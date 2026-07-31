@@ -458,6 +458,29 @@ De Gaia Genome is het interne gedragsprofiel van de assistent. Het bepaalt niet 
 
 Genome-aanpassingen gebeuren langzaam, uitlegbaar en terugdraaibaar. Expliciete gebruikersvoorkeuren wegen zwaarder dan afgeleide patronen.
 
+## 4.15 Concrete agentrollen uit Notities
+
+De ideeën uit de Apple Notes-notitie **Ai assistant** worden vertaald naar bouwbare rollen. Deze rollen zijn geen losse robots die alles mogen, maar gespecialiseerde werkmodi bovenop dezelfde Memory Engine, Value Engine, Task Manager en MCP Hub.
+
+| Rol | Doel | Mag zelfstandig | Vereist altijd approval |
+|---|---|---|---|
+| Self Learning Agent | Gesprekken, fouten, herhaling en nieuwe bronnen analyseren | Ideeën samenvatten, toolkandidaten scoren, vragen voorbereiden | Tools installeren, permissies wijzigen, persoonlijke data koppelen |
+| Manager Agent | Geld, marktdata, abonnementen en financiële keuzes bewaken | Read-only analyses, budgetoverzicht, markt- en cryptoresearch | Betalen, handelen, geld verplaatsen, abonnementen aanpassen |
+| Planner Agent | Routines, agenda, taken, vakanties, school/Magister en mails organiseren | Agenda lezen, conflicten signaleren, conceptplanning maken | Agenda-items schrijven, mails sturen, afspraken bevestigen |
+| Shopper Agent | Deals zoeken op Marktplaats, Vinted, TicketSwap en webshops | Prijsalerts, vergelijkingen, conceptberichten, shortlist maken | Berichten versturen, bieden, kopen, betalen, accounts gebruiken |
+| Server Manager Agent | Servers, containers, processen, logs en updates bewaken | Status lezen, errors samenvatten, updatevoorstellen maken | Containers herstarten, software installeren, firewall/DNS wijzigen |
+| Model Scheduler | Lokaal en extern modelgebruik verdelen | Modelroute kiezen op kosten, snelheid, privacy en VRAM | Nieuwe modellen downloaden, GPU-intensieve jobs starten |
+| Tool Builder / Value Engine | Beslissen of een nieuwe tool zelf gebouwd moet worden of hergebruikt kan worden | GitHub/MCP-kandidaten zoeken, scorekaart invullen, backlog-item maken | Code laten draaien, repo's installeren, credentials koppelen |
+
+**Gedragsregels per agent:**
+
+- Read-only is de standaardmodus voor alle gekoppelde accounts.
+- Schrijfacties worden opgesplitst in concept, preview, risico-uitleg en expliciete goedkeuring.
+- Captcha's, logincontroles en anti-botmaatregelen worden niet omzeild. De assistent mag de gebruiker helpen de officiële flow te volgen, maar niet stiekem beveiligingen passeren.
+- Geld, bank, crypto, PayPal, tickets, aankopen, e-mail en serverbeheer hebben een extra approval-laag.
+- Elke agent schrijft na een belangrijke taak een korte logregel: wat gebeurde er, welke bron/tool is gebruikt, wat kostte het, wat ging mis, wat kan later beter.
+- Nieuwe GitHub-projecten of MCP-servers komen eerst in een evaluatie-backlog met bron, use case, permissies, risico's en onderhoudsstatus.
+
 ## 5. De beslislaag
 
 Elke gebruikersvraag gaat door een routingbesluit.
@@ -804,6 +827,107 @@ Task Queue: “Maak bronprofiel of connectorvoorstel”
   ↓
 Ochtendrapport toont voorstel
 ```
+
+## 11.5 Voorbeelden uit Notities
+
+Deze voorbeelden komen uit de Apple Notes-notitie **Ai assistant** en maken het plan concreet.
+
+### WK-wedstrijden in de agenda zetten
+
+```text
+Gebruiker:
+Kan je alle WK-wedstrijden in mijn calendar zetten?
+  ↓
+Planner Agent zoekt betrouwbare wedstrijdbron
+  ↓
+Bronnen worden vergeleken: officiële kalender, openfootball/worldcup.json, ICS-feed
+  ↓
+Gaia toont preview: aantal wedstrijden, tijdzone, kalendernaam, dubbele items
+  ↓
+Gebruiker geeft approval
+  ↓
+Calendar-tool schrijft events
+  ↓
+Task Manager bewaart bron en update-regel
+```
+
+Belangrijk: agenda-items worden nooit zonder preview geschreven.
+
+### Reisresearch terwijl de gebruiker Gaia niet actief gebruikt
+
+```text
+Gebruiker vraagt over vliegtickets of Airbnb's op een plek
+  ↓
+Live Cycle geeft direct antwoord op de vraag
+  ↓
+Task Manager maakt optionele researchtaak
+  ↓
+Night Cycle onderzoekt stranden, bezienswaardigheden, Airbnb-zones, reistijd en budget
+  ↓
+Research Agent bewaart bronnen en shortlist
+  ↓
+Ochtendrapport toont: "Ik heb extra reisresearch klaarstaan"
+```
+
+Belangrijk: de assistent koopt geen tickets, boekt geen verblijf en stuurt geen berichten zonder expliciete approval.
+
+### Weather-tool faalt en Gaia repareert de workflow
+
+```text
+Gebruiker:
+Wat is het weer in Amsterdam?
+  ↓
+Weather-tool faalt of geeft onduidelijk resultaat
+  ↓
+Feedback Engine logt tool failure
+  ↓
+Curiosity Engine ziet patroon of hoge frictie
+  ↓
+Tool Builder zoekt alternatief: andere weather API, MCP-server of fallbackbron
+  ↓
+Value Engine beoordeelt betrouwbaarheid, kosten en onderhoud
+  ↓
+Task Queue: "Verbeter weather-workflow"
+```
+
+Belangrijk: Gaia probeert niet eindeloos dezelfde fout opnieuw, maar maakt een reparatietaak met diagnose.
+
+### Shopper-deal vinden
+
+```text
+Gebruiker:
+Zoek een goede deal voor X op Marktplaats/Vinted/TicketSwap
+  ↓
+Shopper Agent maakt filters: prijs, locatie, conditie, maat, deadline
+  ↓
+Read-only search via scraper/API/browser
+  ↓
+Resultaten worden gescoord: prijs, betrouwbaarheid, afstand, verkoper, timing
+  ↓
+Gaia toont shortlist en eventueel conceptbericht
+  ↓
+Bericht, bod, reservering of aankoop alleen na approval
+```
+
+Belangrijk: bij marktplaatsen en tickets blijft Gaia binnen officiële loginflows en respecteert rate limits. Geen captcha-bypass, geen proxyrotatie om blokkades te ontwijken en geen automatische aankoop.
+
+### Wekelijkse servercheck
+
+```text
+Wekelijkse planning
+  ↓
+Server Manager Agent leest status van containers, logs, uptime en diskruimte
+  ↓
+Errors worden samengevat met ernst en mogelijke oorzaak
+  ↓
+Updates worden voorgesteld, niet direct uitgevoerd
+  ↓
+Gebruiker keurt concrete acties goed
+  ↓
+Ansible/Portainer/Docker-tools voeren wijzigingen uit
+```
+
+Belangrijk: monitoring mag automatisch; wijzigingen aan draaiende services blijven approval-first.
 
 ## 12. Roadmap zonder coderen
 
@@ -1767,7 +1891,150 @@ Curiosity candidate:
 - Frontend component contracts.
 - Eerste technische backlog.
 
-## 22. Aanbevolen bronnen
+## 22. Herbruikbare GitHub-bouwblokken
+
+Doel van deze sectie: Gaia moet niet alles zelf bouwen. Voor elk onderdeel zoekt de Tool Builder eerst naar bestaande open-source projecten, MCP-servers, SDKs of self-hosted tools. Pas als hergebruik te riskant, te beperkt of te duur is, wordt iets zelf gebouwd.
+
+**Vuistregel:**
+
+```text
+Eerst hergebruiken
+  ↓
+Dan aanpassen
+  ↓
+Dan wrapper/MCP maken
+  ↓
+Pas als laatste zelf volledig bouwen
+```
+
+## 22.1 Evaluatieregel voor GitHub-projecten
+
+Elke repo krijgt vóór installatie een korte beoordeling.
+
+| Criteria | Vraag |
+|---|---|
+| Onderhoud | Is de repo recent bijgewerkt en niet gearchiveerd? |
+| Adoptie | Zijn er gebruikers, issues, releases, forks of documentatie? |
+| Veiligheid | Welke permissies, tokens, scopes en lokale toegang vraagt het project? |
+| Reproduceerbaarheid | Is de installatie duidelijk en testbaar in een sandbox? |
+| Fit | Lost het echt een Gaia-probleem op, of is het alleen interessant? |
+| Onderhoudslast | Wordt Gaia afhankelijk van fragiele scraping, private APIs of veel services? |
+| Exit | Kan het later makkelijk vervangen worden? |
+
+**Defaultactie:**
+
+- Actieve, bekende projecten mogen naar de evaluatie-backlog.
+- Kleine of experimentele projecten mogen alleen in sandbox.
+- Gearchiveerde projecten worden inspiratie, niet basisarchitectuur.
+- Tools met bank, betaling, trading, e-mail, agenda, tickets of serverbeheer krijgen extra approval.
+
+## 22.2 Aanbevolen startstack
+
+Dit is de meest logische eerste combinatie als Gaia bouwbaar moet worden zonder alles zelf te schrijven.
+
+| Laag | Startkeuze | Waarom |
+|---|---|---|
+| Agent runtime | [OpenAI Agents SDK](https://github.com/openai/openai-agents-python) of [LangGraph](https://github.com/langchain-ai/langgraph) | Duidelijke orchestration voor tools, state en multi-agent taken |
+| Workflow automation | [n8n](https://github.com/n8n-io/n8n) of [Activepieces](https://github.com/activepieces/activepieces) | Taken, triggers, approvals en koppelingen zonder alles te coderen |
+| MCP-basis | [modelcontextprotocol/servers](https://github.com/modelcontextprotocol/servers), [FastMCP](https://github.com/PrefectHQ/fastmcp), [awesome-mcp-servers](https://github.com/punkpeye/awesome-mcp-servers) | Herbruikbare servers en snelle eigen wrappers |
+| Browser/web | [Playwright MCP](https://github.com/microsoft/playwright-mcp), [Browser Use](https://github.com/browser-use/browser-use), [Firecrawl](https://github.com/firecrawl/firecrawl), [Apify MCP](https://github.com/apify/apify-mcp-server) | Websites gebruiken, webresearch doen en data ophalen |
+| Memory/graph | [Mem0](https://github.com/mem0ai/mem0), [Graphiti](https://github.com/getzep/graphiti), [Cognee](https://github.com/topoteretes/cognee) | Persoonlijk geheugen, contextgraph en retrieval niet zelf vanaf nul bouwen |
+| Model routing | [LiteLLM](https://github.com/BerriAI/litellm), [Ollama](https://github.com/ollama/ollama), [vLLM](https://github.com/vllm-project/vllm), [llama.cpp](https://github.com/ggml-org/llama.cpp) | Lokaal/extern modelgebruik sturen op kosten, snelheid en hardware |
+| Observability | [Langfuse](https://github.com/langfuse/langfuse) | Traces, evaluaties, prompts, kosten en kwaliteit meten |
+| Serverbeheer | [Uptime Kuma](https://github.com/louislam/uptime-kuma), [Portainer](https://github.com/portainer/portainer), [Netdata](https://github.com/netdata/netdata), [Ansible](https://github.com/ansible/ansible) | Monitoring en beheer zonder custom dashboard vanaf nul |
+
+## 22.3 Projectcatalogus per Gaia-onderdeel
+
+| Gaia-onderdeel | Projecten om te evalueren | Gebruik in Gaia | Let op |
+|---|---|---|---|
+| Agent orchestration | [OpenAI Agents SDK](https://github.com/openai/openai-agents-python), [LangGraph](https://github.com/langchain-ai/langgraph), [CrewAI](https://github.com/crewAIInc/crewAI), [AutoGen](https://github.com/microsoft/autogen), [Agno](https://github.com/agno-agi/agno), [Mastra](https://github.com/mastra-ai/mastra), [Semantic Kernel](https://github.com/microsoft/semantic-kernel), [VoltAgent](https://github.com/VoltAgent/voltagent) | Personal Agent, Research Agent en gespecialiseerde rollen bouwen | Kies één primaire runtime; meerdere tegelijk maakt debugging moeilijk |
+| Coding/long-running work | [OpenHands](https://github.com/OpenHands/OpenHands), [OpenHands Software Agent SDK](https://github.com/OpenHands/software-agent-sdk), [OpenCode](https://github.com/opencode-ai/opencode) | Grote code- en toolbouwtaken door laten werken | Alleen in repos/sandboxes met duidelijke rollback |
+| Agent command center | [Maestro](https://github.com/RunMaestro/Maestro) | Meerdere agents/projecten zichtbaar organiseren | Evalueren als UI/operational laag, niet als kernbrein |
+| MCP ecosysteem | [modelcontextprotocol/servers](https://github.com/modelcontextprotocol/servers), [awesome-mcp-servers](https://github.com/punkpeye/awesome-mcp-servers), [FastMCP](https://github.com/PrefectHQ/fastmcp) | Nieuwe tools sneller koppelen | Elke MCP-server krijgt permissiemanifest |
+| Memory en knowledge graph | [Mem0](https://github.com/mem0ai/mem0), [Graphiti](https://github.com/getzep/graphiti), [Cognee](https://github.com/topoteretes/cognee), [LlamaIndex](https://github.com/run-llama/llama_index), [GraphRAG](https://github.com/microsoft/graphrag), [Neo4j MCP](https://github.com/neo4j-contrib/mcp-neo4j), [OpenViking](https://github.com/volcengine/OpenViking) | Long-term memory, bronprovenance, contextgraph, documentretrieval | Begin klein; memory is nutteloos als opschoning en confidence ontbreken |
+| Zelfverbetering en observability | [Langfuse](https://github.com/langfuse/langfuse), [VoltAgent](https://github.com/VoltAgent/voltagent) | Traces, toolkwaliteit, prompts, evals, feedbackloops | Geen persoonlijke secrets in logs opslaan |
+| Workflow automation | [n8n](https://github.com/n8n-io/n8n), [Activepieces](https://github.com/activepieces/activepieces), [Flowise](https://github.com/FlowiseAI/Flowise), [Dify](https://github.com/langgenius/dify), [Home Assistant](https://github.com/home-assistant/core) | Night Queue, routine-automations, notificaties, approvals | Workflowtools mogen geen approvalregels omzeilen |
+| Browser en webresearch | [Playwright MCP](https://github.com/microsoft/playwright-mcp), [Browser Use](https://github.com/browser-use/browser-use), [Firecrawl](https://github.com/firecrawl/firecrawl), [Firecrawl MCP](https://github.com/firecrawl/firecrawl-mcp-server), [Apify MCP](https://github.com/apify/apify-mcp-server) | Websites lezen, research doen, formulieren voorbereiden, data verzamelen | Geen captcha-bypass of agressieve scraping |
+| Agenda, mail en planner | [Google Workspace MCP](https://github.com/taylorwilsdon/google_workspace_mcp), [Calendar MCP](https://github.com/MarimerLLC/calendar-mcp), [email-mcp](https://github.com/codefuturist/email-mcp), [Google MCP](https://github.com/google/mcp) | Gmail, Calendar, Drive, Tasks, contacten en planning | Draft/read-first; verzenden en schrijven alleen met approval |
+| Magister/school | [unofficial-magister-mcp](https://github.com/israelroldan/unofficial-magister-mcp), [magister-tool](https://github.com/nlitsme/magister-tool) | Schoolagenda en rooster ophalen | Onofficiële tools: sandbox, beperkte login, goed testen |
+| WK en sportkalenders | [world-cup-ics](https://github.com/thatbritguy/world-cup-ics), [openfootball/worldcup.json](https://github.com/openfootball/worldcup.json), [openfootball/football.json](https://github.com/openfootball/football.json) | WK-wedstrijden en andere voetbaldata in agenda zetten | Bronnen vergelijken met officiële tijden voordat events worden geschreven |
+| Shopper/deals | [Apify MCP](https://github.com/apify/apify-mcp-server), [Vinted Scraper](https://github.com/Giglium/vinted_scraper), [marktplaats-py](https://github.com/jensjeflensje/marktplaats-py), [marktplaats-scraper](https://github.com/chadsr/marktplaats-scraper), [shoppingscraper-cli](https://github.com/ShoppingResult/shoppingscraper-cli), [BuyWhere MCP](https://github.com/buywhere/buywhere-mcp), [mcp-ticketer](https://github.com/bobmatnyc/mcp-ticketer) | Prijsalerts, productvergelijking, dealshortlists, conceptberichten | Geen automatisch kopen/bieden; geen blokkades omzeilen |
+| Geld, marktdata en investeren | [bank-mcp](https://github.com/elcukro/bank-mcp), [OpenBB](https://github.com/OpenBB-finance/OpenBB), [Financial Datasets MCP](https://github.com/financial-datasets/mcp-server), [PayPal MCP Server](https://github.com/paypal/paypal-mcp-server), [PayPal Agent Toolkit](https://github.com/paypal/agent-toolkit), [Freqtrade](https://github.com/freqtrade/freqtrade) | Read-only bankoverzicht, marktdata, onderzoek, sandboxbetalingen | Geen financieel advies of trades zonder menselijke beslissing |
+| Server manager | [Uptime Kuma](https://github.com/louislam/uptime-kuma), [Portainer](https://github.com/portainer/portainer), [Netdata](https://github.com/netdata/netdata), [Ansible](https://github.com/ansible/ansible), [Renovate](https://github.com/renovatebot/renovate) | Uptime, containers, metrics, configbeheer, dependency updates | Wijzigingen aan productiecontainers alleen na approval |
+| Container auto-update inspiratie | [Watchtower](https://github.com/containrrr/watchtower) | Ideeën voor updatebeleid | Repo is gearchiveerd; niet als nieuwe basis gebruiken |
+| Model serving en GPU-routing | [LiteLLM](https://github.com/BerriAI/litellm), [Ollama](https://github.com/ollama/ollama), [vLLM](https://github.com/vllm-project/vllm), [llama.cpp](https://github.com/ggml-org/llama.cpp), [LocalAI](https://github.com/mudler/LocalAI), [Open WebUI](https://github.com/open-webui/open-webui), [Harbor](https://github.com/av/harbor), [Colibri](https://github.com/JustVugg/colibri) | Lokaal model draaien, externe modellen routeren, VRAM beperken, UI voor modellen | Colibri is interessant/experimenteel; eerst testen met kleine taken |
+| Persoonlijke AI als referentie | [Khoj](https://github.com/khoj-ai/khoj), [Open WebUI](https://github.com/open-webui/open-webui), [Dify](https://github.com/langgenius/dify) | Inspiratie of deels herbruikbare app-laag | Niet automatisch Gaia vervangen; alleen onderdelen lenen |
+
+## 22.4 Projecten uit de Notities-bronnen
+
+Deze bronnen stonden al in de Apple Notes-notitie en blijven in de evaluatie-backlog.
+
+| Bron | Mogelijke rol in Gaia | Status |
+|---|---|---|
+| [S.I.R.I.U.S. discussion](https://github.com/Devjosef/S.I.R.I.U.S./discussions/1) | Inspiratie voor self-learning en toolontwikkeling | Lezen en ideeën extraheren |
+| [OpenViking](https://github.com/volcengine/OpenViking) | Contextdatabase voor agents | Serieus evalueren naast Mem0/Graphiti/Cognee |
+| [VoltAgent](https://github.com/VoltAgent/voltagent) | TypeScript agent framework met memory, tools, MCP en observability | Evalueren als TS-stack |
+| [Bytebot](https://github.com/bytebot-ai/bytebot) | Self-hosted desktop/computer-use agent | Gearchiveerd; alleen inspiratie |
+| [bank-mcp](https://github.com/elcukro/bank-mcp) | Read-only banktoegang via open banking providers | Alleen read-only en met sterke scopes |
+| [mcp-market-data-server](https://github.com/fintools-ai/mcp-market-data-server) | Marktdata voor Manager Agent | Evalueren naast OpenBB/Financial Datasets |
+| [mcp-ticketer](https://github.com/bobmatnyc/mcp-ticketer) | Ticket/dealonderzoek | Alleen monitoren en concepten; geen autobuy |
+| [PayPal MCP Server](https://github.com/paypal/paypal-mcp-server) | PayPal-integratie | Eerst sandbox; betalingen altijd approval |
+| [mcp-supersubagents](https://github.com/yigitkonur/mcp-supersubagents) | Subagent orchestration | Evalueren in sandbox |
+| [chaterm](https://github.com/chaterm/chaterm) | Terminal/chat workflow | Evalueren als developer interface |
+| [openai-oauth](https://github.com/EvanZhouDev/openai-oauth) | OAuth/reference voor OpenAI-loginflows | Alleen als referentie, security review vereist |
+| [OpenCode](https://github.com/opencode-ai/opencode) | Open-source coding agent | Evalueren voor code/agentic work |
+| [Colibri](https://github.com/JustVugg/colibri) | Grote MoE-modellen lokaal met weinig geheugen verkennen | Experimenteel; testen zonder kritieke afhankelijkheid |
+
+## 22.5 Eerste technische backlog uit de GitHub-scan
+
+| Prioriteit | Taak | Output |
+|---|---|---|
+| P0 | Kies primaire agent runtime: OpenAI Agents SDK, LangGraph of VoltAgent | Keuzedocument met trade-offs |
+| P0 | Maak permissiemodel voor MCP Hub | Read/write scopes, approvalregels, auditlog |
+| P0 | Zet observability op met Langfuse of vergelijkbaar | Traceerbare toolruns en kosten |
+| P1 | Test Memory Engine met Mem0, Graphiti, Cognee en OpenViking | Prototype met dezelfde dataset en evaluatievragen |
+| P1 | Test browserlaag met Playwright MCP, Browser Use, Firecrawl en Apify | Betrouwbaarheid per taaktype |
+| P1 | Maak Planner proof-of-concept met Google Workspace MCP en WK-ICS | Agenda-preview zonder direct schrijven |
+| P1 | Maak Server Manager read-only dashboard met Uptime Kuma/Portainer/Netdata | Wekelijks rapport zonder wijzigingen |
+| P2 | Maak Shopper proof-of-concept voor Vinted/Marktplaats alerts | Shortlist + conceptbericht, geen aankoop |
+| P2 | Maak Model Scheduler prototype met LiteLLM + Ollama/vLLM | Kosten/snelheid/privacy routing |
+| P2 | Maak finance sandbox met OpenBB, bank-mcp en PayPal sandbox | Read-only analyse en betaal-preview |
+
+## 22.6 Aanvullende bronnen uit tweede zoekronde
+
+Deze bronnen zijn extra kandidaten die Gaia later kan evalueren. Ze zijn bewust per probleemgebied gegroepeerd, zodat de Tool Builder ze niet allemaal tegelijk hoeft te proberen.
+
+| Probleemgebied | Extra projecten | Waarom interessant voor Gaia | Eerste beoordeling |
+|---|---|---|---|
+| Productie-agent frameworks | [Pydantic AI](https://github.com/pydantic/pydantic-ai), [Letta](https://github.com/letta-ai/letta), [CAMEL](https://github.com/camel-ai/camel), [CAMEL OWL](https://github.com/camel-ai/OWL), [mcp-agent](https://github.com/lastmile-ai/mcp-agent), [Inngest AgentKit](https://github.com/inngest/agent-kit) | Extra opties voor stateful agents, typed Python agents, multi-agent samenwerking en MCP-native agents | Evalueren naast OpenAI Agents SDK, LangGraph en VoltAgent |
+| Durable execution | [Temporal](https://github.com/temporalio/temporal), [Hatchet](https://github.com/hatchet-dev/hatchet), [Inngest](https://github.com/inngest/inngest), [Windmill](https://github.com/windmill-labs/windmill), [Prefect](https://github.com/PrefectHQ/prefect) | Lange taken kunnen pauzeren, herstellen na fouten, retryen en wachten op menselijke approval | Sterke kandidaat voor Night Queue en Research Agent |
+| MCP discovery en beheer | [GitHub MCP Server](https://github.com/github/github-mcp-server), [Docker MCP Registry](https://github.com/docker/mcp-registry), [Docker MCP Gateway](https://github.com/docker/mcp-gateway), [Desktop Commander MCP](https://github.com/wonderwhy-er/DesktopCommanderMCP), [OpenAI Agents MCP extension](https://github.com/lastmile-ai/openai-agents-mcp), [mcp-eval](https://github.com/lastmile-ai/mcp-eval) | MCP-servers vinden, lokaal veiliger draaien, GitHub koppelen, MCP-tools testen | Desktop/terminal MCP alleen met strakke sandbox en approval |
+| Code execution sandbox | [E2B](https://github.com/e2b-dev/e2b), [Daytona](https://github.com/daytonaio/daytona), [Pydantic Monty](https://github.com/pydantic/monty), [Open Interpreter](https://github.com/openinterpreter/openinterpreter) | AI-code draaien zonder je echte systeem direct bloot te stellen | Cruciaal voordat Gaia zelf code of scripts mag uitvoeren |
+| Document-ingestie | [MarkItDown](https://github.com/microsoft/markitdown), [Docling](https://github.com/docling-project/docling), [Unstructured](https://github.com/Unstructured-IO/unstructured), [AnythingLLM](https://github.com/Mintplex-Labs/anything-llm) | PDFs, Office-bestanden, afbeeldingen en notities klaarmaken voor RAG/memory | Goed voor Apple Notes export, schooldocs, handleidingen en serverdocs |
+| Vector/RAG opslag | [Qdrant](https://github.com/qdrant/qdrant), [Chroma](https://github.com/chroma-core/chroma), [Weaviate](https://github.com/weaviate/weaviate), [Milvus](https://github.com/milvus-io/milvus), [LanceDB](https://github.com/lancedb/lancedb), [pgvector](https://github.com/pgvector/pgvector) | Semantisch zoeken, long-term memory en documentretrieval | Begin met één simpele store; later pas vergelijken |
+| Model serving extra | [SGLang](https://github.com/sgl-project/sglang), [TensorRT-LLM](https://github.com/NVIDIA/TensorRT-LLM), [LMDeploy](https://github.com/InternLM/lmdeploy), [ExLlamaV2](https://github.com/turboderp-org/exllamav2) | Snellere lokale of GPU-inference dan alleen Ollama/vLLM in bepaalde situaties | Alleen nodig als lokale modellen echt bottleneck worden |
+| Voice assistant | [whisper.cpp](https://github.com/ggml-org/whisper.cpp), [faster-whisper](https://github.com/SYSTRAN/faster-whisper), [Piper](https://github.com/OHF-voice/piper1-gpl), [openWakeWord](https://github.com/dscripka/openWakeWord), [Open Interpreter 01](https://github.com/openinterpreter/01) | Spraak naar tekst, lokale TTS, wake word en desktop/voice control | Later toevoegen; eerst tekstinterface betrouwbaar maken |
+| Privacy en security | [Infisical](https://github.com/Infisical/infisical), [Vault](https://github.com/hashicorp/vault), [SOPS](https://github.com/getsops/sops), [Gitleaks](https://github.com/gitleaks/gitleaks), [TruffleHog](https://github.com/trufflesecurity/trufflehog), [Open Policy Agent](https://github.com/open-policy-agent/opa), [Presidio](https://github.com/data-privacy-stack/presidio) | Secrets bewaren, tokens scannen, PII maskeren en policies afdwingen | P0 zodra Gaia echte accounts/tokens krijgt |
+| Eval en observability | [Promptfoo](https://github.com/promptfoo/promptfoo), [Phoenix](https://github.com/Arize-ai/phoenix), [OpenLIT](https://github.com/openlit/openlit), [Helicone](https://github.com/Helicone/helicone), [Pydantic Logfire](https://github.com/pydantic/logfire) | Prompts testen, agents evalueren, traces bekijken, regressies vinden | Combineer met Langfuse of vergelijk als alternatief |
+| Self-hosting dashboard | [Beszel](https://github.com/henrygd/beszel), [Komodo](https://github.com/moghtech/komodo), [Dockge](https://github.com/louislam/dockge), [Homepage](https://github.com/gethomepage/homepage), [Glance](https://github.com/glanceapp/glance), [Traefik](https://github.com/traefik/traefik), [Caddy](https://github.com/caddyserver/caddy), [Authelia](https://github.com/authelia/authelia), [NetBird](https://github.com/netbirdio/netbird), [CrowdSec](https://github.com/crowdsecurity/crowdsec) | Serverstatus, containers, reverse proxy, login en basisbeveiliging | Goed voor Server Manager Agent en homelabbeheer |
+| Persoonlijke interface | [LibreChat](https://github.com/danny-avila/LibreChat), [Lobe Chat](https://github.com/lobehub/lobe-chat), [big-AGI](https://github.com/enricoros/big-AGI), [AnythingLLM](https://github.com/Mintplex-Labs/anything-llm) | Bestaande UI-ideeën voor multi-model chat, agents, files, memory en MCP | Alleen lenen/inspireren; Gaia blijft eigen productvisie houden |
+| Planner, taken en geld | [Vikunja](https://github.com/go-vikunja/vikunja), [Cal.diy](https://github.com/calcom/cal.diy), [Actual Budget](https://github.com/actualbudget/actual), [Firefly III](https://github.com/firefly-iii/firefly-iii), [Beancount](https://github.com/beancount/beancount) | Taken, scheduling, persoonlijke begroting en scriptbare boekhouding | Finance blijft read-only tenzij de gebruiker expliciet tekent |
+| Integratieplatformen | [Composio](https://github.com/ComposioHQ/composio), [Pipedream](https://github.com/PipedreamHQ/pipedream) | Veel externe apps koppelen zonder elke API zelf te bouwen | Alleen gebruiken met duidelijke OAuth-scopes |
+
+## 22.7 Nieuwe backlog-items uit tweede bronronde
+
+| Prioriteit | Taak | Output |
+|---|---|---|
+| P0 | Ontwerp sandboxbeleid voor code, browser en terminal | Wanneer E2B/Daytona/Monty/lokale container gebruikt wordt |
+| P0 | Ontwerp secrets- en tokenbeheer | Infisical/Vault/SOPS-keuze, plus Gitleaks/TruffleHog scanregels |
+| P1 | Vergelijk durable execution opties | Temporal vs Hatchet vs Inngest vs Windmill voor Night Queue |
+| P1 | Maak document-ingestie prototype | Apple Notes/export, PDF, DOCX en Markdown via MarkItDown/Docling |
+| P1 | Maak privacyfilter voor memory | Presidio/PII-detectie voordat gesprekken permanent worden opgeslagen |
+| P2 | Test voice assistant stack | whisper.cpp/faster-whisper + Piper + openWakeWord |
+| P2 | Test self-hosting dashboard voor Gaia servers | Beszel/Komodo/Dockge/Homepage met read-only statuspaneel |
+| P2 | Test eval-suite | Promptfoo/mcp-eval/Phoenix/OpenLIT naast Langfuse |
+
+## 23. Aanbevolen bronnen
 
 - Model Context Protocol-documentatie: https://modelcontextprotocol.io/docs/getting-started/intro
 - MCP-specificatie: https://modelcontextprotocol.io/specification/2025-03-26
@@ -1780,8 +2047,69 @@ Curiosity candidate:
 - Material Design 3 - Motion: https://m3.material.io/styles/motion/overview/how-it-works
 - WCAG 2.2: https://www.w3.org/TR/WCAG22/
 - WAI-ARIA Authoring Practices Guide: https://www.w3.org/WAI/ARIA/apg/
+- GitHub MCP server catalogus: https://github.com/modelcontextprotocol/servers
+- Awesome MCP servers: https://github.com/punkpeye/awesome-mcp-servers
+- OpenAI Agents SDK repo: https://github.com/openai/openai-agents-python
+- LangGraph repo: https://github.com/langchain-ai/langgraph
+- Playwright MCP repo: https://github.com/microsoft/playwright-mcp
+- Browser Use repo: https://github.com/browser-use/browser-use
+- Mem0 repo: https://github.com/mem0ai/mem0
+- Graphiti repo: https://github.com/getzep/graphiti
+- Cognee repo: https://github.com/topoteretes/cognee
+- LiteLLM repo: https://github.com/BerriAI/litellm
+- Ollama repo: https://github.com/ollama/ollama
+- vLLM repo: https://github.com/vllm-project/vllm
+- n8n repo: https://github.com/n8n-io/n8n
+- Activepieces repo: https://github.com/activepieces/activepieces
+- Langfuse repo: https://github.com/langfuse/langfuse
+- OpenViking repo: https://github.com/volcengine/OpenViking
+- VoltAgent repo: https://github.com/VoltAgent/voltagent
+- OpenCode repo: https://github.com/opencode-ai/opencode
+- Colibri repo: https://github.com/JustVugg/colibri
+- World Cup ICS repo: https://github.com/thatbritguy/world-cup-ics
+- openfootball worldcup.json: https://github.com/openfootball/worldcup.json
+- Pydantic AI repo: https://github.com/pydantic/pydantic-ai
+- Letta repo: https://github.com/letta-ai/letta
+- CAMEL repo: https://github.com/camel-ai/camel
+- mcp-agent repo: https://github.com/lastmile-ai/mcp-agent
+- Temporal repo: https://github.com/temporalio/temporal
+- Hatchet repo: https://github.com/hatchet-dev/hatchet
+- Windmill repo: https://github.com/windmill-labs/windmill
+- Docker MCP Registry: https://github.com/docker/mcp-registry
+- GitHub MCP Server: https://github.com/github/github-mcp-server
+- E2B repo: https://github.com/e2b-dev/e2b
+- Daytona repo: https://github.com/daytonaio/daytona
+- Pydantic Monty repo: https://github.com/pydantic/monty
+- MarkItDown repo: https://github.com/microsoft/markitdown
+- Docling repo: https://github.com/docling-project/docling
+- Qdrant repo: https://github.com/qdrant/qdrant
+- Weaviate repo: https://github.com/weaviate/weaviate
+- Chroma repo: https://github.com/chroma-core/chroma
+- LanceDB repo: https://github.com/lancedb/lancedb
+- SGLang repo: https://github.com/sgl-project/sglang
+- TensorRT-LLM repo: https://github.com/NVIDIA/TensorRT-LLM
+- whisper.cpp repo: https://github.com/ggml-org/whisper.cpp
+- faster-whisper repo: https://github.com/SYSTRAN/faster-whisper
+- Piper repo: https://github.com/OHF-voice/piper1-gpl
+- openWakeWord repo: https://github.com/dscripka/openWakeWord
+- Infisical repo: https://github.com/Infisical/infisical
+- Open Policy Agent repo: https://github.com/open-policy-agent/opa
+- Presidio repo: https://github.com/data-privacy-stack/presidio
+- Promptfoo repo: https://github.com/promptfoo/promptfoo
+- Phoenix repo: https://github.com/Arize-ai/phoenix
+- OpenLIT repo: https://github.com/openlit/openlit
+- Helicone repo: https://github.com/Helicone/helicone
+- Beszel repo: https://github.com/henrygd/beszel
+- Komodo repo: https://github.com/moghtech/komodo
+- Dockge repo: https://github.com/louislam/dockge
+- LibreChat repo: https://github.com/danny-avila/LibreChat
+- Lobe Chat repo: https://github.com/lobehub/lobe-chat
+- Actual Budget repo: https://github.com/actualbudget/actual
+- Firefly III repo: https://github.com/firefly-iii/firefly-iii
+- Vikunja repo: https://github.com/go-vikunja/vikunja
+- Cal.diy repo: https://github.com/calcom/cal.diy
 
-## 23. Definitieve positionering
+## 24. Definitieve positionering
 
 De assistent is geen simpele chatbot en ook geen volledig autonome robot. Het is een persoonlijk besturingssysteem voor kennis, taken, research, UI-compositie en zelfverbetering.
 
