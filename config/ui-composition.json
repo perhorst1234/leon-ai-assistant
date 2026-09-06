@@ -1,0 +1,549 @@
+{
+  "version": 1,
+  "status": "foundation",
+  "principle": "Leon composes interfaces from reviewed components. It does not invent new UI patterns for high-risk flows.",
+  "product_shell": {
+    "name": "Leon",
+    "experience": "A calm personal AI environment that opens directly into status, memory, work and intent surfaces.",
+    "first_screen": {
+      "entry": "environment_canvas",
+      "must_present": ["leon_presence", "modular_canvas", "bottom_floating_dock", "live_status", "next_action"],
+      "must_not_present": ["marketing_landing_page", "sales_hero", "generic_chat_thread", "admin_dashboard_as_primary_screen"]
+    },
+    "ui_direction": {
+      "use": [
+        "modular canvas with one to three priority surfaces",
+        "floating bottom dock for connected spaces",
+        "assistant presence tied to current status",
+        "adaptive transparency for details, logs, sources and policy",
+        "control-plane panels only as supporting inspection surfaces"
+      ],
+      "avoid": [
+        "standard chatbot layout as the default product shell",
+        "dense SaaS dashboard grids as the first impression",
+        "permanent traditional sidebar navigation",
+        "marketing landing pages before the working environment",
+        "decorative motion that does not communicate state"
+      ]
+    },
+    "visual_design_rules": {
+      "dark_soft_backgrounds": "Use layered near-black and blue-black fields instead of flat black.",
+      "subtle_gradients_or_noise": "Use low-contrast radial gradients plus fine noise to create depth without visual clutter.",
+      "glass_panels": "Panels use translucent fills, backdrop blur and inner highlights.",
+      "rounded_corners": "Use generous rounded corners on shell panels and smaller radii on operational cards.",
+      "blur": "Use blur for depth and transparency, never to hide critical safety text.",
+      "glow": "Glow is soft and status-aware around Leon presence, focus rings and active surfaces.",
+      "shadow": "Shadows are diffuse and layered, supporting depth without heavy borders.",
+      "whitespace": "Prefer spacious grouping and one to three primary surfaces over dense dashboard packing.",
+      "minimal_borders": "Borders are subtle hairlines used only for structure, affordance or safety separation.",
+      "dynamic_accent_color": "Exactly one dynamic accent drives active glow, progress and selected dock state."
+    },
+    "dynamic_accent": {
+      "source": "assistant_state",
+      "fallback": "#62a8ff",
+      "css_variable": "--accent"
+    },
+    "status_colors": {
+      "idle": {"color": "#62a8ff", "label": "idle/rest", "usage": "calm availability and resting Leon presence"},
+      "thinking": {"color": "#a78bfa", "label": "thinking", "usage": "routing, planning and proposal preparation"},
+      "acting": {"color": "#22d3ee", "label": "acting/executing", "usage": "approved execution or active local work"},
+      "attention": {"color": "#fbbf24", "label": "attention/review", "usage": "approval, missing input, risk review or blocker"},
+      "error": {"color": "#fb7185", "label": "error/danger", "usage": "real failure, danger or policy violation only"}
+    }
+  },
+  "spaces": {
+    "home": {
+      "purpose": "Daily command center and project overview.",
+      "primary_components": ["ProjectStatusCard", "NeedInputQueue", "ActiveTaskList", "MorningBriefCard"]
+    },
+    "chat": {
+      "purpose": "Fast direct interaction for compact answers and light context.",
+      "primary_components": ["CommandBar", "AssistantStatusPill", "ContextCard", "SafeResponseCard"]
+    },
+    "workflows": {
+      "purpose": "Reviewable multi-step work, orchestration proposals and agent assignments.",
+      "primary_components": ["TaskQueue", "OrchestrationProposalCard", "AgentRunCard", "AuditRow"]
+    },
+    "memory": {
+      "purpose": "Inspectable and correctable memory and graph relationships.",
+      "primary_components": ["MemoryCard", "MemoryGraphEdgeList", "MemoryReviewQueue", "AuditRow"]
+    },
+    "skills": {
+      "purpose": "Approved skills, tool candidates, MCP reviews, permission checks and gated approvals.",
+      "primary_components": ["ToolManifestCard", "PermissionCheckCard", "ApprovalSheet", "McpIntakeCard"]
+    },
+    "projects": {
+      "purpose": "Project context, research boards, source stacks and active work surfaces.",
+      "primary_components": ["ProjectStatusCard", "ResearchBoard", "SourceStack", "TaskTimeline"]
+    },
+    "settings": {
+      "purpose": "Secrets, safety boundaries, model routes and local runtime policy.",
+      "primary_components": ["SecretIntakeCard", "ModelRouteCard", "PolicyRuleCard", "AuditRow"]
+    }
+  },
+  "canvas_shell": {
+    "navigation_model": "bottom_floating_dock",
+    "layout_model": "connected_spatial_canvas",
+    "core_spaces": ["home", "chat", "workflows", "memory", "skills", "projects", "settings"],
+    "continuity": "Spaces are areas of one environment. Dock changes move focus across the same canvas instead of loading unrelated pages.",
+    "permanent_sidebar": false,
+    "dock": {
+      "placement": "bottom_center_floating",
+      "visual_weight": "lightweight_glass",
+      "behavior": "transient_focus_controls",
+      "primary_spaces": ["home", "chat", "workflows", "memory", "skills", "projects", "settings"],
+      "core_actions": [
+        {
+          "id": "new_intent",
+          "label": "Intent",
+          "target_space": "chat",
+          "operation": "focus_intent",
+          "aria_label": "Start a new Leon intent"
+        },
+        {
+          "id": "review_attention",
+          "label": "Review",
+          "target_space": "skills",
+          "operation": "focus_attention",
+          "aria_label": "Open attention and review queues"
+        },
+        {
+          "id": "search_memory",
+          "label": "Memory",
+          "target_space": "memory",
+          "operation": "focus_memory_search",
+          "aria_label": "Search Leon memory"
+        },
+        {
+          "id": "morning_brief",
+          "label": "Brief",
+          "target_space": "home",
+          "operation": "generate_morning_brief",
+          "aria_label": "Generate or inspect the morning brief"
+        }
+      ],
+      "interaction_model": {
+        "space_change": "set_active_canvas_space",
+        "page_reload": false,
+        "scroll_behavior": "smooth",
+        "active_state": "aria_pressed",
+        "keyboard_support": ["tab", "enter", "space"],
+        "min_target_px": 44,
+        "responsive_overflow": "horizontal_scroll_on_small_viewports"
+      }
+    },
+    "placement_contract": {
+      "approved_component_types_source": "component_registry",
+      "no_generated_component_types": true,
+      "allowed_operations": ["appear", "move", "resize", "expand", "merge", "split"],
+      "max_primary_surfaces": 3
+    },
+    "animation_system": {
+      "principle": "Motion communicates spatial continuity, state change and focus only. It must stay restrained and all information must remain readable without motion.",
+      "mode": "functional_restrained",
+      "timing": {
+        "standard_ms": 260,
+        "emphasis_ms": 360,
+        "max_ms": 420,
+        "easing": "cubic-bezier(0.2, 0.8, 0.2, 1)",
+        "spring": "soft_local_spring"
+      },
+      "operations": {
+        "space_transition": {
+          "behavior": "focus_shift_same_canvas",
+          "avoids_page_reload": true,
+          "preserve_layout_continuity": true
+        },
+        "card_expand": {
+          "from": "current_card_bounds",
+          "to": "detail_window",
+          "returns_focus_on_close": true
+        },
+        "panel_merge": {
+          "from": "adjacent_panels",
+          "to": "shared_context_surface",
+          "visual": "shared_glow_and_reduced_gap"
+        },
+        "panel_split": {
+          "from": "shared_context_surface",
+          "to": "separate_task_surfaces",
+          "visual": "restored_gap_and_individual_radius"
+        },
+        "magnetic_move": {
+          "target": "active_space_or_component",
+          "max_translate_px": 14,
+          "purpose": "Pull active elements subtly toward the logical focus point."
+        }
+      },
+      "restraints": {
+        "prefers_reduced_motion": "disable_nonessential_motion",
+        "essential_information_visible_without_motion": true,
+        "decorative_loops": "character_status_only",
+        "reading_safe": true
+      }
+    }
+  },
+  "character_renderer": {
+    "principle": "Leon character motion is functional status communication, not decoration. It is derived from runtime state and never implies execution when the system is only previewing.",
+    "states": {
+      "idle": {
+        "label": "Idle",
+        "status_color": "idle",
+        "motion": "subtle_breathe",
+        "glow": "soft",
+        "particles": "none",
+        "dimmed": false,
+        "danger": false
+      },
+      "thinking": {
+        "label": "Thinking",
+        "status_color": "thinking",
+        "motion": "focused_pulse",
+        "glow": "focused",
+        "particles": "sparse",
+        "dimmed": false,
+        "danger": false
+      },
+      "acting": {
+        "label": "Acting",
+        "status_color": "acting",
+        "motion": "directed_drift",
+        "glow": "active",
+        "particles": "trail",
+        "dimmed": false,
+        "danger": false,
+        "requires_target": true
+      },
+      "interacting": {
+        "label": "Interacting",
+        "status_color": "acting",
+        "motion": "component_touch",
+        "glow": "active",
+        "particles": "localized",
+        "dimmed": false,
+        "danger": false,
+        "requires_target": true
+      },
+      "sleeping": {
+        "label": "Sleeping",
+        "status_color": "idle",
+        "motion": "almost_still",
+        "glow": "dim",
+        "particles": "none",
+        "dimmed": true,
+        "danger": false
+      },
+      "attention": {
+        "label": "Attention",
+        "status_color": "attention",
+        "motion": "slow_attention_pulse",
+        "glow": "amber",
+        "particles": "few",
+        "dimmed": false,
+        "danger": false
+      },
+      "error": {
+        "label": "Error",
+        "status_color": "error",
+        "motion": "minimal_warning_pulse",
+        "glow": "red",
+        "particles": "none",
+        "dimmed": false,
+        "danger": true
+      }
+    },
+    "red_usage": "Red is reserved for real error, danger, failed run, failed task, or policy violation states only.",
+    "target_behavior": {
+      "acting": "Point toward the active execution/work component.",
+      "interacting": "Point toward the reviewable or user-manipulated component."
+    }
+  },
+  "component_registry": {
+    "ProjectStatusCard": {
+      "purpose": "Show current phase, progress and next recommended task.",
+      "allowed_spaces": ["home", "projects"],
+      "required_state": ["metadata.current_phase", "metadata.progress_percent"],
+      "safety_role": "visibility"
+    },
+    "NeedInputQueue": {
+      "purpose": "Surface pending approvals, missing secrets and blocked tasks.",
+      "allowed_spaces": ["home", "settings"],
+      "required_state": ["approvals", "required_env", "tasks"],
+      "safety_role": "friction"
+    },
+    "ActiveTaskList": {
+      "purpose": "Show open tasks without hiding status/risk/owner.",
+      "allowed_spaces": ["home", "workflows"],
+      "required_state": ["tasks"],
+      "safety_role": "visibility"
+    },
+    "MorningBriefCard": {
+      "purpose": "Placeholder for future morning report; no autonomous execution.",
+      "allowed_spaces": ["home"],
+      "required_state": ["metadata", "tasks"],
+      "safety_role": "proposal_only"
+    },
+    "CommandBar": {
+      "purpose": "Start a request or route preview without claiming execution.",
+      "allowed_spaces": ["chat", "home"],
+      "required_state": ["decision_layer"],
+      "safety_role": "entry"
+    },
+    "AssistantStatusPill": {
+      "purpose": "Show assistant state such as idle, thinking, waiting, blocked, reviewing or done.",
+      "allowed_spaces": ["chat", "home", "projects", "workflows", "memory", "skills", "settings"],
+      "required_state": ["ui_composition.assistant_state"],
+      "safety_role": "status"
+    },
+    "ContextCard": {
+      "purpose": "Show compact relevant context and why it is relevant.",
+      "allowed_spaces": ["chat", "home", "projects"],
+      "required_state": ["routing_decisions", "memory_items"],
+      "safety_role": "explainability"
+    },
+    "SafeResponseCard": {
+      "purpose": "Show direct answer, refusal or safe redirect without hidden tool execution.",
+      "allowed_spaces": ["chat"],
+      "required_state": ["routing_decisions"],
+      "safety_role": "safety"
+    },
+    "ResearchBoard": {
+      "purpose": "Show plan, method, subtasks and uncertainty for research work.",
+      "allowed_spaces": ["projects"],
+      "required_state": ["tasks", "routing_decisions"],
+      "safety_role": "method"
+    },
+    "SourceStack": {
+      "purpose": "Show sources, provenance and confidence.",
+      "allowed_spaces": ["projects"],
+      "required_state": ["tasks.source_refs", "tool_manifests.github_metadata"],
+      "safety_role": "evidence"
+    },
+    "TaskTimeline": {
+      "purpose": "Show event sequence for tasks, previews, runs and audits.",
+      "allowed_spaces": ["projects", "workflows"],
+      "required_state": ["audit_events"],
+      "safety_role": "audit"
+    },
+    "UncertaintyCard": {
+      "purpose": "Show missing inputs, assumptions and unresolved decisions.",
+      "allowed_spaces": ["projects", "workflows"],
+      "required_state": ["tasks.blocked_reason", "approval_status"],
+      "safety_role": "friction"
+    },
+    "TaskQueue": {
+      "purpose": "Show queued and active work with state transitions.",
+      "allowed_spaces": ["workflows", "home"],
+      "required_state": ["tasks"],
+      "safety_role": "control"
+    },
+    "OrchestrationProposalCard": {
+      "purpose": "Show prepared proposals before applying local task/approval changes.",
+      "allowed_spaces": ["workflows"],
+      "required_state": ["orchestration_proposals"],
+      "safety_role": "review_gate"
+    },
+    "AgentRunCard": {
+      "purpose": "Show agent assignments and runs with allowed/forbidden actions.",
+      "allowed_spaces": ["workflows"],
+      "required_state": ["agent_runs", "agent_assignment_proposals"],
+      "safety_role": "review_gate"
+    },
+    "MemoryCard": {
+      "purpose": "Show memory content, confidence, source, expiry and edit/delete controls.",
+      "allowed_spaces": ["memory"],
+      "required_state": ["memory_items"],
+      "safety_role": "user_control"
+    },
+    "MemoryGraphEdgeList": {
+      "purpose": "Show simple graph relationships with source memory and confidence.",
+      "allowed_spaces": ["memory"],
+      "required_state": ["memory_graph_edges"],
+      "safety_role": "explainability"
+    },
+    "MemoryReviewQueue": {
+      "purpose": "Show candidate, sensitive or long-term memory requiring review.",
+      "allowed_spaces": ["memory"],
+      "required_state": ["memory_items.status"],
+      "safety_role": "review_gate"
+    },
+    "ToolManifestCard": {
+      "purpose": "Show tool/MCP candidates, scope, cost/resource profile and status.",
+      "allowed_spaces": ["skills"],
+      "required_state": ["tool_manifests"],
+      "safety_role": "visibility"
+    },
+    "PermissionCheckCard": {
+      "purpose": "Show local preflight decision before any tool action.",
+      "allowed_spaces": ["skills"],
+      "required_state": ["tool_permission_checks"],
+      "safety_role": "safety"
+    },
+    "ApprovalSheet": {
+      "purpose": "Show high-impact action preview, risk, cost, rollback and explicit decision controls.",
+      "allowed_spaces": ["skills", "workflows", "settings"],
+      "required_state": ["approvals"],
+      "safety_role": "approval_gate"
+    },
+    "McpIntakeCard": {
+      "purpose": "Show MCP candidate review checklist without install/connect/write.",
+      "allowed_spaces": ["skills"],
+      "required_state": ["mcp_candidate_intakes"],
+      "safety_role": "review_gate"
+    },
+    "SecretIntakeCard": {
+      "purpose": "Write-only local env key intake; never show secret values.",
+      "allowed_spaces": ["settings"],
+      "required_state": ["required_env"],
+      "safety_role": "secret_safety"
+    },
+    "ModelRouteCard": {
+      "purpose": "Show dynamic model routing and local GPU readiness without changing runtime.",
+      "allowed_spaces": ["settings"],
+      "required_state": ["model_policy"],
+      "safety_role": "cost_control"
+    },
+    "PolicyRuleCard": {
+      "purpose": "Show autonomy and approval rules.",
+      "allowed_spaces": ["settings"],
+      "required_state": ["engineering_rules"],
+      "safety_role": "policy"
+    },
+    "AuditRow": {
+      "purpose": "Show append-only event evidence.",
+      "allowed_spaces": ["home", "workflows", "memory", "skills", "settings", "projects"],
+      "required_state": ["audit_events"],
+      "safety_role": "audit"
+    },
+    "TaskCard": {
+      "purpose": "Show a single blocked or reviewable task with status, risk and next action.",
+      "allowed_spaces": ["workflows", "home"],
+      "required_state": ["tasks"],
+      "safety_role": "friction"
+    }
+  },
+  "assistant_states": {
+    "idle": {
+      "label": "Beschikbaar",
+      "description": "Leon wacht op input of toont status.",
+      "motion": "none"
+    },
+    "thinking": {
+      "label": "Aan het bepalen",
+      "description": "Leon routeert of maakt een lokaal voorstel.",
+      "motion": "subtle"
+    },
+    "researching": {
+      "label": "Onderzoekt",
+      "description": "Leon werkt aan bron- of taakonderzoek.",
+      "motion": "subtle"
+    },
+    "waiting_for_approval": {
+      "label": "Wacht op approval",
+      "description": "Leon mag niet verder met een high-impact actie zonder jouw keuze.",
+      "motion": "none"
+    },
+    "waiting_for_secret": {
+      "label": "Wacht op veilige key-input",
+      "description": "Leon heeft alleen een env-key naam nodig; raw waarden blijven write-only.",
+      "motion": "none"
+    },
+    "blocked": {
+      "label": "Geblokkeerd",
+      "description": "Er ontbreekt externe input of approval.",
+      "motion": "none"
+    },
+    "reviewing": {
+      "label": "Review nodig",
+      "description": "Er ligt werk klaar voor acceptatie of wijzigingen.",
+      "motion": "subtle"
+    },
+    "done": {
+      "label": "Klaar",
+      "description": "De slice heeft resultaat en verificatie.",
+      "motion": "none"
+    }
+  },
+  "composition_rules": [
+    {
+      "when_route": "direct_answer",
+      "space": "chat",
+      "components": ["AssistantStatusPill", "CommandBar", "SafeResponseCard", "ContextCard"],
+      "assistant_state": "idle"
+    },
+    {
+      "when_route": "quick_tool_use",
+      "space": "chat",
+      "components": ["AssistantStatusPill", "CommandBar", "ContextCard", "AuditRow"],
+      "assistant_state": "thinking"
+    },
+    {
+      "when_route": "memory_retrieval",
+      "space": "memory",
+      "components": ["AssistantStatusPill", "MemoryCard", "MemoryGraphEdgeList", "SourceStack", "AuditRow"],
+      "assistant_state": "thinking"
+    },
+    {
+      "when_route": "shell_agent_flow",
+      "space": "workflows",
+      "components": ["AssistantStatusPill", "AgentRunCard", "TaskTimeline", "AuditRow"],
+      "assistant_state": "thinking"
+    },
+    {
+      "when_route": "research_agent",
+      "space": "projects",
+      "components": ["AssistantStatusPill", "ResearchBoard", "SourceStack", "TaskTimeline", "UncertaintyCard"],
+      "assistant_state": "researching"
+    },
+    {
+      "when_route": "task_queue",
+      "space": "workflows",
+      "components": ["AssistantStatusPill", "TaskQueue", "OrchestrationProposalCard", "TaskTimeline"],
+      "assistant_state": "thinking"
+    },
+    {
+      "when_route": "approval_required",
+      "space": "skills",
+      "components": ["AssistantStatusPill", "ApprovalSheet", "PermissionCheckCard", "AuditRow"],
+      "assistant_state": "waiting_for_approval",
+      "friction_required": true
+    },
+    {
+      "when_route": "refuse_redirect",
+      "space": "chat",
+      "components": ["AssistantStatusPill", "SafeResponseCard", "PolicyRuleCard"],
+      "assistant_state": "idle",
+      "friction_required": true
+    }
+  ],
+  "task_status_rules": {
+    "waiting_for_approval": {"space": "skills", "assistant_state": "waiting_for_approval", "required_components": ["ApprovalSheet"]},
+    "waiting_for_secret": {"space": "settings", "assistant_state": "waiting_for_secret", "required_components": ["SecretIntakeCard"]},
+    "blocked": {"space": "workflows", "assistant_state": "blocked", "required_components": ["UncertaintyCard", "TaskCard"]},
+    "review": {"space": "workflows", "assistant_state": "reviewing", "required_components": ["TaskCard", "AuditRow"]},
+    "done": {"space": "home", "assistant_state": "done", "required_components": ["ProjectStatusCard", "AuditRow"]}
+  },
+  "friction_metrics": {
+    "signals": [
+      "approval_required",
+      "missing_secret",
+      "blocked_task",
+      "review_needed",
+      "high_risk_route",
+      "hidden_component_needed",
+      "too_many_primary_components"
+    ],
+    "limits": {
+      "max_primary_components_compact": 3,
+      "max_primary_components_complex": 5
+    }
+  },
+  "safety_invariants": [
+    "approval actions must be explicit and accessible",
+    "secret values must never render",
+    "high-risk flows must include an approval or policy component",
+    "memory must remain inspectable and editable",
+    "tool execution state must never be implied when execution_allowed=false",
+    "motion must be subtle or disabled and never carry essential information"
+  ]
+}

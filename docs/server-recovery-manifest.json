@@ -1,0 +1,554 @@
+{
+  "snapshot_date": "2026-09-06",
+  "source_head": "6b1863b6e1fdc612672c816ac048313c677115ca",
+  "complete": false,
+  "missing_working_files": [
+    "src/leon_control_plane/server.py",
+    "src/leon_control_plane/store.py",
+    "tests/test_control_plane.py",
+    "docs/personal-ai-assistant-plan.md"
+  ],
+  "missing_git_blob": "c23bfd252bc957407403c5abda3fc2d654df7aa7",
+  "source_commits": [
+    "6b1863b6e1fdc612672c816ac048313c677115ca story: US-007 Runtime and Model Reuse Review",
+    "476f0e0800e405430f29b41bec198f5f5f96752e story: US-026 Add local GPU validation gate",
+    "5a39cf6e563a770aa035515849608137a09bb9d2 story: US-025 Build governance and connector test suite",
+    "58a2e1bc28835973af6429d1626c53201a634f96 story: US-017 Build Leon canvas shell",
+    "d0b0088c1bc46eb09329dd4d21dfbb5197663dbb story: US-015 Build memory retrieval experience",
+    "522c0a4d5aad3c373de7e3834d712568ea77d25a story: US-014 Add connector permission manifests",
+    "c228e3951323b56a1f193116aca44b14faa5f828 story: US-010 Expand memory graph schema",
+    "2f544efa31ebcbba23ab581b5adb1de1c9be5dd1 story: US-009 Generate morning brief after night runs",
+    "1497da64f945dbf39561df102a9ef93191bf4515 story: US-008 Implement autonomous night queue scheduler",
+    "994d89617d421f098897e3ca6b877bff9bc86beb story: US-007 Build rollback registry",
+    "dc28546e256e5ca66ca0c7620306137cb4df44ff story: US-006 Implement model routing and cost warnings",
+    "40a5a319be264e6efbea072fbad791a11e20eb9b story: US-005 Create agent run execution model",
+    "ad455d92cc02fb820781e649f6f297f116974dec story: US-004 Add secret scanning and redaction layer",
+    "6fa6fe50e8229b914126d029e1c8f498b828819a story: US-003 Capture audit trail for all agent actions",
+    "adaa5c0772de7a5d0b7654a0668e37cb03e1b041 story: US-001 Define Leon product shell and visual system",
+    "4dee2bef129c894fcc89f28f8734d77195dd12fe Keep only the personal assistant plan"
+  ],
+  "excluded": [
+    ".git",
+    ".env.local",
+    ".ralph-tui",
+    ".codex",
+    ".agents",
+    "runtime databases and JSON",
+    "personal agent/research outputs",
+    "caches"
+  ],
+  "sanitizations": "Private tailnet hostname replaced in two documentation files. Original README mapped to docs/source-server-readme.md. Source exports unchanged.",
+  "files": [
+    {
+      "path": ".env.example",
+      "source_path": ".env.example",
+      "source_sha256": "6810a6dc82ab31655d15222f0cc20a630848c52848a849d6f3e5ea2c65c35e6c",
+      "published_sha256": "6810a6dc82ab31655d15222f0cc20a630848c52848a849d6f3e5ea2c65c35e6c",
+      "mode": "100644"
+    },
+    {
+      "path": "config/agent-runtime-provider.json",
+      "source_path": "config/agent-runtime-provider.json",
+      "source_sha256": "f5a5dd61d76d5e14b4c0480c114b4ac0b893db76bc93068619f87a902da82b4c",
+      "published_sha256": "f5a5dd61d76d5e14b4c0480c114b4ac0b893db76bc93068619f87a902da82b4c",
+      "mode": "100644"
+    },
+    {
+      "path": "config/autonomy-policy.json",
+      "source_path": "config/autonomy-policy.json",
+      "source_sha256": "aad36ee3151d0102cbb8ba01ef294f4a1e986a5d90f6ae1203485f4107ecb565",
+      "published_sha256": "aad36ee3151d0102cbb8ba01ef294f4a1e986a5d90f6ae1203485f4107ecb565",
+      "mode": "100644"
+    },
+    {
+      "path": "config/model-routing.json",
+      "source_path": "config/model-routing.json",
+      "source_sha256": "571df7735262eb70401b83079edb28dc529c015ccb9f3144e58a2eb4caa7c438",
+      "published_sha256": "571df7735262eb70401b83079edb28dc529c015ccb9f3144e58a2eb4caa7c438",
+      "mode": "100644"
+    },
+    {
+      "path": "config/routing-evals.json",
+      "source_path": "config/routing-evals.json",
+      "source_sha256": "11bcf17a34ecceffa53d42e6036876a561bab8174e21e9061f7406c61c0292a1",
+      "published_sha256": "11bcf17a34ecceffa53d42e6036876a561bab8174e21e9061f7406c61c0292a1",
+      "mode": "100644"
+    },
+    {
+      "path": "config/tool-catalog.candidates.json",
+      "source_path": "config/tool-catalog.candidates.json",
+      "source_sha256": "336cadd3370638036444a96b27779be0eb5fcdd824456cc553a690f98813e5e6",
+      "published_sha256": "336cadd3370638036444a96b27779be0eb5fcdd824456cc553a690f98813e5e6",
+      "mode": "100644"
+    },
+    {
+      "path": "config/ui-composition.json",
+      "source_path": "config/ui-composition.json",
+      "source_sha256": "8cfa42b62ff85466f8fa90b88587498d50383005dae6c9ca50874897ef3bb6f4",
+      "published_sha256": "8cfa42b62ff85466f8fa90b88587498d50383005dae6c9ca50874897ef3bb6f4",
+      "mode": "100644"
+    },
+    {
+      "path": "docs/agent-assignment-gate-implementation.md",
+      "source_path": "docs/agent-assignment-gate-implementation.md",
+      "source_sha256": "87539579bca7eb04fc16e14854f7dc7afcb2d5b8a00ed163b82f36c3baa956c8",
+      "published_sha256": "87539579bca7eb04fc16e14854f7dc7afcb2d5b8a00ed163b82f36c3baa956c8",
+      "mode": "100644"
+    },
+    {
+      "path": "docs/agent-runtime-adapter-implementation.md",
+      "source_path": "docs/agent-runtime-adapter-implementation.md",
+      "source_sha256": "52f433a201e5790f66f9fc8736984670c4295ad5e5248c67aa56255cc0483d01",
+      "published_sha256": "52f433a201e5790f66f9fc8736984670c4295ad5e5248c67aa56255cc0483d01",
+      "mode": "100644"
+    },
+    {
+      "path": "docs/agent-runtime-provider-decision.md",
+      "source_path": "docs/agent-runtime-provider-decision.md",
+      "source_sha256": "62e14dfda58157e1adb6e081c106ed092b844ded652ede9d92264320c10c624f",
+      "published_sha256": "62e14dfda58157e1adb6e081c106ed092b844ded652ede9d92264320c10c624f",
+      "mode": "100644"
+    },
+    {
+      "path": "docs/agent-work-protocol.md",
+      "source_path": "docs/agent-work-protocol.md",
+      "source_sha256": "d98ba337428e6971b087af754312991a2d461b5fcc7d175cf4bf4907ac6f6344",
+      "published_sha256": "d98ba337428e6971b087af754312991a2d461b5fcc7d175cf4bf4907ac6f6344",
+      "mode": "100644"
+    },
+    {
+      "path": "docs/browser-research-tool-evaluation.md",
+      "source_path": "docs/browser-research-tool-evaluation.md",
+      "source_sha256": "04e9b78a715b689341e78e5c3c7a349da3a0e5a9dae6df74baa9b28dbd4cb7e5",
+      "published_sha256": "04e9b78a715b689341e78e5c3c7a349da3a0e5a9dae6df74baa9b28dbd4cb7e5",
+      "mode": "100644"
+    },
+    {
+      "path": "docs/control-plane-dashboard-spec.md",
+      "source_path": "docs/control-plane-dashboard-spec.md",
+      "source_sha256": "a73b370814cecd5570d4912e606d68021658bb52beeabe2cc38909a115c7d12c",
+      "published_sha256": "a73b370814cecd5570d4912e606d68021658bb52beeabe2cc38909a115c7d12c",
+      "mode": "100644"
+    },
+    {
+      "path": "docs/dashboard-auth-implementation.md",
+      "source_path": "docs/dashboard-auth-implementation.md",
+      "source_sha256": "c9b73999b33a29f8181fbd87199801f3caa06c7fb992434aa4aa0a8a7b39bc84",
+      "published_sha256": "8d682b8cfa470f7b58ca2891ee539facda22e4d15dffa3ffb109545578e5cc4f",
+      "mode": "100644"
+    },
+    {
+      "path": "docs/decision-layer-implementation.md",
+      "source_path": "docs/decision-layer-implementation.md",
+      "source_sha256": "363913bd70720e23aa7199e724f40de6014920e58ef5dafdab892665e252b388",
+      "published_sha256": "363913bd70720e23aa7199e724f40de6014920e58ef5dafdab892665e252b388",
+      "mode": "100644"
+    },
+    {
+      "path": "docs/engineering-execution-plan.md",
+      "source_path": "docs/engineering-execution-plan.md",
+      "source_sha256": "35971c7e4b2a72eaa67426d68a99a0e23960d02c46d7dde23312c194e1df5218",
+      "published_sha256": "35971c7e4b2a72eaa67426d68a99a0e23960d02c46d7dde23312c194e1df5218",
+      "mode": "100644"
+    },
+    {
+      "path": "docs/engineering-roadmap.md",
+      "source_path": "docs/engineering-roadmap.md",
+      "source_sha256": "92d241d5648dbd2700f36c8ef7b8e0acbb180034547d1f905e2f478cd13c2e64",
+      "published_sha256": "92d241d5648dbd2700f36c8ef7b8e0acbb180034547d1f905e2f478cd13c2e64",
+      "mode": "100644"
+    },
+    {
+      "path": "docs/gpu-openai-codex-tailscale-plan.md",
+      "source_path": "docs/gpu-openai-codex-tailscale-plan.md",
+      "source_sha256": "864006a8447731b7113eaaa38d8409595eaa2c8a03b935fbc5988160e921b219",
+      "published_sha256": "fd02971ff5f99c260117d1a90840a6feb6e4224af739011c4fa33f18a11a7f08",
+      "mode": "100644"
+    },
+    {
+      "path": "docs/leon-product-shell-and-visual-system.md",
+      "source_path": "docs/leon-product-shell-and-visual-system.md",
+      "source_sha256": "a912169a236703e84cf5f86387f12250d8d70d9a8f551cd37695e9e776d3b689",
+      "published_sha256": "a912169a236703e84cf5f86387f12250d8d70d9a8f551cd37695e9e776d3b689",
+      "mode": "100644"
+    },
+    {
+      "path": "docs/litellm-sandbox-plan.md",
+      "source_path": "docs/litellm-sandbox-plan.md",
+      "source_sha256": "c5fff1058556f08ffa224f4530917e044f74434e07632e78273155c5ad583022",
+      "published_sha256": "c5fff1058556f08ffa224f4530917e044f74434e07632e78273155c5ad583022",
+      "mode": "100644"
+    },
+    {
+      "path": "docs/local-gpu-model-runtime-readiness.md",
+      "source_path": "docs/local-gpu-model-runtime-readiness.md",
+      "source_sha256": "8e71a74813c1d4312f04eda88f715c95df88dc28f2a6bc03b7bf0a3d4cdbdb65",
+      "published_sha256": "8e71a74813c1d4312f04eda88f715c95df88dc28f2a6bc03b7bf0a3d4cdbdb65",
+      "mode": "100644"
+    },
+    {
+      "path": "docs/mcp-agenda-mail-research.md",
+      "source_path": "docs/mcp-agenda-mail-research.md",
+      "source_sha256": "ff3dd388472c0a8bf110db20e5aef6b1c5105e551cc906968a874770b0d1aba2",
+      "published_sha256": "ff3dd388472c0a8bf110db20e5aef6b1c5105e551cc906968a874770b0d1aba2",
+      "mode": "100644"
+    },
+    {
+      "path": "docs/mcp-server-review-template.md",
+      "source_path": "docs/mcp-server-review-template.md",
+      "source_sha256": "ccd2078cf28c3ad5722edde0106842a30ff835578cb63e17a8245f2843068b2c",
+      "published_sha256": "ccd2078cf28c3ad5722edde0106842a30ff835578cb63e17a8245f2843068b2c",
+      "mode": "100644"
+    },
+    {
+      "path": "docs/mcp-tool-permission-model.md",
+      "source_path": "docs/mcp-tool-permission-model.md",
+      "source_sha256": "7e9f815e9322307cfd87f1e58b8ea68d959b0a490def0ef0c78b922b848a4f3e",
+      "published_sha256": "7e9f815e9322307cfd87f1e58b8ea68d959b0a490def0ef0c78b922b848a4f3e",
+      "mode": "100644"
+    },
+    {
+      "path": "docs/memory-knowledge-graph-mvp.md",
+      "source_path": "docs/memory-knowledge-graph-mvp.md",
+      "source_sha256": "ce8cd73a13fea0efd43be7fa7f3972533c2e7675439805bc811d071da40bb494",
+      "published_sha256": "ce8cd73a13fea0efd43be7fa7f3972533c2e7675439805bc811d071da40bb494",
+      "mode": "100644"
+    },
+    {
+      "path": "docs/mvp-control-plane-spec.md",
+      "source_path": "docs/mvp-control-plane-spec.md",
+      "source_sha256": "b9aee51ae9893d3e3ad87d2cd2857d7a0fb01cbc1809732531bd3a08cb4f4531",
+      "published_sha256": "b9aee51ae9893d3e3ad87d2cd2857d7a0fb01cbc1809732531bd3a08cb4f4531",
+      "mode": "100644"
+    },
+    {
+      "path": "docs/openai-agents-sdk-sandbox-plan.md",
+      "source_path": "docs/openai-agents-sdk-sandbox-plan.md",
+      "source_sha256": "d109496554ac399be34485031d2a3463cc555996967af9a01a7ca73ceeb261cb",
+      "published_sha256": "d109496554ac399be34485031d2a3463cc555996967af9a01a7ca73ceeb261cb",
+      "mode": "100644"
+    },
+    {
+      "path": "docs/orchestration-proposal-implementation.md",
+      "source_path": "docs/orchestration-proposal-implementation.md",
+      "source_sha256": "c3d84092fda6778719e83149d7601cc3aa08d9f90450337388ee537ecd3e0c4e",
+      "published_sha256": "c3d84092fda6778719e83149d7601cc3aa08d9f90450337388ee537ecd3e0c4e",
+      "mode": "100644"
+    },
+    {
+      "path": "docs/planner-read-only-poc.md",
+      "source_path": "docs/planner-read-only-poc.md",
+      "source_sha256": "4dee9005ca21fcfbefa5ba84cb02add03af70080c13f989be090daf82dacc94e",
+      "published_sha256": "4dee9005ca21fcfbefa5ba84cb02add03af70080c13f989be090daf82dacc94e",
+      "mode": "100644"
+    },
+    {
+      "path": "docs/product-constitution-and-component-contracts.md",
+      "source_path": "docs/product-constitution-and-component-contracts.md",
+      "source_sha256": "9c4b9640a119ac130b1e3f9fcf5c15585d174bbb56b249a539ab787dd056d893",
+      "published_sha256": "9c4b9640a119ac130b1e3f9fcf5c15585d174bbb56b249a539ab787dd056d893",
+      "mode": "100644"
+    },
+    {
+      "path": "docs/runtime-and-model-reuse-review.md",
+      "source_path": "docs/runtime-and-model-reuse-review.md",
+      "source_sha256": "9dcb3e5f4ad397aafe8ab0b32af1746147296633191e9db91bb31f0a79d7e209",
+      "published_sha256": "9dcb3e5f4ad397aafe8ab0b32af1746147296633191e9db91bb31f0a79d7e209",
+      "mode": "100644"
+    },
+    {
+      "path": "docs/source-server-readme.md",
+      "source_path": "README.md",
+      "source_sha256": "1570ea2623e45759e6b512b21e613b89c02a46f6fddf779e324f53f640a1ab81",
+      "published_sha256": "1570ea2623e45759e6b512b21e613b89c02a46f6fddf779e324f53f640a1ab81",
+      "mode": "100644"
+    },
+    {
+      "path": "docs/task-manager-audit-implementation.md",
+      "source_path": "docs/task-manager-audit-implementation.md",
+      "source_sha256": "8112a777c04386da48235fc19e9db2de811aca1bfaaecb718317c7f0c628a50d",
+      "published_sha256": "8112a777c04386da48235fc19e9db2de811aca1bfaaecb718317c7f0c628a50d",
+      "mode": "100644"
+    },
+    {
+      "path": "docs/tool-reuse-review-results.md",
+      "source_path": "docs/tool-reuse-review-results.md",
+      "source_sha256": "b53c141934862a14438c994d56c92aa1c3aa197bb41949bc58c79267400df5d4",
+      "published_sha256": "b53c141934862a14438c994d56c92aa1c3aa197bb41949bc58c79267400df5d4",
+      "mode": "100644"
+    },
+    {
+      "path": "docs/ui-composition-assistant-character-foundation.md",
+      "source_path": "docs/ui-composition-assistant-character-foundation.md",
+      "source_sha256": "cf42d80c11942955945ec39332c9abc9662925338587a077b335e7032fae0ed6",
+      "published_sha256": "cf42d80c11942955945ec39332c9abc9662925338587a077b335e7032fae0ed6",
+      "mode": "100644"
+    },
+    {
+      "path": "pyproject.toml",
+      "source_path": "pyproject.toml",
+      "source_sha256": "cb3eed019509a712f77f39b1b61b9b7329039ed60d63303ea444e4b0aae5d0c8",
+      "published_sha256": "cb3eed019509a712f77f39b1b61b9b7329039ed60d63303ea444e4b0aae5d0c8",
+      "mode": "100644"
+    },
+    {
+      "path": "scripts/leon-codex-resume-watch",
+      "source_path": "scripts/leon-codex-resume-watch",
+      "source_sha256": "646aa618ba16ac53bd13802bec0d52fe1188dd227eae2d2e25f77e5c9dae883e",
+      "published_sha256": "646aa618ba16ac53bd13802bec0d52fe1188dd227eae2d2e25f77e5c9dae883e",
+      "mode": "100755"
+    },
+    {
+      "path": "scripts/leon-dashboard",
+      "source_path": "scripts/leon-dashboard",
+      "source_sha256": "6fcdbbd643991a3b2dffb17ac41f16ee9697da261a79637aacb196471e3bb666",
+      "published_sha256": "6fcdbbd643991a3b2dffb17ac41f16ee9697da261a79637aacb196471e3bb666",
+      "mode": "100755"
+    },
+    {
+      "path": "scripts/leon-dashboard-token",
+      "source_path": "scripts/leon-dashboard-token",
+      "source_sha256": "ef9e76c561638c986045616c537163ca44fc50e44b7935eb0170ddcb63bcb473",
+      "published_sha256": "ef9e76c561638c986045616c537163ca44fc50e44b7935eb0170ddcb63bcb473",
+      "mode": "100755"
+    },
+    {
+      "path": "scripts/leon-model-choice",
+      "source_path": "scripts/leon-model-choice",
+      "source_sha256": "4b5364f179c52b3531ec01a7b03f4d96da610d2d4858864c5f5532274adf700f",
+      "published_sha256": "4b5364f179c52b3531ec01a7b03f4d96da610d2d4858864c5f5532274adf700f",
+      "mode": "100755"
+    },
+    {
+      "path": "scripts/leon-refresh-github-candidates",
+      "source_path": "scripts/leon-refresh-github-candidates",
+      "source_sha256": "758ff8646f9a6c3a3a20a387a6a1115f697dddebb1088b2c0816618b7acd7a98",
+      "published_sha256": "758ff8646f9a6c3a3a20a387a6a1115f697dddebb1088b2c0816618b7acd7a98",
+      "mode": "100755"
+    },
+    {
+      "path": "scripts/leon-routing-eval",
+      "source_path": "scripts/leon-routing-eval",
+      "source_sha256": "c73849ab46a77a0c1455df363f731a2bbc6efd41aea319146e240a0426d0407a",
+      "published_sha256": "c73849ab46a77a0c1455df363f731a2bbc6efd41aea319146e240a0426d0407a",
+      "mode": "100755"
+    },
+    {
+      "path": "scripts/leon-tailscale-dashboard",
+      "source_path": "scripts/leon-tailscale-dashboard",
+      "source_sha256": "91fde62ebda10c73ba5414a42c90f39b508fed74393f6613d45c2acada799b92",
+      "published_sha256": "91fde62ebda10c73ba5414a42c90f39b508fed74393f6613d45c2acada799b92",
+      "mode": "100755"
+    },
+    {
+      "path": "src/leon_control_plane/__init__.py",
+      "source_path": "src/leon_control_plane/__init__.py",
+      "source_sha256": "ae8315646db685f42039c083178be707982b15d19ce7dcc2d59a64c4a35350c3",
+      "published_sha256": "ae8315646db685f42039c083178be707982b15d19ce7dcc2d59a64c4a35350c3",
+      "mode": "100644"
+    },
+    {
+      "path": "src/leon_control_plane/agent_assignment.py",
+      "source_path": "src/leon_control_plane/agent_assignment.py",
+      "source_sha256": "4f09d9fe890bedb922d00433a4db3dee7aac44520a1ed659caadb49c1a0a4d72",
+      "published_sha256": "4f09d9fe890bedb922d00433a4db3dee7aac44520a1ed659caadb49c1a0a4d72",
+      "mode": "100644"
+    },
+    {
+      "path": "src/leon_control_plane/agent_run_model.py",
+      "source_path": "src/leon_control_plane/agent_run_model.py",
+      "source_sha256": "98be6396eaf8cc92755a4d76c60829f3e31555c05af4b785a41494bd7cdc6c98",
+      "published_sha256": "98be6396eaf8cc92755a4d76c60829f3e31555c05af4b785a41494bd7cdc6c98",
+      "mode": "100644"
+    },
+    {
+      "path": "src/leon_control_plane/agent_runtime.py",
+      "source_path": "src/leon_control_plane/agent_runtime.py",
+      "source_sha256": "523cbb78062766a25c43e646b52dfde74c9d42c842b2a7ac278838eb59351c37",
+      "published_sha256": "523cbb78062766a25c43e646b52dfde74c9d42c842b2a7ac278838eb59351c37",
+      "mode": "100644"
+    },
+    {
+      "path": "src/leon_control_plane/connector_registry.py",
+      "source_path": "src/leon_control_plane/connector_registry.py",
+      "source_sha256": "daac5b0afe88ea6123b9ce22b048f4e17d61783a4c335b64e694d9b370748015",
+      "published_sha256": "daac5b0afe88ea6123b9ce22b048f4e17d61783a4c335b64e694d9b370748015",
+      "mode": "100644"
+    },
+    {
+      "path": "src/leon_control_plane/decision_layer.py",
+      "source_path": "src/leon_control_plane/decision_layer.py",
+      "source_sha256": "f2388ce30e349085951a160ecb348bc6a331e09b2bc337ce318f79eb2693b828",
+      "published_sha256": "f2388ce30e349085951a160ecb348bc6a331e09b2bc337ce318f79eb2693b828",
+      "mode": "100644"
+    },
+    {
+      "path": "src/leon_control_plane/github_catalog.py",
+      "source_path": "src/leon_control_plane/github_catalog.py",
+      "source_sha256": "6901930c208724c51414309dc19a3159e9ec8c705cf737dca184aba0f6ea114c",
+      "published_sha256": "6901930c208724c51414309dc19a3159e9ec8c705cf737dca184aba0f6ea114c",
+      "mode": "100644"
+    },
+    {
+      "path": "src/leon_control_plane/local_gpu_validation.py",
+      "source_path": "src/leon_control_plane/local_gpu_validation.py",
+      "source_sha256": "3dd72326394f2d99891b04dcf72223472c3b94b62c8f558caa7b255f7506740d",
+      "published_sha256": "3dd72326394f2d99891b04dcf72223472c3b94b62c8f558caa7b255f7506740d",
+      "mode": "100644"
+    },
+    {
+      "path": "src/leon_control_plane/mcp_intake.py",
+      "source_path": "src/leon_control_plane/mcp_intake.py",
+      "source_sha256": "2a520ea519f157de3a1ce49fb4a2a7dfc5c0804179bd9b7d75407d1e8344fffc",
+      "published_sha256": "2a520ea519f157de3a1ce49fb4a2a7dfc5c0804179bd9b7d75407d1e8344fffc",
+      "mode": "100644"
+    },
+    {
+      "path": "src/leon_control_plane/model_policy.py",
+      "source_path": "src/leon_control_plane/model_policy.py",
+      "source_sha256": "b2c14ddf7e5e6928661b6ed058c3e8b3d1755529a240c907b886a5ddee498b83",
+      "published_sha256": "b2c14ddf7e5e6928661b6ed058c3e8b3d1755529a240c907b886a5ddee498b83",
+      "mode": "100644"
+    },
+    {
+      "path": "src/leon_control_plane/morning_brief.py",
+      "source_path": "src/leon_control_plane/morning_brief.py",
+      "source_sha256": "a8938bda8106be9e6233e31541f2508aa96063ada8886ea32c0609bd37bfda8e",
+      "published_sha256": "a8938bda8106be9e6233e31541f2508aa96063ada8886ea32c0609bd37bfda8e",
+      "mode": "100644"
+    },
+    {
+      "path": "src/leon_control_plane/night_queue.py",
+      "source_path": "src/leon_control_plane/night_queue.py",
+      "source_sha256": "16aff58f81f01d4707737df32d43bda9c4eb62975c1215650f309308e4b7f2f4",
+      "published_sha256": "16aff58f81f01d4707737df32d43bda9c4eb62975c1215650f309308e4b7f2f4",
+      "mode": "100644"
+    },
+    {
+      "path": "src/leon_control_plane/orchestrator.py",
+      "source_path": "src/leon_control_plane/orchestrator.py",
+      "source_sha256": "eb41257b9af362b9485a08d28cc1a469ce3994f108a8a326b03fed09e05e07c4",
+      "published_sha256": "eb41257b9af362b9485a08d28cc1a469ce3994f108a8a326b03fed09e05e07c4",
+      "mode": "100644"
+    },
+    {
+      "path": "src/leon_control_plane/planner_preview.py",
+      "source_path": "src/leon_control_plane/planner_preview.py",
+      "source_sha256": "a9082d60a5552f4ea2bd61f9b10ecc031fb8aff07c3bce0e6c5f76ed7917f575",
+      "published_sha256": "a9082d60a5552f4ea2bd61f9b10ecc031fb8aff07c3bce0e6c5f76ed7917f575",
+      "mode": "100644"
+    },
+    {
+      "path": "src/leon_control_plane/provider_adapter.py",
+      "source_path": "src/leon_control_plane/provider_adapter.py",
+      "source_sha256": "3e0726651adb54e81bda577dac13274ffb0ecc4fb46fb40123f5735ab89c85ad",
+      "published_sha256": "3e0726651adb54e81bda577dac13274ffb0ecc4fb46fb40123f5735ab89c85ad",
+      "mode": "100644"
+    },
+    {
+      "path": "src/leon_control_plane/risk_policy.py",
+      "source_path": "src/leon_control_plane/risk_policy.py",
+      "source_sha256": "6982087dff3ad705d08350345de55d3c36a8479de413af2b4ca8ddc7b9e1935e",
+      "published_sha256": "6982087dff3ad705d08350345de55d3c36a8479de413af2b4ca8ddc7b9e1935e",
+      "mode": "100644"
+    },
+    {
+      "path": "src/leon_control_plane/secret_scanner.py",
+      "source_path": "src/leon_control_plane/secret_scanner.py",
+      "source_sha256": "2400bc36a6db6ba65a13e9ff34bcc85dcac68a279999e3cf642711b338caa7a5",
+      "published_sha256": "2400bc36a6db6ba65a13e9ff34bcc85dcac68a279999e3cf642711b338caa7a5",
+      "mode": "100644"
+    },
+    {
+      "path": "src/leon_control_plane/tool_adoption.py",
+      "source_path": "src/leon_control_plane/tool_adoption.py",
+      "source_sha256": "5558354b57a8328725a859dd51c07eb9ccbbeecaf0ac193d884d60519700b6df",
+      "published_sha256": "5558354b57a8328725a859dd51c07eb9ccbbeecaf0ac193d884d60519700b6df",
+      "mode": "100644"
+    },
+    {
+      "path": "src/leon_control_plane/tool_registry.py",
+      "source_path": "src/leon_control_plane/tool_registry.py",
+      "source_sha256": "146c3da97ea6fa572d9256f8befa35f31a4abf21e61bee60112f7ba064a076b2",
+      "published_sha256": "146c3da97ea6fa572d9256f8befa35f31a4abf21e61bee60112f7ba064a076b2",
+      "mode": "100644"
+    },
+    {
+      "path": "src/leon_control_plane/tool_review.py",
+      "source_path": "src/leon_control_plane/tool_review.py",
+      "source_sha256": "34984d28c6bc0d9171def6393273ade507dcd851c9ff55b576c65324151d66c5",
+      "published_sha256": "34984d28c6bc0d9171def6393273ade507dcd851c9ff55b576c65324151d66c5",
+      "mode": "100644"
+    },
+    {
+      "path": "src/leon_control_plane/transparency.py",
+      "source_path": "src/leon_control_plane/transparency.py",
+      "source_sha256": "8dd426662601c8cfb66bf53e2501b772236b6f7b082f4a2860963b3baf2752f7",
+      "published_sha256": "8dd426662601c8cfb66bf53e2501b772236b6f7b082f4a2860963b3baf2752f7",
+      "mode": "100644"
+    },
+    {
+      "path": "src/leon_control_plane/ui_composition.py",
+      "source_path": "src/leon_control_plane/ui_composition.py",
+      "source_sha256": "bdee4973b285ba0e144616100bbeedd79c06c7319d1282cbae76020a332c7ace",
+      "published_sha256": "bdee4973b285ba0e144616100bbeedd79c06c7319d1282cbae76020a332c7ace",
+      "mode": "100644"
+    },
+    {
+      "path": "state/control-plane.seed.json",
+      "source_path": "state/control-plane.seed.json",
+      "source_sha256": "ec21fd46c85f8350dcf8581c9519f0ef529e0af3a761b0c5d7cf7f0a04915380",
+      "published_sha256": "ec21fd46c85f8350dcf8581c9519f0ef529e0af3a761b0c5d7cf7f0a04915380",
+      "mode": "100644"
+    },
+    {
+      "path": "tasks/prd-leon-ai-assistant-prd.md",
+      "source_path": "tasks/prd-leon-ai-assistant-prd.md",
+      "source_sha256": "1799fc0fee115c177e6e044e62fb9d0bd7a035693604abbc3c5589c34e740521",
+      "published_sha256": "1799fc0fee115c177e6e044e62fb9d0bd7a035693604abbc3c5589c34e740521",
+      "mode": "100644"
+    },
+    {
+      "path": "tasks/prd-leon-personal-ai-environment.md",
+      "source_path": "tasks/prd-leon-personal-ai-environment.md",
+      "source_sha256": "67de15af73ea89eef2918dca7af00484b2d6f8a46931953bc6a58bd83b2c345f",
+      "published_sha256": "67de15af73ea89eef2918dca7af00484b2d6f8a46931953bc6a58bd83b2c345f",
+      "mode": "100644"
+    },
+    {
+      "path": "tasks/prd-leon-phase-2-leon-shell-agent-flow-en-modelrouting.md",
+      "source_path": "tasks/prd-leon-phase-2-leon-shell-agent-flow-en-modelrouting.md",
+      "source_sha256": "0f12472738defd2caa34f86568dcf4fe752d659391f89d6da7bc7f5bfcb3712a",
+      "published_sha256": "0f12472738defd2caa34f86568dcf4fe752d659391f89d6da7bc7f5bfcb3712a",
+      "mode": "100644"
+    },
+    {
+      "path": "tasks/prd-leon-phase-3-prd-reliable-prioritization-autonomous-work-and-morning-brief.md",
+      "source_path": "tasks/prd-leon-phase-3-prd-reliable-prioritization-autonomous-work-and-morning-brief.md",
+      "source_sha256": "131235ebeba19e5914d66ac78361da4f255e0a3f366a212ad425b5676adfdf4c",
+      "published_sha256": "131235ebeba19e5914d66ac78361da4f255e0a3f366a212ad425b5676adfdf4c",
+      "mode": "100644"
+    },
+    {
+      "path": "tasks/prd-leon-phase-4-volledig-bruikbare-personal-ai-environment.md",
+      "source_path": "tasks/prd-leon-phase-4-volledig-bruikbare-personal-ai-environment.md",
+      "source_sha256": "6025ac1de41e6490a961e45ccb48b920ba9a7c4c4b07566dd139565df78c1925",
+      "published_sha256": "6025ac1de41e6490a961e45ccb48b920ba9a7c4c4b07566dd139565df78c1925",
+      "mode": "100644"
+    },
+    {
+      "path": "tasks/prd-untitled-feature.md",
+      "source_path": "tasks/prd-untitled-feature.md",
+      "source_sha256": "ab5df625bc76dbd4e163bed2dd888df828f90159bb93556525c31821b6541d46",
+      "published_sha256": "ab5df625bc76dbd4e163bed2dd888df828f90159bb93556525c31821b6541d46",
+      "mode": "100644"
+    },
+    {
+      "path": "tasks/prd.json",
+      "source_path": "tasks/prd.json",
+      "source_sha256": "81549ff1de79a8c9bd4417b66c7a4b06ee86c4c9b5a140927d521d024fe3c66e",
+      "published_sha256": "81549ff1de79a8c9bd4417b66c7a4b06ee86c4c9b5a140927d521d024fe3c66e",
+      "mode": "100644"
+    }
+  ]
+}

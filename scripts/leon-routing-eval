@@ -1,0 +1,41 @@
+#!/usr/bin/env python3
+from __future__ import annotations
+
+import json
+import sys
+import argparse
+from pathlib import Path
+
+REPO_ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(REPO_ROOT / "src"))
+
+from leon_control_plane.decision_layer import DEFAULT_EVAL_PATH, evaluate_cases, load_eval_cases
+from leon_control_plane.store import ControlPlaneStore
+
+DEFAULT_DB_PATH = REPO_ROOT / "state" / "control-plane.sqlite"
+DEFAULT_SEED_PATH = REPO_ROOT / "state" / "control-plane.seed.json"
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description="Run Leon routing evals.")
+    parser.add_argument("--release-label", default="working-tree")
+    parser.add_argument("--no-record", action="store_true", help="Do not persist this eval run in the control-plane store.")
+    args = parser.parse_args()
+
+    cases = load_eval_cases(DEFAULT_EVAL_PATH)
+    store = ControlPlaneStore(DEFAULT_DB_PATH, DEFAULT_SEED_PATH)
+    cases.extend(store.active_routing_eval_cases())
+    summary = evaluate_cases(cases, release_label=args.release_label)
+    if not args.no_record:
+        summary = store.record_routing_eval_run(
+            summary,
+            release_label=args.release_label,
+            actor_type="system",
+            actor_id="routing-eval-cli",
+        )["summary"]
+    print(json.dumps(summary, ensure_ascii=False, indent=2))
+    return 0 if summary["ok"] else 1
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

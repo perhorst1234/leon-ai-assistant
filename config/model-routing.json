@@ -1,0 +1,213 @@
+{
+  "version": 1,
+  "default_budget_mode": "balanced",
+  "cost_policy": {
+    "currency": "USD",
+    "basis": "Planning estimate for a single bounded Leon agent/model call before exact token metering is available.",
+    "warning_threshold_estimated_max": 0.08
+  },
+  "cloud_models": {
+    "cheap": {
+      "provider": "openai",
+      "model": "gpt-5.6-luna",
+      "reasoning_effort": "low",
+      "relative_cost": "low",
+      "default_run_estimate": {
+        "estimated_min": 0.001,
+        "estimated_max": 0.015
+      },
+      "use_for": [
+        "classification",
+        "extraction",
+        "housekeeping",
+        "small summaries",
+        "schema transforms",
+        "clear repeatable tasks"
+      ]
+    },
+    "balanced": {
+      "provider": "openai",
+      "model": "gpt-5.6-terra",
+      "reasoning_effort": "medium",
+      "relative_cost": "medium",
+      "default_run_estimate": {
+        "estimated_min": 0.01,
+        "estimated_max": 0.08
+      },
+      "use_for": [
+        "everyday coding",
+        "debugging",
+        "tool implementation",
+        "documentation",
+        "routine research"
+      ]
+    },
+    "premium": {
+      "provider": "openai",
+      "model": "gpt-5.6-sol",
+      "reasoning_effort": "high",
+      "requires_reason": true,
+      "relative_cost": "high",
+      "default_run_estimate": {
+        "estimated_min": 0.05,
+        "estimated_max": 0.35
+      },
+      "use_for": [
+        "complex planning",
+        "code review",
+        "architecture",
+        "security-sensitive review",
+        "sensitive decisions",
+        "complex product decisions",
+        "hard debugging",
+        "high-value agent orchestration"
+      ]
+    }
+  },
+  "local_gpu": {
+    "enabled": false,
+    "readiness_status": "not_validated",
+    "selected_backend": "",
+    "selected_model": "",
+    "validation": {
+      "schema_version": 1,
+      "status": "not_validated",
+      "route_allowed": false,
+      "checks": {
+        "hardware_detection": {
+          "status": "not_run",
+          "summary": "No local GPU inventory has been recorded.",
+          "evidence": {
+            "gpu_detected": false,
+            "device_name": "",
+            "vram_mb": 0
+          },
+          "last_run_at": null,
+          "source_ref": ""
+        },
+        "driver_cuda_readiness": {
+          "status": "not_run",
+          "summary": "No NVIDIA driver, CUDA, or backend healthcheck evidence has been recorded.",
+          "evidence": {
+            "driver_version": "",
+            "cuda_available": false,
+            "backend_healthcheck": ""
+          },
+          "last_run_at": null,
+          "source_ref": ""
+        },
+        "benchmark_results": {
+          "status": "not_run",
+          "summary": "No bounded local model benchmark has been recorded.",
+          "evidence": {
+            "tokens_per_second": 0,
+            "latency_ms": 0,
+            "test_model": ""
+          },
+          "last_run_at": null,
+          "source_ref": ""
+        },
+        "quality_comparison": {
+          "status": "not_run",
+          "summary": "No quality comparison against the cloud baseline has been recorded.",
+          "evidence": {
+            "eval_set": "",
+            "cloud_baseline_model": "",
+            "quality_delta": ""
+          },
+          "last_run_at": null,
+          "source_ref": ""
+        },
+        "cost_comparison": {
+          "status": "not_run",
+          "summary": "No provider-cost versus local resource-cost comparison has been recorded.",
+          "evidence": {
+            "provider_cost_baseline": "",
+            "local_resource_cost": "",
+            "worth_routing": false
+          },
+          "last_run_at": null,
+          "source_ref": ""
+        }
+      }
+    },
+    "preferred_backend_order": [
+      "llama.cpp",
+      "ollama",
+      "exllamav2",
+      "vllm-if-supported"
+    ],
+    "hardware_targets": [
+      "NVIDIA Tesla M40",
+      "NVIDIA Tesla P40",
+      "other NVIDIA GPU"
+    ],
+    "policy": "Local GPU is an optimization and privacy route, not a hard dependency. Use it for low/medium-risk local inference only after benchmark, driver validation, backend healthcheck and fallback evidence.",
+    "validation_required": [
+      "gpu_detected_by_lspci_and_nvidia_smi",
+      "driver_stable",
+      "backend_healthcheck_passed",
+      "small_quantized_model_benchmark_passed",
+      "realistic_leon_task_benchmark_passed",
+      "cloud_or_cpu_fallback_passed",
+      "redacted_benchmark_log_recorded"
+    ],
+    "resource_policy": {
+      "model_download_requires_approval": true,
+      "gpu_heavy_job_requires_approval": true,
+      "default_max_gpu_minutes_without_new_approval": 5,
+      "default_download_mb_approval_threshold": 500,
+      "public_model_server_allowed": false,
+      "high_risk_tasks_allowed_on_local_gpu_before_quality_evals": false
+    },
+    "runtime_policy": {
+      "max_latency_ms": 3500,
+      "fallback_on": [
+        "local_failure",
+        "latency_exceeds_threshold"
+      ],
+      "fallback_route": "api_policy_selected"
+    }
+  },
+  "routing_rules": [
+    {
+      "match": {
+        "complexity": "low",
+        "risk": "low"
+      },
+      "route": "cheap"
+    },
+    {
+      "match": {
+        "task_type": "tool_making"
+      },
+      "route": "balanced"
+    },
+    {
+      "match": {
+        "task_type": "debugging"
+      },
+      "route": "balanced"
+    },
+    {
+      "match": {
+        "task_type": "architecture"
+      },
+      "route": "premium"
+    },
+    {
+      "match": {
+        "risk": "high"
+      },
+      "route": "premium"
+    }
+  ],
+  "approval_required": [
+    "max_reasoning",
+    "ultra_multi_agent",
+    "large_local_model_download",
+    "gpu_intensive_job",
+    "new_external_provider",
+    "model_route_that_exposes_sensitive_data"
+  ]
+}

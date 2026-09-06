@@ -1,0 +1,69 @@
+{
+  "version": 1,
+  "status": "decision_record",
+  "primary_provider": {
+    "id": "openai_agents_sdk_python",
+    "name": "OpenAI Agents SDK for Python",
+    "decision": "primary_for_first_real_agent_adapter",
+    "why": [
+      "Python-first path matches the current local control-plane codebase.",
+      "Fits the existing OpenAI/Codex key and model-routing plan.",
+      "Small agent primitives are easier to wrap behind Leon's approval, audit and assignment gates than a larger workflow platform.",
+      "Good first target for Personal Agent, Research Agent, code review, tool calls and multi-agent handoffs."
+    ],
+    "not_allowed_until": [
+      "OPENAI_API_KEY is present in .env.local.",
+      "A provider adapter is implemented behind agent_assignment_proposals.",
+      "Tool scopes are capability-based, not raw secret/file access.",
+      "External write/tool execution requires a pending approval card and consumed approval id.",
+      "Trace/audit events redact prompt secrets and tool arguments."
+    ]
+  },
+  "secondary_options": [
+    {
+      "id": "langgraph",
+      "name": "LangGraph",
+      "decision": "reserve_for_stateful_long_running_workflows",
+      "use_when": "Use if Leon needs explicit graph state, durable multi-step workflows, resumability and complex human-in-the-loop flow control beyond the local task queue."
+    },
+    {
+      "id": "pydantic_ai",
+      "name": "Pydantic AI",
+      "decision": "reserve_for_typed_component_agents",
+      "use_when": "Use if typed inputs/outputs, dependency injection and validation become more important than OpenAI-native handoffs for a specific component."
+    },
+    {
+      "id": "voltagent",
+      "name": "VoltAgent",
+      "decision": "defer_until_typescript_or_observability_platform_is_needed",
+      "use_when": "Use only if the Leon interface/runtime moves strongly toward TypeScript and VoltAgent's observability/evals platform becomes worth the extra stack."
+    }
+  ],
+  "current_runtime": {
+    "id": "local_mock",
+    "status": "active_only_runtime",
+    "purpose": "Exercise task packets, model routing, audit, review, and dashboard flows without external calls."
+  },
+  "adapter_contract": {
+    "must_start_from": "agent_assignment_proposals",
+    "must_record": [
+      "agent_run_started",
+      "agent_run_completed",
+      "agent_run_reviewed",
+      "provider_call_started",
+      "provider_call_completed_or_failed"
+    ],
+    "forbidden_without_explicit_gate": [
+      "reading raw .env.local values inside agent context",
+      "shell commands",
+      "filesystem writes",
+      "dependency installs",
+      "external account connections",
+      "email/calendar/payment/server/browser writes",
+      "GPU model downloads or heavy jobs"
+    ],
+    "write_action_requirement": "consumed approval id",
+    "secret_policy": "Agents receive scoped capabilities and env-key presence metadata, never raw dashboard secret values.",
+    "rate_limit_policy": "Provider calls must return a retryable waiting state and integrate with leon-codex-resume-watch or a future queue worker."
+  }
+}

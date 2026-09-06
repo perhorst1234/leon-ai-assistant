@@ -1,0 +1,225 @@
+{
+  "metadata": {
+    "product": "Leon AI Assistant",
+    "codename": "Gaia",
+    "status": "active",
+    "current_phase": "Fase 0 — Control plane",
+    "summary": "Eerste lokale control-plane slice gebouwd en uitgebreid met OpenAI/Codex env-contracten, dynamische modelrouting, rate-limit resume wrapper en Tailscale-dashboard script. Volgende stap is persistent Task Manager + auditlog.",
+    "progress_percent": 18,
+    "created_at": "",
+    "updated_at": ""
+  },
+  "phases": [
+    {
+      "id": "phase-0",
+      "title": "Fase 0 — Control plane en governance",
+      "goal": "Dashboard, backlog, approval queue, env intake en engineeringregels lokaal werkend maken.",
+      "status": "active"
+    },
+    {
+      "id": "phase-1",
+      "title": "Fase 1 — Leon Assistant interface en experience",
+      "goal": "De echte gebruikersinterface voor Leon later uitwerken; nu alleen als productfase bewaken, niet alvast vasttimmeren.",
+      "status": "planned"
+    },
+    {
+      "id": "phase-2",
+      "title": "Fase 2 — Core intelligence en governance",
+      "goal": "Constitution, Task Manager, Decision Layer, Value Engine, approvals, audit en orchestration gates als kernfundament.",
+      "status": "planned"
+    },
+    {
+      "id": "phase-3",
+      "title": "Fase 3 — Agent runtime en agent teams",
+      "goal": "Personal, Research, Builder, Debugger, Reviewer, Planner, Manager en Model Scheduler agents via een verwisselbare runtime aansluiten.",
+      "status": "planned"
+    },
+    {
+      "id": "phase-4",
+      "title": "Fase 4 — Memory, context en knowledge graph",
+      "goal": "Geheugen, retrieval, privacyfilter, bronnen, confidence, expiry en graph-relaties toevoegen.",
+      "status": "planned"
+    },
+    {
+      "id": "phase-5",
+      "title": "Fase 5 — Tools, MCP en integraties",
+      "goal": "MCP Hub, toolregistry, browser/research, planner/mail/agenda/school, finance/shopping/tickets/server met read-only default en approval-first writes.",
+      "status": "planned"
+    },
+    {
+      "id": "phase-6",
+      "title": "Fase 6 — Self-learning, research en night improvement",
+      "goal": "Research Agent, opportunity/curiosity/feedback engines, ochtendrapport, evals en observability.",
+      "status": "planned"
+    },
+    {
+      "id": "phase-7",
+      "title": "Fase 7 — Local GPU, deployment en operatie",
+      "goal": "Modelrouting naar OpenAI/Codex/lokale GPU, Tailscale access, healthchecks, backup/restore en stabiele lokale operatie.",
+      "status": "planned"
+    }
+  ],
+  "tasks": [
+    {
+      "id": "task-control-plane-dashboard",
+      "priority": "P0",
+      "title": "Lokaal voortgangsdashboard",
+      "owner": "Codex",
+      "status": "review",
+      "risk": "low",
+      "acceptance": "Dashboard draait op localhost, toont fases/backlog/approvals/env status, en lekt geen secretwaarden."
+    },
+    {
+      "id": "task-safe-env-intake",
+      "priority": "P0",
+      "title": "Veilige API-key intake",
+      "owner": "Codex",
+      "status": "review",
+      "risk": "medium",
+      "acceptance": "Gebruiker kan geregistreerde env keys invullen; waarden worden alleen in .env.local opgeslagen en niet in git of API responses getoond."
+    },
+    {
+      "id": "task-constitution-split",
+      "priority": "P0",
+      "title": "Gaia Constitution naar bouwbare documenten splitsen",
+      "owner": "Product/Architecture Agent",
+      "status": "planned",
+      "risk": "low",
+      "acceptance": "Docs bevatten mission, architecture, intelligence, memory, tools, safety, UI, development standards en roadmap als single source of truth."
+    },
+    {
+      "id": "task-runtime-decision",
+      "priority": "P0",
+      "title": "Primaire agent runtime kiezen",
+      "owner": "Tech Stack Agent",
+      "status": "planned",
+      "risk": "medium",
+      "acceptance": "Keuzedocument vergelijkt OpenAI Agents SDK, LangGraph, Pydantic AI en VoltAgent met lokale deployment, tools, state, evals en onderhoud."
+    },
+    {
+      "id": "task-task-manager-mvp",
+      "priority": "P1",
+      "title": "Task Manager MVP",
+      "owner": "Builder Agent",
+      "status": "planned",
+      "risk": "medium",
+      "acceptance": "Taken hebben eigenaar, status, risico, waarde, bronnen, subtaken, approval status en audit trail."
+    },
+    {
+      "id": "task-gpu-readiness",
+      "priority": "P2",
+      "title": "GPU-readiness plan voor Tesla M40/P40",
+      "owner": "Model Scheduler Agent",
+      "status": "active",
+      "risk": "medium",
+      "acceptance": "Documenteert driver/CUDA-beperkingen, VRAM-profielen, geschikte inference backends, fallback naar CPU/externe modellen en upgradeadvies."
+    },
+    {
+      "id": "task-dynamic-model-router",
+      "priority": "P0",
+      "title": "Dynamische agent modelkeuze",
+      "owner": "Codex",
+      "status": "review",
+      "risk": "medium",
+      "acceptance": "Modelrouter kiest Luna/Terra/Sol/later lokaal GPU op basis van taaktype, complexiteit, risico, budgetmodus en privacy; premium routes vereisen reden en waar nodig approval."
+    },
+    {
+      "id": "task-tailscale-dashboard",
+      "priority": "P0",
+      "title": "Dashboard via Tailscale bereikbaar maken",
+      "owner": "Codex/User",
+      "status": "review",
+      "risk": "medium",
+      "acceptance": "Dashboard is via tailnet bereikbaar zonder public Funnel; dashboard-auth wordt P0 voordat gevoelige controls extern worden gebruikt."
+    },
+    {
+      "id": "task-rate-limit-resume",
+      "priority": "P1",
+      "title": "Rate-limit resume wrapper",
+      "owner": "Codex",
+      "status": "review",
+      "risk": "low",
+      "acceptance": "Lokale Codex/Leon runner jobs wachten en hervatten bij waarschijnlijke OpenAI 429/quota/rate-limit fouten."
+    }
+  ],
+  "approvals": [
+    {
+      "id": "approval-external-installs",
+      "title": "Externe tools installeren",
+      "reason": "Repos zoals n8n, Langfuse, Mem0, Graphiti, LiteLLM, Ollama en MCP-servers kunnen brede permissies, netwerktoegang of onderhoudslast introduceren.",
+      "status": "waiting"
+    },
+    {
+      "id": "approval-account-connections",
+      "title": "Accounts koppelen",
+      "reason": "Agenda, mail, bank, PayPal, marktplaatsen, tickets en servers moeten read-only starten en schrijven pas na preview + expliciete goedkeuring.",
+      "status": "waiting"
+    },
+    {
+      "id": "approval-tailscale-serve",
+      "title": "Dashboard publiceren via Tailscale Serve",
+      "reason": "Tailscale Serve maakt het lokale dashboard bereikbaar vanaf apparaten in je tailnet. Dit is nuttig, maar moet bewust gebeuren omdat approvals en secret-status zichtbaar worden.",
+      "status": "approved",
+      "decided_at": "2026-08-01T13:59:00+00:00",
+      "note": "Gebruiker vroeg expliciet om dashboard via Tailscale bereikbaar te maken; tailscale serve wijst nu naar 127.0.0.1:8765."
+    },
+    {
+      "id": "approval-gpu-heavy-jobs",
+      "title": "GPU-intensieve jobs en modeldownloads",
+      "reason": "Lokale modeldownloads en GPU-runs kunnen veel stroom, opslag, VRAM en driverproblemen veroorzaken. Eerst hardwarebenchmark en expliciete resource policy.",
+      "status": "waiting"
+    }
+  ],
+  "required_env": [
+    {
+      "key": "OPENAI_API_KEY",
+      "purpose": "Later nodig voor OpenAI model calls en agent runtime."
+    },
+    {
+      "key": "CODEX_API_KEY",
+      "purpose": "Optioneel voor single-invocation Codex automation; niet globaal aan onbetrouwbare scripts geven."
+    },
+    {
+      "key": "ANTHROPIC_API_KEY",
+      "purpose": "Optioneel later voor alternatieve research/coding agents."
+    },
+    {
+      "key": "GITHUB_TOKEN",
+      "purpose": "Optioneel later voor GitHub repo, issue en PR automation."
+    },
+    {
+      "key": "LANGFUSE_PUBLIC_KEY",
+      "purpose": "Optioneel later voor observability."
+    },
+    {
+      "key": "LANGFUSE_SECRET_KEY",
+      "purpose": "Optioneel later voor observability."
+    },
+    {
+      "key": "LANGFUSE_HOST",
+      "purpose": "Optioneel later voor lokale of externe Langfuse host."
+    },
+    {
+      "key": "LEON_DASHBOARD_TOKEN",
+      "purpose": "Required for remote/Tailscale dashboard login."
+    },
+    {
+      "key": "LEON_DASHBOARD_AUTH_MODE",
+      "purpose": "Controls dashboard auth mode: tailnet, required, or off."
+    }
+  ],
+  "engineering_rules": [
+    "Plan first, act incrementally, verify always.",
+    "Geen externe installs of accountkoppelingen zonder expliciete approval.",
+    "Read-only is standaard voor gekoppelde tools.",
+    "Secrets worden nooit in git, logs, state JSON of API responses opgeslagen.",
+    "Elke risicovolle actie krijgt preview, reden, risico en rollbackpad.",
+    "Gebruik bestaande open-source bouwblokken alleen na fit/security/maintenance review.",
+    "Lokale hardware is leidend: nu CPU-first; GPU-routing pas na concrete GPU-installatie.",
+    "Dynamische modelkeuze is verplicht: Luna voor repeatable laag-risico werk, Terra voor tool-making/debugging, Sol alleen voor complexe of high-risk taken.",
+    "Tailscale Serve is tailnet-only toegestaan na approval; publieke Funnel vereist aparte approval en dashboard-auth.",
+    "Rate-limit resume mag lokale jobs hervatten, maar mag geen nieuwe scope of externe actie toevoegen.",
+    "Agents krijgen kleine, verifieerbare taken met disjuncte write scopes."
+  ],
+  "events": []
+}

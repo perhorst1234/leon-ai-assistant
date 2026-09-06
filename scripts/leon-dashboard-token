@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+repo_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+export PYTHONPATH="${repo_dir}/src${PYTHONPATH:+:${PYTHONPATH}}"
+
+python3 - "$@" <<'PY'
+import argparse
+import secrets
+from pathlib import Path
+
+from leon_control_plane.server import ENV_PATH, STORE, parse_selected_env_values, upsert_env_value
+
+parser = argparse.ArgumentParser(description="Manage the Leon dashboard token in .env.local.")
+parser.add_argument("--show", action="store_true", help="Print the current dashboard token to stdout.")
+parser.add_argument("--rotate", action="store_true", help="Replace any existing dashboard token.")
+args = parser.parse_args()
+
+current = parse_selected_env_values({"LEON_DASHBOARD_TOKEN"}).get("LEON_DASHBOARD_TOKEN", "")
+
+if args.show:
+    if not current:
+        raise SystemExit("LEON_DASHBOARD_TOKEN is not set. Run scripts/leon-dashboard-token first.")
+    print(current)
+    raise SystemExit(0)
+
+if current and not args.rotate:
+    print(f"LEON_DASHBOARD_TOKEN already exists in {ENV_PATH}. Use --rotate to replace it or --show to print it locally.")
+    raise SystemExit(0)
+
+token = secrets.token_urlsafe(32)
+STORE.ensure_required_env("LEON_DASHBOARD_TOKEN", "Required for remote/Tailscale dashboard login.")
+STORE.ensure_required_env("LEON_DASHBOARD_AUTH_MODE", "Controls dashboard auth mode: tailnet, required, or off.")
+upsert_env_value("LEON_DASHBOARD_TOKEN", token)
+upsert_env_value("LEON_DASHBOARD_AUTH_MODE", "tailnet")
+STORE.record_secret_updated("LEON_DASHBOARD_TOKEN", actor_type="system", actor_id="dashboard-token-script")
+print(f"Generated LEON_DASHBOARD_TOKEN in {ENV_PATH}.")
+print("Token value was not printed. To reveal locally: ./scripts/leon-dashboard-token --show")
+PY
