@@ -24,7 +24,9 @@ Server-HEAD: `6b1863b6e1fdc612672c816ac048313c677115ca`, met 16 lokale commits n
 
 ## Eerstvolgende actie
 
-Maak een nieuwe volledige export van de drie ontbrekende bron/testfiles, `docs/personal-ai-assistant-plan.md` en verborgen `.git`. Bewaar originele SSD en eerdere export. Controleer `git fsck --full --no-reflogs --no-dangling` opnieuw. Oudere store.py-versies zijn geen vervanging voor de actuele werkmapversie zonder expliciete reconstructiekeuze.
+**Update WSL-herstel:** afgerond; Ubuntu werkt en volledige recovery is gecontroleerd. SSD weer losgekoppeld van WSL, USB-sharing en bijbehorende firewallregel uit. De lokale werkkloon staat op main voor deze overdracht; backendreparatie blijft op codex/night-queue-evidence.
+
+Vul nu een aparte ontwikkelkopie aan uit de volledige export; behoud de nachtqueue-reparatie, scan nieuw te publiceren bron, vergelijk het serverplan en voer oorspronkelijke tests met tijdelijke state uit. De originele SSD, het privéarchief en eerdere exports blijven intact. Geen historische reconstructie meer nodig.
 
 Crucial CT525MX300SSD1: 525.110.100.480 bytes. Schijfnummers veranderen. DiskGenius was verhoogd en niet vanuit Codex bedienbaar; WSL was afwezig. Geen format-, repair- of partitioneringsactie uitvoeren. Oorzaak van onvolledige export is nog onbekend.
 
