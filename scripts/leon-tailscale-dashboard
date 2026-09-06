@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+repo_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+dashboard_port="${LEON_DASHBOARD_PORT:-8765}"
+
+if ! command -v tailscale >/dev/null 2>&1; then
+  echo "tailscale is not installed. Install/auth requires explicit approval." >&2
+  exit 1
+fi
+
+if ! curl -fsS "http://127.0.0.1:${dashboard_port}/api/state" >/dev/null 2>&1; then
+  echo "Dashboard is not reachable on 127.0.0.1:${dashboard_port}." >&2
+  echo "Start it first with: ${repo_dir}/scripts/leon-dashboard" >&2
+  exit 1
+fi
+
+tailscale serve --bg "${dashboard_port}"
+tailscale serve status
+

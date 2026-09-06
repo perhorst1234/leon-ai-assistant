@@ -1,0 +1,174 @@
+{
+  "name": "Leon Phase 4 - Volledig Bruikbare Personal AI Environment",
+  "branchName": "feature/leon-phase-4-personal-ai-environment",
+  "userStories": [
+    {
+      "id": "US-001",
+      "title": "Chat-to-Work",
+      "description": "Als gebruiker wil ik met Leon kunnen chatten en vanuit chat echt werk kunnen starten, zodat Leon niet alleen antwoord geeft maar ook helpt uitvoeren.",
+      "acceptanceCriteria": [
+        "Chat kan taakcontext ophalen.",
+        "Leon kan plan en voorgestelde acties tonen.",
+        "Leon kan veilige acties starten.",
+        "Approval wordt gevraagd waar nodig.",
+        "Resultaat komt terug in chat en audit log."
+      ],
+      "priority": 1,
+      "passes": false,
+      "dependsOn": []
+    },
+    {
+      "id": "US-002",
+      "title": "Autonomous Prioritization",
+      "description": "Als gebruiker wil ik dat Leon zelf ziet welk werk waardevol is, zodat ik niet alles handmatig hoef te sturen.",
+      "acceptanceCriteria": [
+        "Leon leest taken/plannen/docs.",
+        "Leon rangschikt werk op waarde, urgentie, risico en afhankelijkheden.",
+        "Leon kiest een eerstvolgende actie.",
+        "Keuze wordt uitgelegd in dashboard/Morning Brief."
+      ],
+      "priority": 1,
+      "passes": false,
+      "dependsOn": []
+    },
+    {
+      "id": "US-003",
+      "title": "Safe Autonomous Execution",
+      "description": "Als gebruiker wil ik dat Leon zelfstandig werkt maar niet roekeloos handelt.",
+      "acceptanceCriteria": [
+        "Risk levels worden toegepast.",
+        "R1-R3 kan zelfstandig waar policy dit toestaat.",
+        "R4+ vraagt approval.",
+        "Destructieve systeemacties en externe writes vragen altijd approval.",
+        "Audit log toont acties en beslissingen."
+      ],
+      "priority": 1,
+      "passes": false,
+      "dependsOn": [
+        "US-002"
+      ]
+    },
+    {
+      "id": "US-004",
+      "title": "GPU-Backed Local Intelligence",
+      "description": "Als gebruiker wil ik dat Leon de M40 gebruikt om API-kosten te besparen.",
+      "acceptanceCriteria": [
+        "GPU wordt gedetecteerd.",
+        "Ollama en llama.cpp zijn gevalideerd of duidelijk afgewezen.",
+        "Beste backend is gekozen.",
+        "Minimaal een lokaal model werkt.",
+        "Routing gebruikt lokaal waar mogelijk.",
+        "Dashboard toont GPU/modelstatus."
+      ],
+      "priority": 1,
+      "passes": false,
+      "dependsOn": []
+    },
+    {
+      "id": "US-005",
+      "title": "Cost-Aware Routing",
+      "description": "Als gebruiker wil ik dat Leon niet onnodig API-kosten maakt.",
+      "acceptanceCriteria": [
+        "Routing kiest lokaal voor geschikte taken.",
+        "API-gebruik wordt verklaard.",
+        "Fallbacks zijn zichtbaar.",
+        "Dashboard toont routekeuze en kostenindicatie."
+      ],
+      "priority": 1,
+      "passes": false,
+      "dependsOn": [
+        "US-004"
+      ]
+    },
+    {
+      "id": "US-006",
+      "title": "Browser/Web Research",
+      "description": "Als gebruiker wil ik dat Leon web research kan doen wanneer actuele informatie nodig is.",
+      "acceptanceCriteria": [
+        "Leon kan browser/web research starten.",
+        "Resultaten worden samengevat met bronnen.",
+        "Research wordt gekoppeld aan taakcontext.",
+        "Externe write-acties blijven approval-first."
+      ],
+      "priority": 1,
+      "passes": false,
+      "dependsOn": [
+        "US-003"
+      ]
+    },
+    {
+      "id": "US-007",
+      "title": "Night Queue",
+      "description": "Als gebruiker wil ik dat Leon werk kan klaarzetten en 's avonds/nachts uitvoeren.",
+      "acceptanceCriteria": [
+        "Queue kan taken plannen.",
+        "Queue respecteert risk gates.",
+        "GPU/API limits worden gerespecteerd.",
+        "Resultaten worden gelogd.",
+        "Fouten blokkeren gecontroleerd en zichtbaar."
+      ],
+      "priority": 1,
+      "passes": false,
+      "dependsOn": [
+        "US-002",
+        "US-003",
+        "US-005"
+      ]
+    },
+    {
+      "id": "US-008",
+      "title": "Morning Brief",
+      "description": "Als gebruiker wil ik 's ochtends zien wat Leon heeft gedaan.",
+      "acceptanceCriteria": [
+        "Brief toont uitgevoerde taken.",
+        "Brief toont wijzigingen/bewijs.",
+        "Brief toont blockers.",
+        "Brief toont approvals die nodig zijn.",
+        "Brief stelt concrete next actions voor."
+      ],
+      "priority": 1,
+      "passes": false,
+      "dependsOn": [
+        "US-007"
+      ]
+    },
+    {
+      "id": "US-009",
+      "title": "Fan-Control Service",
+      "description": "Als gebruiker wil ik dat de chassis fan automatisch reageert op GPU-temperatuur.",
+      "acceptanceCriteria": [
+        "Service leest GPU-temp.",
+        "Fan speed volgt fan curve.",
+        "Failsafe werkt bij hoge temperatuur/sensorfout.",
+        "Logs zijn beschikbaar.",
+        "Dashboard/status kan tonen of service actief is."
+      ],
+      "priority": 1,
+      "passes": false,
+      "dependsOn": [
+        "US-004"
+      ]
+    },
+    {
+      "id": "US-010",
+      "title": "Productwaardig Dashboard",
+      "description": "Als gebruiker wil ik Leon kunnen bedienen zonder terminal.",
+      "acceptanceCriteria": [
+        "Dashboard toont workflow, approvals, queue, brief, GPU, fan en routing.",
+        "UI is responsive.",
+        "Foutstates en lege states zijn netjes.",
+        "Controls zijn duidelijk.",
+        "De interface voelt klaar voor dagelijks gebruik."
+      ],
+      "priority": 1,
+      "passes": false,
+      "dependsOn": [
+        "US-001",
+        "US-005",
+        "US-007",
+        "US-008",
+        "US-009"
+      ]
+    }
+  ]
+}

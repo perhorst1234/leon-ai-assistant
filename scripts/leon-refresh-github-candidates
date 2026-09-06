@@ -1,0 +1,70 @@
+#!/usr/bin/env python3
+from __future__ import annotations
+
+import argparse
+import json
+import sys
+
+from leon_control_plane.github_catalog import refresh_manifest_github_metadata
+from leon_control_plane.server import STORE
+from leon_control_plane.tool_registry import score_tool_candidate
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description="Refresh public GitHub metadata for Leon tool candidates.")
+    parser.add_argument("--tool-id", default="", help="Refresh one tool id. Defaults to all GitHub-backed candidates.")
+    parser.add_argument("--max-items", type=int, default=8, help="Bounded batch size for no-token GitHub API calls.")
+    args = parser.parse_args()
+
+    if args.tool_id:
+        manifests = [STORE.get_tool_manifest(args.tool_id)]
+    else:
+        manifests = []
+        for item in STORE.get_state().get("tool_manifests", []):
+            manifest = json.loads(item.get("manifest_json") or "{}")
+            if "github.com/" in str(manifest.get("source_url") or ""):
+                manifests.append(manifest)
+            if len(manifests) >= max(1, min(10, args.max_items)):
+                break
+
+    results = []
+    for manifest in manifests:
+        result = refresh_manifest_github_metadata(manifest)
+        if result.get("ok"):
+            STORE.upsert_tool_manifest(result["manifest"], actor_type="system", actor_id="github-metadata-refresh-cli")
+            results.append(
+                {
+                    "tool_id": result["tool_id"],
+                    "ok": True,
+                    "score": score_tool_candidate(result["manifest"])["score"],
+                    "status": result.get("status"),
+                    "refresh_status": result.get("metadata", {}).get("refresh_status"),
+                }
+            )
+        else:
+            failed_manifest = dict(result.get("manifest") or manifest)
+            previous = dict(failed_manifest.get("github_metadata") or {})
+            failed_manifest["github_metadata"] = {
+                **previous,
+                **dict(result.get("metadata") or {}),
+                "refresh_status": result.get("error") or "error",
+                "last_error_status": result.get("status", 0),
+            }
+            STORE.upsert_tool_manifest(failed_manifest, actor_type="system", actor_id="github-metadata-refresh-cli")
+            results.append(
+                {
+                    "tool_id": result.get("tool_id"),
+                    "ok": False,
+                    "error": result.get("error"),
+                    "status": result.get("status"),
+                }
+            )
+            if result.get("error") == "rate_limited":
+                break
+
+    print(json.dumps({"ok": True, "results": results}, ensure_ascii=False, indent=2))
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

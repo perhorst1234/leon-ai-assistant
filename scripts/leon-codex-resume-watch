@@ -1,0 +1,120 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+usage() {
+  echo "Usage: $0 -- <command> [args...]" >&2
+  echo "Example: $0 -- codex exec -m gpt-5.6-terra --json \"continue the Leon task queue\"" >&2
+}
+
+is_non_negative_integer() {
+  case "${1:-}" in
+    ''|*[!0-9]*)
+      return 1
+      ;;
+    *)
+      return 0
+      ;;
+  esac
+}
+
+is_positive_integer() {
+  is_non_negative_integer "${1:-}" && [ "$1" -ge 1 ]
+}
+
+log_file=""
+cleanup() {
+  if [ -n "${log_file:-}" ] && [ -f "$log_file" ]; then
+    command rm -f -- "$log_file"
+  fi
+}
+trap cleanup EXIT INT TERM
+
+if [ "$#" -eq 0 ]; then
+  usage
+  exit 2
+fi
+
+if [ "${1:-}" = "--" ]; then
+  shift
+fi
+
+if [ "$#" -eq 0 ]; then
+  usage
+  exit 2
+fi
+
+max_attempts="${LEON_RESUME_MAX_ATTEMPTS:-50}"
+default_wait_seconds="${LEON_RESUME_DEFAULT_WAIT_SECONDS:-900}"
+max_wait_seconds="${LEON_RESUME_MAX_WAIT_SECONDS:-0}"
+test_mode="${LEON_RESUME_TEST_MODE:-0}"
+
+if ! is_positive_integer "$max_attempts"; then
+  echo "Leon resume-watch: LEON_RESUME_MAX_ATTEMPTS must be a positive integer." >&2
+  exit 2
+fi
+
+if ! is_non_negative_integer "$default_wait_seconds"; then
+  echo "Leon resume-watch: LEON_RESUME_DEFAULT_WAIT_SECONDS must be a non-negative integer." >&2
+  exit 2
+fi
+
+if ! is_non_negative_integer "$max_wait_seconds"; then
+  echo "Leon resume-watch: LEON_RESUME_MAX_WAIT_SECONDS must be a non-negative integer." >&2
+  exit 2
+fi
+
+if [ "$test_mode" != "0" ] && [ "$test_mode" != "1" ]; then
+  echo "Leon resume-watch: LEON_RESUME_TEST_MODE must be 0 or 1." >&2
+  exit 2
+fi
+
+attempt=1
+
+while [ "$attempt" -le "$max_attempts" ]; do
+  cleanup
+  log_file="$(mktemp "${TMPDIR:-/tmp}/leon-resume-watch.XXXXXX")"
+  set +e
+  "$@" > >(tee -a "$log_file") 2> >(tee -a "$log_file" >&2)
+  status=$?
+  set -e
+
+  if [ "$status" -eq 0 ]; then
+    cleanup
+    log_file=""
+    exit 0
+  fi
+
+  if grep -Eiq 'rate.?limit|quota|429|too many requests|try again|retry-after' "$log_file"; then
+    if [ "$attempt" -ge "$max_attempts" ]; then
+      cleanup
+      log_file=""
+      echo "Leon resume-watch: max attempts reached." >&2
+      exit 124
+    fi
+    wait_seconds="$default_wait_seconds"
+    parsed_wait="$(grep -Eio 'retry-after:?[[:space:]]*[0-9]+' "$log_file" | tail -n 1 | grep -Eo '[0-9]+' || true)"
+    if [ -n "$parsed_wait" ]; then
+      wait_seconds="$parsed_wait"
+    fi
+    if [ "$max_wait_seconds" -gt 0 ] && [ "$wait_seconds" -gt "$max_wait_seconds" ]; then
+      wait_seconds="$max_wait_seconds"
+    fi
+    echo "Leon resume-watch: detected likely OpenAI/Codex rate limit. Waiting ${wait_seconds}s before attempt $((attempt + 1))/${max_attempts}." >&2
+    cleanup
+    log_file=""
+    if [ "$test_mode" = "1" ]; then
+      echo "Leon resume-watch: test mode enabled; skipping sleep." >&2
+    else
+      sleep "$wait_seconds"
+    fi
+    attempt=$((attempt + 1))
+    continue
+  fi
+
+  cleanup
+  log_file=""
+  exit "$status"
+done
+
+echo "Leon resume-watch: max attempts reached." >&2
+exit 124
