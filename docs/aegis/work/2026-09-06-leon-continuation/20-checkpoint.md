@@ -1,6 +1,6 @@
 # Checkpoint
 
-Actief: REC-01/05 gedeeltelijke recovery en openbare bronback-up.
+Actief: REC-01 volledige export verkrijgen. REC-05 openbare gedeeltelijke bronback-up gepubliceerd en teruggelezen: herstelcommit 8ebd5a913d91c9c99ccdf82cce00f2df86db66e9, 73 hashes en bestandsmodi gecontroleerd.
 
 Gedaan: inventaris, 22 syntaxchecks, 34/34 route-evals; frontend eerder gebouwd. Huidige vraag voegt Ubuntu, 16/32 GB RAM en optionele goedkope OpenAI-route toe.
 
