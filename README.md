@@ -1,6 +1,6 @@
 # Leon AI Assistant / Gaia
 
-Persoonlijke AI-assistent met een Gaia-frontend en bestaande Python-servercode. De SSD-export is geïnventariseerd maar onvolledig: drie centrale bron/testbestanden ontbreken. De gecontroleerde backend-snapshot staat op [de herstelbranch](https://github.com/perhorst1234/leon-ai-assistant/tree/codex/ssd-recovery-2026-09-06), nog niet als startklare release op main.
+Persoonlijke AI-assistent met een Gaia-frontend en bestaande Python-servercode. De volledige serverbron is inmiddels lokaal teruggehaald via WSL; zie [herstelbewijs](docs/wsl-recovery.md). GitHub bevat nog de [gedeeltelijke bron-snapshot](https://github.com/perhorst1234/leon-ai-assistant/tree/codex/ssd-recovery-2026-09-06) en een aparte nachtqueue-reparatie. Integratie van de nieuw teruggevonden grote bestanden en volledige tests volgen; nog geen startklare releaseclaim.
 
 ## Begin hier
 

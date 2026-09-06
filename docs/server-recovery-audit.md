@@ -1,5 +1,7 @@
 # Servercode-inventaris — 6 september 2026
 
+**Latere update:** de aanvankelijk onvolledige export hieronder is inmiddels vervangen door een volledige, gecontroleerde lokale WSL-recovery, inclusief actuele grote bronfiles, Git-objecten en SQLite-database. Zie [WSL-herstelbewijs](wsl-recovery.md). Deze audit bewaart de eerdere bevindingen; de GitHub-herstelbranch blijft bewust de oorspronkelijke gedeeltelijke snapshot. Nieuwe grote bronfiles moeten nog worden gescand/geïntegreerd en volledig getest.
+
 ## Uitkomst
 
 De gebruiker heeft twee leesbare Windows-mappen aangeleverd: `Documents/leon-ai-assistant` en `Documents/leon-workspace`. De eerste bevat echte Python-backendcode en een lokale Git-geschiedenis. De tweede bevat ondersteunende agent-/researchwerkruimtes en voorbeelden, geen tweede applicatierepository.

@@ -4,10 +4,12 @@ Stand: **6 september 2026**. De eigenaar vraagt het bestaande project stap voor 
 
 ## Actieve checkpoint
 
+**Nieuwste checkpoint: volledig lokaal herstel geslaagd via WSL.** Zie [herstelbewijs](wsl-recovery.md). De vier ontbrekende files, volledige Git-objecten en SQLite-database staan in `C:/Users/perhorst/Documents/leon-ssd-full-2026-09-06`. Alle kopiehashes en Git-objectintegriteit gecontroleerd. De oude herstelblokkade is opgelost; bronintegratie en volledige backendtests zijn nu de volgende stap. Het archief bevat secrets en mag niet openbaar worden.
+
 - Gedaan: Gaia-frontend behouden op main (importcommit `ed6dfb2`), SSD-export onderzocht, 22 aanwezige Python-modules syntax-getest, 34/34 routeringsevaluaties geslaagd.
 - Actieve stap: gecontroleerde gedeeltelijke snapshot bewaren op `codex/ssd-recovery-2026-09-06` en export compleet krijgen.
 - Vervolgwerk op `codex/night-queue-evidence`: scheduler fabriceert geen succesvolle patch/testresultaten meer; zeven gerichte regressietests en 34 routeringsevaluaties geslaagd. De actuele werkkloon staat op deze ontwikkelbranch. Herstelbranch blijft de oorspronkelijke snapshot. Broncommit: `8f3adfb86fdaf4f50ffbe9df3bd07e1d9f0db525`. Zie [reparatiebewijs](night-queue-evidence-repair.md).
-- Blokkade voor backendstart: actuele `src/leon_control_plane/server.py`, `src/leon_control_plane/store.py` en `tests/test_control_plane.py` ontbreken. Ook de Git-blob van store.py op server-HEAD ontbreekt.
+- Eerdere blokkade opgelost: actuele server/store/testbron en het ontbrekende Git-object zijn nu aanwezig in de volledige recoverykopie; nog niet in de gedeeltelijke GitHub-snapshot.
 - Daarna: volledige bestaande tests, onterecht geslaagde nachtelijke self-improvement-tests corrigeren, één echte hervatbare taak en Gaia-Werk-UI koppelen.
 - Update volgende stap: lokale schijntestproducent is gecorrigeerd; na volledige export ook store/HTTP en oorspronkelijke tests controleren, vervolgens echte patch-/testuitvoering en hervatbare taken bouwen.
 - Niet geclaimd: volledige recovery, live providers, gevalideerde approvalketen, externe connectors of geteste Ubuntu/M40-runtime.
@@ -24,9 +26,9 @@ Server-HEAD: `6b1863b6e1fdc612672c816ac048313c677115ca`, met 16 lokale commits n
 
 ## Eerstvolgende actie
 
-**Update WSL-herstel:** eigenaar bevestigt een bestandsgroottebeperking bij DiskGenius en vraagt WSL. WSL 2.7.13 is geïnstalleerd en VirtualMachinePlatform aangezet; Windows-herstart vereist, Ubuntu nog afwezig. Zie [WSL-checkpoint](wsl-recovery.md). De lokale werkkloon staat nu op main voor deze overdracht; backendreparatie blijft op codex/night-queue-evidence.
+**Update WSL-herstel:** afgerond; Ubuntu werkt en volledige recovery is gecontroleerd. SSD weer losgekoppeld van WSL, USB-sharing en bijbehorende firewallregel uit. De lokale werkkloon staat op main voor deze overdracht; backendreparatie blijft op codex/night-queue-evidence.
 
-Maak een nieuwe volledige export van de drie ontbrekende bron/testfiles, `docs/personal-ai-assistant-plan.md` en verborgen `.git`. Bewaar originele SSD en eerdere export. Controleer `git fsck --full --no-reflogs --no-dangling` opnieuw. Oudere store.py-versies zijn geen vervanging voor de actuele werkmapversie zonder expliciete reconstructiekeuze.
+Vul nu een aparte ontwikkelkopie aan uit de volledige export; behoud de nachtqueue-reparatie, scan nieuw te publiceren bron, vergelijk het serverplan en voer oorspronkelijke tests met tijdelijke state uit. De originele SSD, het privéarchief en eerdere exports blijven intact. Geen historische reconstructie meer nodig.
 
 Crucial CT525MX300SSD1: 525.110.100.480 bytes. Schijfnummers veranderen. DiskGenius was verhoogd en niet vanuit Codex bedienbaar; WSL was afwezig. Geen format-, repair- of partitioneringsactie uitvoeren. Oorzaak van onvolledige export is nog onbekend.
 
