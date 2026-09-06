@@ -1,10 +1,11 @@
 # Leon AI Assistant / Gaia
 
-Persoonlijke AI-assistent met een bestaande Gaia-frontend en een uitgebreider productplan. De backend op de tijdelijke offline Linux-server moet nog met deze repository worden vergeleken.
+Persoonlijke AI-assistent met een Gaia-frontend en bestaande Python-servercode. De SSD-export is geïnventariseerd maar onvolledig: drie centrale bron/testbestanden ontbreken. De gecontroleerde backend-snapshot staat op [de herstelbranch](https://github.com/perhorst1234/leon-ai-assistant/tree/codex/ssd-recovery-2026-09-06), nog niet als startklare release op main.
 
 ## Begin hier
 
 - [Actuele status en hervatinstructies](docs/handoff.md)
+- [Servercode: wat bestaat, wat getest is en wat ontbreekt](docs/server-recovery-audit.md)
 - [Uitvoerbare backlog met acceptatiecriteria](docs/implementation-backlog.md)
 - [Volledig productplan](docs/personal-ai-assistant-plan.md)
 - [Tesla M40 / Xeon-doelhardware](docs/hardware.md)

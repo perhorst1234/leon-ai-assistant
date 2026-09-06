@@ -6,11 +6,11 @@ Dit document beschrijft de productvisie; een beschreven functie is niet automati
 
 - **Gecontroleerd:** GitHub `main` op `d0f7ba0` bevatte alleen dit plan en `.gitkeep`. Ook de andere remote branch bevatte geen applicatiecode.
 - **Bestaande frontend gevonden:** de Gaia-website uit de Codex-taak “Maak AI-assistantwebsite prachtig”, lokale broncommit `f5e8426`. Een bronkopie staat nu in [`apps/web`](../apps/web), met product- en designdocumentatie. Vandaag, Chat, Werk, Memory, agentkeuze en approval-preview zijn gebouwd als interactieve demo.
-- **Backendstatus onbekend:** de gebruiker heeft al op de server gewerkt; de Linux-SSD met dat werk is herkend, maar de projectmap moet nog worden uitgelezen en vergeleken. De UI gebruikt timers en React-state, geen echte agentbackend. Ontbreken op GitHub bewijst niet dat de backend op de SSD ontbreekt.
-- **Doelhardware:** NVIDIA Tesla M40 en Intel Xeon E5-2676 v3. VRAM-variant, RAM, besturingssysteem en bestaande modelruntime moeten nog worden vastgesteld. GPU-runtimes uit sectie 22 zijn kandidaten, geen bevestigde M40-compatibiliteit.
+- **Backend gedeeltelijk teruggevonden:** Python-control-plane met 16 lokale commits en ongecommitte werk. De export mist actuele `server.py`, `store.py` en `test_control_plane.py`; zie [audit](server-recovery-audit.md). 22 aanwezige modules slagen voor syntaxcontrole en 34/34 routeringsevaluaties slagen. Agentuitvoering is nog mock, de OpenAI-adapter dry-run; volledige backendtest is geblokkeerd.
+- **Doelhardware:** Ubuntu, NVIDIA Tesla M40 en Intel Xeon E5-2676 v3, waarschijnlijk 16 GB systeem-RAM, eventueel 32 GB. Phase 4 noemt 24 GB VRAM, nog niet gemeten. GPU-runtimes uit sectie 22 blijven te valideren kandidaten. OpenAI API mag korte goedkope taken ondersteunen na budget- en privacyconfiguratie; sleutel blijft buiten GitHub.
 - **Actuele uitvoering:** zie [overdracht en inventaris](handoff.md), [werkbacklog](implementation-backlog.md) en [hardwarevoorwaarden](hardware.md). Deze documenten onderscheiden bevestigd, prototype, nog te controleren en gepland werk.
 
-De eerstvolgende stap is de SSD-code veiligstellen en inventariseren, voordat een nieuwe backendstack wordt gekozen. De oorspronkelijke conceptroadmap hieronder blijft behouden als productcontext; zij is geen opdracht om bestaand werk opnieuw te bouwen.
+De eigenaar vraagt nu het project stap voor stap af te maken en passend bestaand werk te hergebruiken. De eerste stap is de gedeeltelijke snapshot veiligstellen en de ontbrekende actuele bestanden herstellen. Daarna volgen echte, geteste uitvoering, duurzame taakstatus, Gaia-integratie en begrensde tools/providers; zie de uitvoeringsbacklog. De oorspronkelijke conceptroadmap hieronder blijft behouden als productcontext; zij is geen opdracht om bestaand werk opnieuw te bouwen. “Perfect” betekent hier aantoonbare acceptatiecriteria en zichtbare beperkingen, niet een onbewezen garantie.
 
 ## 1. Productvisie
 

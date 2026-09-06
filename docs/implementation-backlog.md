@@ -1,16 +1,29 @@
 # Leon / Gaia — uitvoeringsbacklog
 
-Stand: 6 september 2026. **Prototype** betekent bestaande frontendinteractie met voorbeelddata. **Te controleren** betekent dat werk op de SSD kan bestaan, maar nog niet is gelezen. Alleen een geslaagde passende controle rechtvaardigt “werkend”.
+Stand: 6 september 2026. De eigenaar vraagt volledige stapsgewijze uitvoering. **Prototype** is voorbeeldgedrag; **code aanwezig** is geen live integratie. Alleen passende controles rechtvaardigen “werkend”. Zie de [SSD-audit](server-recovery-audit.md) voor het actuele implementatiebewijs.
 
 ## Eerst continuïteit herstellen
 
 | ID | Prioriteit | Status | Taak en acceptatiecriterium |
 |---|---|---|---|
-| REC-01 | P0 | Geblokkeerd op Windows-toegang | Vind `leon-ai-assistant` op de Crucial-SSD; maak een afzonderlijke leesbare kopie inclusief verborgen `.git`, zonder de bron te wijzigen. Noteer pad en kopiecontrole. |
-| REC-02 | P0 | Wacht op REC-01 | Vergelijk SSD-HEAD, branches, remotes en dirty/untracked bestanden met GitHub. Inventariseer bestaande backend, configuratie, tests en laatste werkstatus. |
+| REC-01 | P0 | Gedeeltelijk hersteld | Export ontvangen; drie centrale bron/testfiles en een Git-object ontbreken. Nieuwe volledige export vergelijken zonder de bron te wijzigen. |
+| REC-02 | P0 | Inventaris uitgevoerd | HEAD `6b1863b`, 16 lokale commits plus dirty werk; Python-stack en mock/dry-rungrenzen onderzocht. Volledige tests wachten op REC-01. |
 | REC-03 | P0 | Uitgevoerd en build getest | Bestaande Gaia-frontend behouden in `apps/web`; SHA-256-kopiecontrole en build geslaagd; lint heeft nul errors en vijf bestaande warnings. |
 | REC-04 | P0 | Vastgelegd in docs | Maak plan, backlog en Codex-hervatinstructies vindbaar. Verifieer na publicatie de GitHub-commit. |
-| REC-05 | P0 | Gepland | Controleer herstelde bestanden op secrets/persoonlijke data vóór toevoegen aan openbare GitHub. Scheid private runtimeback-up van codeback-up. |
+| REC-05 | P0 | Selectie gecontroleerd | 73 bronbestanden geselecteerd, hashes vastgelegd; twee docs geschoond. Private logs/secrets/runtime uitgesloten. Herhaal bij aanvullende export. |
+
+## Uitvoeringsvolgorde en voltooiingsvoorwaarden
+
+1. **Herstelbasis:** actuele ontbrekende files terughalen, integriteit controleren, volledige bestaande tests uitvoeren. Geen vervangende stack of stilzwijgend terugzetten van oudere code.
+2. **Eerlijk uitvoeringsbewijs:** P1 in night_queue corrigeren: geen tests_passed zonder werkelijk testresultaat. Regressietests voor dry-run, gefaalde en niet uitgevoerde tests.
+3. **Duurzame werkcyclus:** één taak echt uitvoeren met opgeslagen events/checkpoints, herstart/retry/idempotentie en backendapproval voor concrete acties.
+4. **Providers:** bestaande router/adapter uitbreiden met echte begrensde uitvoering. OpenAI optioneel en standaard uit totdat model, budget en datascopes gekozen zijn; offline tests vóór betaalde smoke-test. M40-route pas activeren na benchmark.
+5. **Gaia verbinden:** bestaand ontwerp behouden; chat/werk/approval/memory koppelen aan werkelijke status. Fouten en mock/demo zichtbaar onderscheiden.
+6. **Gecontroleerde autonomie:** nachtqueue, memory/value-engine, research en morning brief met budget, annulering en herstarttests; geen verzonnen resultaten.
+7. **Connectors per stuk:** begin read-only; agenda/mail, serverbeheer, shopper, finance en printer vereisen eigen scopes, concrete approvals en regressietests. Externe pakketten pas na licentie-/onderhoud-/veiligheidscontrole.
+8. **Ubuntu-oplevering:** reproduceerbare installatie, secretbeheer, healthchecks, private backup/restore, systemd, logrotatie en begrensde resources. Test op 16 GB RAM/M40; 32 GB blijft optioneel. Fan-control pas na sensoren en fail-safe test.
+
+Releaseklaar betekent relevante acceptatiechecks aantoonbaar geslaagd, geen bekende kritieke veiligheidsfouten, begrensde kosten en herstelbare fouten. Een lokale mocktest bewijst geen werkende dienst of hardware.
 
 ## Functionaliteit, bewijs en volgende stap
 
@@ -33,7 +46,7 @@ Stand: 6 september 2026. **Prototype** betekent bestaande frontendinteractie met
 | 3D-referentiemaker | Gebruikerswens, nog geen bewezen pipeline | Zoek bronmodel of bruikbare aanzichten; lever referentiemodel met herkomst, schaal/onnauwkeurigheid en licentie |
 | 3D-printermanager / camera / Fluidd | Gebruikerswens, UI-agentrol | Lees telemetrie/camera; meld concrete afwijking; instellingswijzigingen begrenzen en expliciet autoriseren |
 
-Voor backendonderdelen is de SSD-implementatiestatus nog **te controleren**. Deze tabel is geen bewijs dat alles nog vanaf nul gebouwd moet worden.
+De tabel bewaart de oorspronkelijke feature-acceptatiecriteria; de recente implementatie-inventaris staat in de audit. Decision Layer/modelrouter bestaan (34/34 evaluaties); agentrunner is mock, provideradapter dry-run, planner sampledata. Store-/HTTP-functionaliteit is beschreven maar door ontbrekende actuele files niet volledig verifieerbaar. Geen van deze onderdelen hoeft blind vanaf nul gebouwd te worden.
 
 ## Eerste verticale integratie na SSD-inventaris
 

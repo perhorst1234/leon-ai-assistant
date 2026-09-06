@@ -4,10 +4,11 @@ Vastgelegd op 6 september 2026. De server is tijdelijk buiten gebruik tijdens ee
 
 | Onderdeel | Bekend | Nog controleren |
 |---|---|---|
-| GPU | NVIDIA Tesla M40, opgegeven door eigenaar | Werkelijke VRAM-capaciteit, aantal GPU's, driver, temperatuur en koeling |
-| CPU | Intel Xeon E5-2676 v3, opgegeven door eigenaar | CPU-aantal, RAM, belasting en beschikbare instructies op doel-OS |
+| GPU | NVIDIA Tesla M40; Phase-4-plan noemt 24 GB VRAM | Werkelijke VRAM-capaciteit, aantal GPU's, driver, temperatuur en koeling |
+| CPU | Intel Xeon E5-2676 v3, opgegeven door eigenaar | CPU-aantal, belasting en beschikbare instructies op doel-OS |
+| Systeem-RAM | Eigenaar verwacht 16 GB, mogelijk 32 GB | Ontwerp voor 16 GB; meet werkelijk beschikbare ruimte |
 | Project-SSD | Crucial CT525MX300SSD1; Windows meldt 525.110.100.480 bytes, circa 489 GiB | Linux-bestandssysteem, projectlocatie, eventuele encryptie/LVM |
-| Software | Nog niet geïnventariseerd op server | Linux-versie, containers, modelruntime, modellen en bestaande services |
+| Software | Ubuntu als doel-OS, Python/SQLite-control-plane aangetroffen | Ubuntu-versie, containers, modelruntime, modellen en bestaande services |
 
 ## GPU-voorwaarden
 
@@ -27,6 +28,10 @@ Lees hardware en software uit met onder andere `nvidia-smi`, `lscpu`, `free -h`,
 Een modelproef moet de modelnaam, quantisatie, runtimecommit/versie, driver/toolkit, contextlengte, piek-VRAM, time-to-first-token, tokens/seconde en tool-callkwaliteit vastleggen. Zonder deze metingen is de GPU-route experimenteel.
 
 ## Eisen aan de aparte modelplanner
+
+De eigenaar heeft een OpenAI API-key beschikbaar voor korte goedkope opdrachten die lokaal niet passen of te traag zijn. Bewaar die uitsluitend in lokale secrets/serveromgeving. Voor een echte call: expliciet model, actuele prijsconfiguratie, maximale input/output en dagelijks/maandelijks budget; reserveer kosten vóór uitvoering en verwerk werkelijk gebruik erna. Geen automatische upload van privécontext of onbegrensde retries. Exact budget en datascopes moeten nog gekozen worden; tot dan staat betaalde uitvoering uit.
+
+Bij 16 GB systeem-RAM mogen modelbestanden, CPU-offload, webprocessen en achtergrondtaken niet onbeperkt tegelijk laden. Start met één model/worker, begrens context en queue, en test OOM/herstart. De optionele 32 GB is extra ruimte, geen minimumvereiste die stilzwijgend aangenomen mag worden. De beschreven GPU-fanservice vereist echte sensoren, fail-safe koeling en hardwarevalidatie vóór automatische aansturing.
 
 - Dagelijkse chat krijgt voorrang op nachtelijke achtergrondtaken.
 - Reserveer geheugen voor gewichten, context/KV-cache en runtime-overhead.
