@@ -15,7 +15,7 @@ Stand: 6 september 2026. De eigenaar vraagt volledige stapsgewijze uitvoering. *
 ## Uitvoeringsvolgorde en voltooiingsvoorwaarden
 
 1. **Herstelbasis:** actuele ontbrekende files terughalen, integriteit controleren, volledige bestaande tests uitvoeren. Geen vervangende stack of stilzwijgend terugzetten van oudere code.
-2. **Eerlijk uitvoeringsbewijs:** P1 in night_queue corrigeren: geen tests_passed zonder werkelijk testresultaat. Regressietests voor dry-run, gefaalde en niet uitgevoerde tests.
+2. **Eerlijk uitvoeringsbewijs:** lokale schijntestproducent gecorrigeerd op `codex/night-queue-evidence` (7 regressietests, 34 bestaande route-evals geslaagd). Niet-geïmplementeerde self-improvement blijft review/expliciete fout, nooit tests_passed of fictieve wijziging. Volledige store/HTTP-test en echte geïsoleerde patch/testuitvoerder blijven open; zie [bewijs](night-queue-evidence-repair.md).
 3. **Duurzame werkcyclus:** één taak echt uitvoeren met opgeslagen events/checkpoints, herstart/retry/idempotentie en backendapproval voor concrete acties.
 4. **Providers:** bestaande router/adapter uitbreiden met echte begrensde uitvoering. OpenAI optioneel en standaard uit totdat model, budget en datascopes gekozen zijn; offline tests vóór betaalde smoke-test. M40-route pas activeren na benchmark.
 5. **Gaia verbinden:** bestaand ontwerp behouden; chat/werk/approval/memory koppelen aan werkelijke status. Fouten en mock/demo zichtbaar onderscheiden.

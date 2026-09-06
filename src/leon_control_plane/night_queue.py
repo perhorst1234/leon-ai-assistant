@@ -1,13 +1,15 @@
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from leon_control_plane.morning_brief import build_morning_brief
 from leon_control_plane.model_policy import choose_route
 from leon_control_plane.risk_policy import evaluate_action_policy
 from leon_control_plane.secret_scanner import redact_value
-from leon_control_plane.store import ControlPlaneStore
 from leon_control_plane.ui_composition import compose_ui
+
+if TYPE_CHECKING:
+    from leon_control_plane.store import ControlPlaneStore
 
 
 DEFAULT_ALLOWED_RISK_CLASSES = ["R1", "R2"]
@@ -160,10 +162,10 @@ def build_night_queue_actions(*, budget_mode: str = "economy", local_gpu_ready: 
             "privacy": "private",
             "action_type": "modify_files",
             "requested_scope": "project:file:self-improvement",
-            "objective": "Apply a bounded local script improvement only when R3 policy controls are satisfied.",
+            "objective": "Review a local script improvement; patch execution and measured test evidence are not implemented.",
             "policy_metadata": {
-                "diff_limited": True,
-                "tests_passed": True,
+                "diff_limited": False,
+                "tests_passed": False,
                 "self_improvement": True,
             },
         },
@@ -539,50 +541,12 @@ class NightQueueScheduler:
                 "changes": [{"type": "cache", "id": f"night_queue:{run_id}:opportunities", "rollback_record_id": rollback_id, "rollback": "delete_supported"}],
             }
         if action["id"] == "apply_controlled_self_improvement":
-            patch_snapshot = (
-                "diff --git a/scripts/leon-self-improvement-check b/scripts/leon-self-improvement-check\n"
-                "new file mode 100755\n"
-                "--- /dev/null\n"
-                "+++ b/scripts/leon-self-improvement-check\n"
-                "@@\n"
-                "+#!/usr/bin/env bash\n"
-                "+set -euo pipefail\n"
-                "+python3 -m py_compile src/leon_control_plane/night_queue.py src/leon_control_plane/store.py\n"
+            # Do not let a future policy/config change revive synthetic success.
+            # A real executor must apply a bounded patch and capture test evidence.
+            raise NotImplementedError(
+                "Controlled self-improvement execution is unavailable: "
+                "no patch was applied and no tests were run."
             )
-            test_results = {
-                "status": "passed",
-                "passed": True,
-                "phase": "post_change",
-                "commands": [
-                    {
-                        "command": "python3 -m py_compile src/leon_control_plane/night_queue.py src/leon_control_plane/store.py",
-                        "exit_code": 0,
-                    }
-                ],
-            }
-            change = self.store.record_controlled_self_improvement(
-                run_id=run_id,
-                target_ref="scripts/leon-self-improvement-check",
-                patch_snapshot=patch_snapshot,
-                test_results=test_results,
-                summary="Added a bounded local self-improvement verification script with post-change compile checks.",
-                action_type=action["action_type"],
-                requested_scope=action["requested_scope"],
-                diff_limited=True,
-                actor_type="system",
-                actor_id="night-queue-scheduler",
-            )
-            return {
-                "action_id": action["id"],
-                "agent": action["agent"],
-                "status": "succeeded",
-                "summary": "Recorded a controlled local self-improvement with bounded diff, post-change tests, and rollback snapshot.",
-                "sources": [{"type": "policy", "ref": "config/autonomy-policy.json"}, {"type": "local_source", "ref": ".ralph-tui/progress.md"}],
-                "changes": [change],
-                "test_results": test_results,
-                "diff": patch_snapshot,
-                "rollback_record_id": change.get("rollback_record_id"),
-            }
         if action["id"] == "prepare_risky_proposals":
             proposals = []
             phase_ids = {str(phase.get("id") or "") for phase in state.get("phases", [])}

@@ -6,8 +6,10 @@ Stand: **6 september 2026**. De eigenaar vraagt het bestaande project stap voor 
 
 - Gedaan: Gaia-frontend behouden op main (importcommit `ed6dfb2`), SSD-export onderzocht, 22 aanwezige Python-modules syntax-getest, 34/34 routeringsevaluaties geslaagd.
 - Actieve stap: gecontroleerde gedeeltelijke snapshot bewaren op `codex/ssd-recovery-2026-09-06` en export compleet krijgen.
+- Vervolgwerk op `codex/night-queue-evidence`: scheduler fabriceert geen succesvolle patch/testresultaten meer; zeven gerichte regressietests en 34 routeringsevaluaties geslaagd. De actuele werkkloon staat op deze ontwikkelbranch. Herstelbranch blijft de oorspronkelijke snapshot. Zie [reparatiebewijs](night-queue-evidence-repair.md).
 - Blokkade voor backendstart: actuele `src/leon_control_plane/server.py`, `src/leon_control_plane/store.py` en `tests/test_control_plane.py` ontbreken. Ook de Git-blob van store.py op server-HEAD ontbreekt.
 - Daarna: volledige bestaande tests, onterecht geslaagde nachtelijke self-improvement-tests corrigeren, één echte hervatbare taak en Gaia-Werk-UI koppelen.
+- Update volgende stap: lokale schijntestproducent is gecorrigeerd; na volledige export ook store/HTTP en oorspronkelijke tests controleren, vervolgens echte patch-/testuitvoering en hervatbare taken bouwen.
 - Niet geclaimd: volledige recovery, live providers, gevalideerde approvalketen, externe connectors of geteste Ubuntu/M40-runtime.
 
 Zie [audit](server-recovery-audit.md), [backlog](implementation-backlog.md) en [hardware](hardware.md).
