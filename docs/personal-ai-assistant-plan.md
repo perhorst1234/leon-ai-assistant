@@ -1,5 +1,17 @@
 # Gaia / Personal AI Assistant — uitgewerkt conceptplan
 
+## 0. Werkelijke projectstatus en overdracht — 6 september 2026
+
+Dit document beschrijft de productvisie; een beschreven functie is niet automatisch gebouwd. De gebruiker wil verder werken op Windows zolang de Linux-server wordt geüpgraded, met GitHub als overdraagbare code- en planversie.
+
+- **Gecontroleerd:** GitHub `main` op `d0f7ba0` bevatte alleen dit plan en `.gitkeep`. Ook de andere remote branch bevatte geen applicatiecode.
+- **Bestaande frontend gevonden:** de Gaia-website uit de Codex-taak “Maak AI-assistantwebsite prachtig”, lokale broncommit `f5e8426`. Een bronkopie staat nu in [`apps/web`](../apps/web), met product- en designdocumentatie. Vandaag, Chat, Werk, Memory, agentkeuze en approval-preview zijn gebouwd als interactieve demo.
+- **Backendstatus onbekend:** de gebruiker heeft al op de server gewerkt; de Linux-SSD met dat werk is herkend, maar de projectmap moet nog worden uitgelezen en vergeleken. De UI gebruikt timers en React-state, geen echte agentbackend. Ontbreken op GitHub bewijst niet dat de backend op de SSD ontbreekt.
+- **Doelhardware:** NVIDIA Tesla M40 en Intel Xeon E5-2676 v3. VRAM-variant, RAM, besturingssysteem en bestaande modelruntime moeten nog worden vastgesteld. GPU-runtimes uit sectie 22 zijn kandidaten, geen bevestigde M40-compatibiliteit.
+- **Actuele uitvoering:** zie [overdracht en inventaris](handoff.md), [werkbacklog](implementation-backlog.md) en [hardwarevoorwaarden](hardware.md). Deze documenten onderscheiden bevestigd, prototype, nog te controleren en gepland werk.
+
+De eerstvolgende stap is de SSD-code veiligstellen en inventariseren, voordat een nieuwe backendstack wordt gekozen. De oorspronkelijke conceptroadmap hieronder blijft behouden als productcontext; zij is geen opdracht om bestaand werk opnieuw te bouwen.
+
 ## 1. Productvisie
 
 Gaia is de werknaam voor een persoonlijke AI-assistent die niet alleen reageert op vragen, maar zichzelf structureel verbetert. Het systeem bestaat uit een snelle dagelijkse assistent, een zware researchlaag voor complexe taken, een contextuele UI/UX-laag en een nachtelijke verbetercyclus die leert van gesprekken, tools, fouten, kansen en terugkerende patronen.

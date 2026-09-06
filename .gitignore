@@ -1,0 +1,30 @@
+# Credentials and local configuration
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+credentials*.json
+
+# Dependencies and generated output
+node_modules/
+.next/
+.vinext/
+.wrangler/
+dist/
+coverage/
+__pycache__/
+.venv/
+*.tsbuildinfo
+
+# Private runtime data and recovery copies
+/recovery/
+/backups/
+/data/
+*.sqlite
+*.sqlite3
+*.db
+*.log
+*.gguf
+*.safetensors
+.DS_Store
