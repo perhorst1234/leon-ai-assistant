@@ -1,8 +1,7 @@
 """Durable execution records for existing tasks; not a second task manager.
 
-Only the fixed, read-only Python check is enabled. Lease recovery is at-least-once:
-an interrupted read may repeat, but a fenced checkpoint can be committed once.
-Do not register side-effecting tools here without a separate approval/idempotency contract.
+Python checks may repeat interrupted reads. Approved text model jobs use a
+separate durable sending marker: never automatically repeat a paid request.
 """
 from __future__ import annotations
 
@@ -13,9 +12,12 @@ import uuid
 
 from leon_control_plane.secret_scanner import assert_no_secrets
 from leon_control_plane.store import ControlPlaneStore
+from leon_control_plane import model_work
+from leon_control_plane.openai_text import KIND as MODEL_KIND
 
 KIND = "python_syntax_check"
 STEPS = ("snapshot", "syntax", "report")
+JOB_STEPS = {KIND: STEPS, MODEL_KIND: ("model",)}
 MAX_ATTEMPTS = 3
 LEASE_SECONDS = 30
 
@@ -41,6 +43,7 @@ class WorkQueue:
                     PRIMARY KEY(job_id, step)
                 );
             """)
+            model_work.initialize(conn)
 
     @contextmanager
     def _transaction(self):
@@ -63,7 +66,7 @@ class WorkQueue:
     def _event(self, conn, job, event, detail=None):
         self.store.append_audit_event(
             conn, actor_type="system", actor_id="local-work-queue", event_type=f"work_{event}",
-            task_id=job["task_id"], summary=f"Local Python check: {event}",
+            task_id=job["task_id"], summary=f"Work execution: {event}",
             redacted_payload={"job_id": job["id"], **(detail or {})},
         )
 
@@ -77,9 +80,10 @@ class WorkQueue:
         return {key: row[key] for key in (
             "id", "task_id", "kind", "status", "attempts", "error", "created_at", "updated_at",
         )} | {
-            "completed_steps": row["next_step"], "total_steps": len(STEPS),
-            "results": self._results(conn, row["id"]), "execution_kind": "local_read_only",
-            "provider_calls_made": False,
+            "completed_steps": row["next_step"], "total_steps": len(JOB_STEPS[row["kind"]]),
+            "results": self._results(conn, row["id"]),
+            "execution_kind": "approved_external_text" if row["kind"] == MODEL_KIND else "local_read_only",
+            **(model_work.view(conn, row["id"]) if row["kind"] == MODEL_KIND else {"provider_calls_made": False}),
         }
 
     def get(self, job_id):
@@ -92,9 +96,10 @@ class WorkQueue:
                 "SELECT * FROM work_jobs ORDER BY created_at DESC, id DESC LIMIT 100",
             )]
 
-    def enqueue(self, *, task_id: str, request_id: str, kind: str = KIND):
-        if kind != KIND:
-            raise ValueError("Only python_syntax_check is enabled")
+    def enqueue(self, *, task_id: str, request_id: str, kind: str = KIND, model_request=None):
+        if kind not in JOB_STEPS or (kind != MODEL_KIND and model_request is not None):
+            raise ValueError("Unsupported work kind or model request")
+        approved = model_work.prepare(model_request) if kind == MODEL_KIND else None
         try:
             request_id = str(uuid.UUID(request_id))
         except (ValueError, TypeError, AttributeError):
@@ -104,9 +109,13 @@ class WorkQueue:
             if existing:
                 if existing["task_id"] != task_id or existing["kind"] != kind:
                     raise ValueError("request_id is already bound to different work")
+                if approved is not None and not model_work.same_request(conn, existing["id"], approved):
+                    raise ValueError("request_id is already bound to different approved text or limits")
                 return self._view(conn, existing)
             if not self._task_eligible(conn, task_id):
                 raise ValueError("Task must be new/planned/active without a pending approval requirement")
+            if approved is not None and not model_work._eligible(self, conn, {"task_id": task_id}):
+                raise ValueError("Model jobs require a low-risk task")
             if conn.execute("SELECT COUNT(*) FROM work_jobs WHERE status IN ('queued','running','paused')").fetchone()[0] >= 100:
                 raise ValueError("Local work queue is full")
             job_id, now = f"work-{uuid.uuid4().hex}", self.clock()
@@ -115,6 +124,8 @@ class WorkQueue:
                 (job_id, request_id, task_id, kind, "queued", now, now),
             )
             row = self._job(conn, job_id)
+            if approved is not None:
+                model_work.insert(conn, job_id, approved)
             self._event(conn, row, "queued")
             return self._view(conn, row)
 
@@ -162,7 +173,7 @@ class WorkQueue:
             )
             self._event(conn, row, "claimed", {"step": row["next_step"], "attempt": row["attempts"] + 1})
             return {"id": row["id"], "task_id": row["task_id"], "step": row["next_step"],
-                    "token": token, "results": self._results(conn, row["id"])}
+                    "kind": row["kind"], "token": token, "results": self._results(conn, row["id"])}
 
     def checkpoint(self, claim: dict, result: dict) -> bool:
         """Commit measured output only while this worker still owns the lease."""
@@ -181,7 +192,7 @@ class WorkQueue:
                 return False
             conn.execute("INSERT INTO work_checkpoints VALUES(?,?,?,?)", (row["id"], row["next_step"], encoded, now))
             next_step = row["next_step"] + int(result["ok"])
-            status = ("succeeded" if next_step == len(STEPS) else "queued") if result["ok"] else "failed"
+            status = ("succeeded" if next_step == len(JOB_STEPS[row["kind"]]) else "queued") if result["ok"] else "failed"
             conn.execute(
                 "UPDATE work_jobs SET status=?,next_step=?,attempts=0,lease_token=NULL,lease_until=NULL,error=?,updated_at=? WHERE id=?",
                 (status, next_step, "" if result["ok"] else "check_failed", now, row["id"]),

@@ -1,5 +1,7 @@
 # Leon / Gaia — uitvoeringsbacklog
 
+**Nieuwste code 7 september:** stap 4 heeft nu echte Responses-transportcode en workerintegratie, standaard uit: tekst-/kostenapproval, gedeelde SQLite-reservering, usage-registratie en crashherstel zonder automatische betaalde herhaling. Gaia toont modeljobs met het juiste type/verbruik. Offline bewijs en open grenzen: [model-work.md](model-work.md). Nog geen live provider-/M40-test; Gaia-modelinvoer, reconciliatie en algemene agents blijven open. De oudere updates hieronder zijn historisch bewijs, geen actuele afronding van het volledige product.
+
 **Update 7 september:** REC-01/02/05 bronherstel, aanvullende scan en integratie uitgevoerd; 185 backendtests plus zeven webbridge-tests geslaagd. Stap 2 is ook met echte HTTP/SQLite getest. Stappen 3 en 5 hebben nu één echte lokale verticale integratie: syntaxcontrole met duurzame checkpoints en Gaia-Werk, inclusief pauze/hervatten/annuleren en procescrashregressie. Dit is geen voltooiing van algemene agents. **Volgende code: echte begrensde modeluitvoering met kostenreservering en offline tests**, daarna chat en read-only connectors. Zie local-work.md; de oudere tabellen hieronder blijven de volledige featurecriteria bewaren.
 
 Stand: 6 september 2026. De eigenaar vraagt volledige stapsgewijze uitvoering. **Prototype** is voorbeeldgedrag; **code aanwezig** is geen live integratie. Alleen passende controles rechtvaardigen “werkend”. Zie de [SSD-audit](server-recovery-audit.md) voor het actuele implementatiebewijs.

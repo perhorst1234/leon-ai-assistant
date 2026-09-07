@@ -1,4 +1,4 @@
-"""Real, bounded CPU-only checks. No shell, imports of inspected code, or providers."""
+"""Durable local checks and separately approved, cost-bounded text model work."""
 from __future__ import annotations
 
 import argparse
@@ -10,7 +10,9 @@ import time
 
 from leon_control_plane.store import ControlPlaneStore
 from leon_control_plane.secret_scanner import assert_no_secrets
-from leon_control_plane.work_queue import STEPS, WorkQueue
+from leon_control_plane.work_queue import STEPS, JOB_STEPS, MODEL_KIND, WorkQueue
+from leon_control_plane.model_work import ModelExecutor
+from leon_control_plane.openai_text import ModelPreflightError, OpenAIConfig
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 MAX_FILE_BYTES = 1024 * 1024
@@ -77,21 +79,24 @@ def execute_step(root: Path, claim: dict) -> dict:
 
 
 class LocalWorker:
-    def __init__(self, queue: WorkQueue, *, root: Path = REPO_ROOT):
+    def __init__(self, queue: WorkQueue, *, root: Path = REPO_ROOT, model_executor=None):
         self.queue, self.root = queue, root.resolve()
+        self.model_executor = model_executor if model_executor is not None else ModelExecutor(queue)
 
     def run_once(self) -> bool:
         claim = self.queue.claim()
         if claim is None:
             return False
         try:
-            result = execute_step(self.root, claim)
+            result = self.model_executor.execute(claim) if claim["kind"] == MODEL_KIND else execute_step(self.root, claim)
             assert_no_secrets("Worker result", result)
         except CheckError as exc:
-            result = {"ok": False, "step": STEPS[claim["step"]], "reason": str(exc)}
+            result = {"ok": False, "step": JOB_STEPS[claim["kind"]][claim["step"]], "reason": str(exc)}
+        except ModelPreflightError as exc:
+            result = {"ok": False, "step": "model", "reason": str(exc), "provider_calls_made": False}
         except Exception:
             # Private file contents/paths from unexpected exceptions stay out of receipts.
-            result = {"ok": False, "step": STEPS[claim["step"]], "reason": "execution_error"}
+            result = {"ok": False, "step": JOB_STEPS[claim["kind"]][claim["step"]], "reason": "execution_error"}
         self.queue.checkpoint(claim, result)
         return True
 
@@ -101,9 +106,14 @@ def main(argv=None) -> int:
     parser.add_argument("--once", action="store_true", help="Process at most one checkpoint, then exit")
     parser.add_argument("--db", type=Path, default=REPO_ROOT / "state" / "control-plane.sqlite")
     parser.add_argument("--seed", type=Path, default=REPO_ROOT / "state" / "control-plane.seed.json")
+    parser.add_argument("--env-file", type=Path, help="Explicit private env file; only OpenAI settings are read, never executed")
     args = parser.parse_args(argv)
+    try:
+        model_config = OpenAIConfig.from_env(env_file=args.env_file)
+    except ModelPreflightError as exc:
+        parser.error(str(exc))
     queue = WorkQueue(ControlPlaneStore(args.db, args.seed))
-    worker = LocalWorker(queue)
+    worker = LocalWorker(queue, model_executor=ModelExecutor(queue, config=model_config))
     try:
         while True:
             processed = worker.run_once()

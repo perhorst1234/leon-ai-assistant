@@ -1,5 +1,7 @@
 # Werken aan Leon / Gaia
 
+- Nieuwste modelwerk: `docs/model-work.md`, 231 backendtests plus twee subtests en zeven webtests geslaagd; tekst-only Responses in bestaande WorkQueue, standaard uit; geen betaalde calls uitgevoerd. Volgende code: Gaia-modelinvoer/approval en gecontroleerde reconciliatie. `.env.example` is op verzoek lokaal van een sleutelachtige waarde ontdaan; overige gebruikerswijzigingen daarin blijven buiten de commit. `.env.local` privé laten. Nieuwe providercode niet testen met de echte sleutel zonder expliciete budgetkeuze.
+
 - Nieuwste werk (7 september): bron geïntegreerd, 185 backendtests plus zeven webbridge-tests geslaagd; echte lokale worker en Gaia-Werk gekoppeld. Zie docs/local-work.md. Volgende code is begrensde modeluitvoering. De gebruiker vraagt minder procesadministratie en meer implementatie; houd handoff/checks kort.
 
 - Lees `docs/handoff.md` en `docs/implementation-backlog.md` bij de start. Raadpleeg het conceptplan voor de productvisie en `apps/web/DESIGN.md` voor bestaande UI-keuzes.

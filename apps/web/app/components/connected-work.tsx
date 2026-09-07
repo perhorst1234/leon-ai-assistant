@@ -8,13 +8,14 @@ import './connected-work.css';
 type Task = { id: string; title: string };
 type Result = { ok: boolean; step: string; source_sha256?: string; files_checked?: number; reason?: string; failures?: { path: string; line: number | null }[] };
 type Job = {
+  kind: string; model_state?: string; reserved_microusd?: number; accounted_microusd?: number;
   id: string; task_id: string; status: 'queued' | 'running' | 'paused' | 'succeeded' | 'failed' | 'cancelled';
   completed_steps: number; total_steps: number; results: Result[]; updated_at: number; error: string;
 };
 type ApiPayload = { error?: string; jobs?: Job[]; tasks?: Task[]; job?: Job; id?: string };
 const labels: Record<Job['status'], string> = {
-  queued: 'In de wachtrij', running: 'Controleert broncode', paused: 'Gepauzeerd',
-  succeeded: 'Controle afgerond', failed: 'Controle mislukt', cancelled: 'Geannuleerd',
+  queued: 'In de wachtrij', running: 'In uitvoering', paused: 'Gepauzeerd',
+  succeeded: 'Uitvoering afgerond', failed: 'Niet afgerond — bekijk het resultaat', cancelled: 'Geannuleerd',
 };
 const stepNames = ['Bronbestanden vastleggen', 'Python-syntax controleren', 'Resultaat en bronversie bevestigen'];
 
@@ -91,10 +92,10 @@ export default function ConnectedWork({ demo }: { demo: ReactNode }) {
     </div>
     {showDemo ? <><span className="work-demo-label">Voorbeelddata — geen echte agentuitvoering</span>{demo}</> :
       <div className="space-view work-view connected-work">
-        <header className="work-header"><div><h1>Werk dat bewaard blijft.</h1><p>Echte lokale controles met opgeslagen voortgang. Geen gesimuleerde agents.</p></div></header>
+        <header className="work-header"><div><h1>Werk dat bewaard blijft.</h1><p>Echte uitvoering met opgeslagen voortgang. Geen gesimuleerde agents.</p></div></header>
         <div className="work-layout">
           <section className="mission-console" aria-label="Echte taakvoortgang">
-            <div className="console-status"><span>{connected ? 'Verbonden met Leon' : 'Niet verbonden — status niet live'}</span><span>Lokale CPU · geen API-kosten</span></div>
+            <div className="console-status"><span>{connected ? 'Verbonden met Leon' : 'Niet verbonden — status niet live'}</span><span>{job?.kind === 'openai_text' ? 'OpenAI · expliciet goedgekeurde tekst' : 'Lokale CPU · geen API-kosten'}</span></div>
             {!token && <form className="work-connect" onSubmit={event => { event.preventDefault(); setToken(draftToken.trim()); setDraftToken(''); }}>
               <label htmlFor="work-token">Leon-dashboardtoken</label>
               <input id="work-token" type="password" autoComplete="off" value={draftToken} onChange={event => setDraftToken(event.target.value)} required />
@@ -104,12 +105,13 @@ export default function ConnectedWork({ demo }: { demo: ReactNode }) {
             {error && <p className="work-error" role="alert">{error}</p>}
             {connectionError && <p className="work-error" role="alert">{connectionError}</p>}
             {token && <div className="work-actions"><button className="secondary-control" type="button" onClick={() => void refresh()} disabled={busy}><RefreshCw size={15} /> Ververs</button><button className="secondary-control" type="button" onClick={() => { refreshController.current?.abort(); setToken(''); setJobs([]); setTasks([]); setConnected(false); setError(''); }}>Verbreek verbinding</button></div>}
-            <div className="console-goal"><div><h2>Python-projectcontrole</h2><p>Leg bestandshashes vast, controleer de syntax en bewaar het gemeten resultaat. Dit wijzigt geen broncode.</p></div><span className="console-eta"><small>verwachte duur</small><strong>—</strong><em>nog niet gemeten</em></span></div>
+            <div className="console-goal"><div><h2>{job?.kind === 'openai_text' ? 'Begrensde modeluitvoering' : 'Python-projectcontrole'}</h2><p>{job?.kind === 'openai_text' ? 'Alleen de goedgekeurde tekst naar OpenAI. Geen tools of bronwijzigingen.' : 'Leg bestandshashes vast, controleer de syntax en bewaar het gemeten resultaat. Dit wijzigt geen broncode.'}</p></div><span className="console-eta"><small>verwachte duur</small><strong>—</strong><em>nog niet gemeten</em></span></div>
             {job ? <>
               <label className="work-field">Opgeslagen controle<select value={job.id} onChange={event => setSelectedId(event.target.value)}>{jobs.map(item => <option key={item.id} value={item.id}>{labels[item.status]} · {item.id.slice(-8)}</option>)}</select></label>
               <p className="work-current-status" role="status">{labels[job.status]}{!connected && ' · laatst bekende status'}</p>
               <div className="console-progress-row"><span><strong>{job.completed_steps}/{job.total_steps}</strong><small>checkpoints</small></span><progress max={job.total_steps} value={job.completed_steps} aria-label="Voltooide checkpoints" /></div>
-              <ol className="mission-timeline">{stepNames.map((name, index) => <li key={name} data-state={index < job.completed_steps ? 'done' : 'planned'}><span className="timeline-marker">{index < job.completed_steps ? <Check size={14} /> : index + 1}</span><span><strong>{name}</strong><small>{job.results[index]?.ok ? 'Resultaat opgeslagen' : job.results[index] ? 'Afwijking gevonden' : 'Nog niet uitgevoerd'}</small></span></li>)}</ol>
+              <ol className="mission-timeline">{(job.kind === 'openai_text' ? ['Modelantwoord en verbruik vastleggen'] : stepNames).map((name, index) => <li key={name} data-state={index < job.completed_steps ? 'done' : 'planned'}><span className="timeline-marker">{index < job.completed_steps ? <Check size={14} /> : index + 1}</span><span><strong>{name}</strong><small>{job.results[index]?.ok ? 'Resultaat opgeslagen' : job.results[index] ? 'Afwijking gevonden' : 'Nog niet uitgevoerd'}</small></span></li>)}</ol>
+              {job.kind === 'openai_text' && <p className="work-hint">Gereserveerd: ${((job.reserved_microusd ?? 0) / 1e6).toFixed(6)} · Verbruik omgerekend: ${((job.accounted_microusd ?? 0) / 1e6).toFixed(6)} USD (geen factuur). {job.model_state === 'unknown' ? 'Uitkomst onzeker. Geen automatische herhaling; nieuwe modelcalls wachten op controle.' : 'Annuleren kan een al verzonden aanvraag niet terugdraaien.'}</p>}
               <div className="work-actions">
                 {['queued', 'running', 'paused'].includes(job.status) && <><button type="button" className="pause-control" disabled={controlsDisabled} onClick={() => void mutate(async () => { await api('control', token, { id: job.id, action: job.status === 'paused' ? 'resume' : 'pause' }); })}>{job.status === 'paused' ? <Play size={15} /> : <Pause size={15} />}{job.status === 'paused' ? 'Hervat' : 'Pauzeer'}</button><button type="button" className="secondary-control" disabled={controlsDisabled} onClick={() => void mutate(async () => { await api('control', token, { id: job.id, action: 'cancel' }); })}><X size={15} /> Annuleer</button></>}
               </div>
@@ -132,7 +134,7 @@ export default function ConnectedWork({ demo }: { demo: ReactNode }) {
                 setTaskId(result.id); pendingRequest.current = null;
               })}>Maak een controletaak</button>
             </section>
-            <section className="approval-gate"><div className="sidebar-heading"><span><LockKeyhole size={16} /> Begrensde uitvoering</span></div><p>Alleen lokale syntaxcontrole. Geen betalingen, shellopdrachten, installs of modelcalls. Een geslaagde check keurt de bovenliggende taak niet automatisch goed.</p></section>
+            <section className="approval-gate"><div className="sidebar-heading"><span><LockKeyhole size={16} /> Begrensde uitvoering</span></div><p>De startknop doet alleen lokale syntaxcontrole. Modelwerk vereist apart goedgekeurde tekst en kostenlimieten via de backend. Geen shellopdrachten of installs; de bovenliggende taak wordt niet automatisch goedgekeurd.</p></section>
             <section className="resilience-log"><div className="sidebar-heading"><span><Database size={16} /> Opgeslagen in SQLite</span></div><p>Checkpoints blijven na browser- en workerherstart bestaan. Een onderbroken leesstap kan opnieuw worden gecontroleerd.</p><code>PYTHONPATH=src python3 -m leon_control_plane.local_worker</code></section>
           </aside>
         </div>
