@@ -1,6 +1,6 @@
 # Leon AI Assistant / Gaia
 
-Persoonlijke AI-assistent met een Gaia-frontend en bestaande Python-servercode. De volledige serverbron is inmiddels lokaal teruggehaald via WSL; zie [herstelbewijs](docs/wsl-recovery.md). GitHub bevat nog de [gedeeltelijke bron-snapshot](https://github.com/perhorst1234/leon-ai-assistant/tree/codex/ssd-recovery-2026-09-06) en een aparte nachtqueue-reparatie. Integratie van de nieuw teruggevonden grote bestanden en volledige tests volgen; nog geen startklare releaseclaim.
+Persoonlijke AI-assistent met de bestaande Gaia-frontend en herstelde Python/SQLite-backend. **Echte lokale taakuitvoering is nu aan de Werk-pagina gekoppeld:** broncontrole, checkpoints, pauze, hervatten en annuleren. 185 backendtests en zeven webbridge-tests slagen. Nog geen live AI-chat, provideruitvoering of M40-releaseclaim. Zie [startinstructies en bewijs](docs/local-work.md).
 
 ## Begin hier
 
@@ -12,6 +12,6 @@ Persoonlijke AI-assistent met een Gaia-frontend en bestaande Python-servercode. 
 - [Bestaande websitebroncode](apps/web)
 - [Frontend starten en herkomst](apps/web/README.md)
 
-De frontend is een interactieve demo. Zichtbare agenttaken, voortgang, geheugen en approvals bewijzen nog geen echte backendfunctionaliteit.
+Werk heeft een echte lokale uitvoeringsmodus en een afzonderlijk ontwerpvoorbeeld. Vandaag, Chat, Memory en specialistische agents blijven demo; de voorbeelden bewijzen geen echte integraties.
 
 GitHub bewaart code, besluiten, voortgang en hervatstappen. De repository is openbaar: credentials, persoonlijke gesprekken, databases, betaalgegevens en serverback-ups horen in een aparte private back-up. Een Git-push is geen back-up van de volledige server of van lopende agentprocessen.

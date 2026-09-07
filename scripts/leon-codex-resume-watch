@@ -74,9 +74,25 @@ while [ "$attempt" -le "$max_attempts" ]; do
   cleanup
   log_file="$(mktemp "${TMPDIR:-/tmp}/leon-resume-watch.XXXXXX")"
   set +e
-  "$@" > >(tee -a "$log_file") 2> >(tee -a "$log_file" >&2)
+  # Process substitutions are asynchronous: wait for both collectors before
+  # inspecting or removing the log, while preserving stdout/stderr separately.
+  exec {out_fd}> >(tee -a "$log_file")
+  out_pid=$!
+  exec {err_fd}> >(tee -a "$log_file" >&2)
+  err_pid=$!
+  "$@" >&"$out_fd" 2>&"$err_fd"
   status=$?
+  exec {out_fd}>&- {err_fd}>&-
+  wait "$out_pid"
+  out_status=$?
+  wait "$err_pid"
+  err_status=$?
   set -e
+
+  if [ "$out_status" -ne 0 ] || [ "$err_status" -ne 0 ]; then
+    echo "Leon resume-watch: output capture failed; refusing to infer a retry." >&2
+    exit 74
+  fi
 
   if [ "$status" -eq 0 ]; then
     cleanup

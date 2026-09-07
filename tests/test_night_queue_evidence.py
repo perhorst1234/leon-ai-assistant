@@ -1,4 +1,4 @@
-"""Focused scheduler/brief regressions; does not replace missing store/HTTP tests."""
+"""Focused scheduler/brief regressions complement the store/HTTP integration tests."""
 
 import unittest
 from unittest.mock import Mock, patch

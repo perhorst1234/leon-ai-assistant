@@ -1,5 +1,7 @@
 # Servercode-inventaris — 6 september 2026
 
+**Historische audit:** onderstaande ontbrekende bron/runtimebevindingen zijn ingehaald door volledig WSL-herstel en integratie. De actuele stand en 185 geslaagde tests staan in [local-work.md](local-work.md) en [handoff.md](handoff.md). De oude inventaris blijft als herkomstbewijs bewaard, niet als actuele blokkade.
+
 **Latere update:** de aanvankelijk onvolledige export hieronder is inmiddels vervangen door een volledige, gecontroleerde lokale WSL-recovery, inclusief actuele grote bronfiles, Git-objecten en SQLite-database. Zie [WSL-herstelbewijs](wsl-recovery.md). Deze audit bewaart de eerdere bevindingen; de GitHub-herstelbranch blijft bewust de oorspronkelijke gedeeltelijke snapshot. Nieuwe grote bronfiles moeten nog worden gescand/geïntegreerd en volledig getest.
 
 ## Uitkomst

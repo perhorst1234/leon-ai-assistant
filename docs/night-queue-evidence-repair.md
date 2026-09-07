@@ -1,5 +1,7 @@
 # Nachtqueue: eerlijk testbewijs
 
+Update 7 september: volledige store/server/tests zijn geïntegreerd. De store registreert aangeleverd bewijs maar past zelf geen patch toe en draait geen tests; de eerdere tegenhypothese is dus verworpen. De oorspronkelijke fictieve-succestest is gecorrigeerd, HTTP/SQLite-regressie toegevoegd. Volledige suite: 185 tests + twee subtests geslaagd. De lokale worker uit local-work.md is een afzonderlijke echte read-only broncontrole, geen self-improvementuitvoerder.
+
 ## Afbakening
 
 Parent: uitvoeringsbacklog stap 2. Dit is een begrensde veiligheidsreparatie, niet de voltooiing van self-improvement of de backend. Snapshotbranch blijft ongewijzigd; ontwikkelbranch: codex/night-queue-evidence vanaf 8ebd5a9. Startwerkboom schoon; geen externe acties of live state. Main was 4ae3e10.

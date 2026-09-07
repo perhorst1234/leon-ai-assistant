@@ -2,6 +2,8 @@
 
 ## 0. Werkelijke projectstatus en overdracht — 6 september 2026
 
+**Actuele aanvulling 7 september:** volledige SSD-backend geïntegreerd; 185 backendtests en zeven webbridge-tests geslaagd. Echte lokale worker en Gaia-Werk gekoppeld met SQLite-checkpoints, deduplicatie, pauze/hervatten/annuleren en geverifieerd procesherstel. Eerste actie is een werkelijke read-only syntaxcontrole, geen LLM-agent of zelfwijziging. Volgende implementatie: begrensde echte modeluitvoering, daarna chat en connectors. Zie [start/bewijs](local-work.md) en [handoff](handoff.md). De oudere herstelstatus hieronder is historische context; secties 1–24 blijven behouden als productvisie.
+
 Dit document beschrijft de productvisie; een beschreven functie is niet automatisch gebouwd. De gebruiker wil verder werken op Windows zolang de Linux-server wordt geüpgraded, met GitHub als overdraagbare code- en planversie.
 
 - **Gecontroleerd:** GitHub `main` op `d0f7ba0` bevatte alleen dit plan en `.gitkeep`. Ook de andere remote branch bevatte geen applicatiecode.

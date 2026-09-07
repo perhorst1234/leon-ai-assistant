@@ -1,13 +1,15 @@
 # Leon / Gaia — uitvoeringsbacklog
 
+**Update 7 september:** REC-01/02/05 bronherstel, aanvullende scan en integratie uitgevoerd; 185 backendtests plus zeven webbridge-tests geslaagd. Stap 2 is ook met echte HTTP/SQLite getest. Stappen 3 en 5 hebben nu één echte lokale verticale integratie: syntaxcontrole met duurzame checkpoints en Gaia-Werk, inclusief pauze/hervatten/annuleren en procescrashregressie. Dit is geen voltooiing van algemene agents. **Volgende code: echte begrensde modeluitvoering met kostenreservering en offline tests**, daarna chat en read-only connectors. Zie local-work.md; de oudere tabellen hieronder blijven de volledige featurecriteria bewaren.
+
 Stand: 6 september 2026. De eigenaar vraagt volledige stapsgewijze uitvoering. **Prototype** is voorbeeldgedrag; **code aanwezig** is geen live integratie. Alleen passende controles rechtvaardigen “werkend”. Zie de [SSD-audit](server-recovery-audit.md) voor het actuele implementatiebewijs.
 
 ## Eerst continuïteit herstellen
 
 | ID | Prioriteit | Status | Taak en acceptatiecriterium |
 |---|---|---|---|
-| REC-01 | P0 | Gedeeltelijk hersteld | Export ontvangen; drie centrale bron/testfiles en een Git-object ontbreken. Nieuwe volledige export vergelijken zonder de bron te wijzigen. |
-| REC-02 | P0 | Inventaris uitgevoerd | HEAD `6b1863b`, 16 lokale commits plus dirty werk; Python-stack en mock/dry-rungrenzen onderzocht. Volledige tests wachten op REC-01. |
+| REC-01 | P0 | Volledig lokaal hersteld | WSL read-only kopie inclusief .git en privéstate; archiefvergelijking, alle reguliere bestandshashes en git fsck geslaagd. Zie wsl-recovery.md. Volledige bronintegratie/publicatiescan volgt. |
+| REC-02 | P0 | Aanvullende inventaris nodig | HEAD `6b1863b`, 16 lokale commits plus dirty werk behouden. Actuele grote server/store/testfiles nu beschikbaar; volledige tests kunnen na veilige integratie starten. |
 | REC-03 | P0 | Uitgevoerd en build getest | Bestaande Gaia-frontend behouden in `apps/web`; SHA-256-kopiecontrole en build geslaagd; lint heeft nul errors en vijf bestaande warnings. |
 | REC-04 | P0 | Vastgelegd in docs | Maak plan, backlog en Codex-hervatinstructies vindbaar. Verifieer na publicatie de GitHub-commit. |
 | REC-05 | P0 | Selectie gecontroleerd | 73 bronbestanden geselecteerd, hashes vastgelegd; twee docs geschoond. Private logs/secrets/runtime uitgesloten. Herhaal bij aanvullende export. |

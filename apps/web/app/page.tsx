@@ -2,6 +2,7 @@
 
 import { FormEvent, useEffect, useRef, useState } from 'react';
 import type { RefObject } from 'react';
+import ConnectedWork from './components/connected-work';
 import { AnimatePresence, MotionConfig, motion } from 'motion/react';
 import {
   Activity,
@@ -1130,7 +1131,7 @@ function PromptIsland({
 }
 
 function CommandDock({ active, onOpenChat }: { active: SpaceId; onOpenChat: () => void }) {
-  const status = active === 'today' ? '1 missie werkt door' : active === 'flows' ? '64% · nog 2u 18m' : 'geheugen beschikbaar';
+  const status = active === 'today' ? 'Voorbeeldmissie' : active === 'flows' ? 'Lokale taken · opgeslagen checkpoints' : 'Voorbeeldgeheugen';
   return (
     <div className="command-dock">
       <span><span className="status-pulse" />{status}</span>
@@ -1318,7 +1319,7 @@ export default function HomePage() {
             />
           )}
           {activeSpace === 'flows' && (
-            <FlowsView
+            <ConnectedWork demo={<FlowsView
               activeStep={activeFlowStep}
               onRun={runFlow}
               paused={missionPaused}
@@ -1330,7 +1331,7 @@ export default function HomePage() {
               selectedAgents={selectedAgents}
               onSelectAgents={() => { setReviewKind(null); setAgentPickerOpen(true); }}
               onApprove={() => setReviewKind('approval')}
-            />
+            />} />
           )}
           {activeSpace === 'memory' && <MemoryView selected={selectedMemory} onSelect={setSelectedMemory} />}
         </motion.div>
@@ -1401,7 +1402,7 @@ export default function HomePage() {
         )}
       </AnimatePresence>
 
-      <div className="prototype-note">Interactief concept · voorbeelddata · backend-ready</div>
+      <div className="prototype-note">{activeSpace === 'flows' ? 'Werk: live backend of expliciet ontwerpvoorbeeld' : 'Interactief concept · voorbeelddata'}</div>
     </main>
     </MotionConfig>
   );
