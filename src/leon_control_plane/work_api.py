@@ -2,11 +2,12 @@
 from urllib.parse import parse_qs, urlsplit
 
 from leon_control_plane.work_queue import KIND, MODEL_KIND, WorkQueue
+from leon_control_plane.model_work import preview
 
 
 def work_request(store, *, method, path, body=None):
     url = urlsplit(path)
-    if url.path not in {"/api/work/jobs", "/api/work/control", "/api/work/tasks", "/api/work/model"}:
+    if url.path not in {"/api/work/jobs", "/api/work/control", "/api/work/tasks", "/api/work/model", "/api/work/model/preview"}:
         return None
     if method == "GET" and url.path == "/api/work/tasks" and not url.query:
         from contextlib import closing
@@ -19,14 +20,18 @@ def work_request(store, *, method, path, body=None):
         return {"ok": True, "tasks": tasks}
     if method == "GET" and url.path == "/api/work/jobs":
         query = parse_qs(url.query, keep_blank_values=True)
-        if set(query) - {"id"} or ("id" in query and (len(query["id"]) != 1 or not query["id"][0])):
-            raise ValueError("Expected only one optional job id")
+        if set(query) - {"id", "request_id"} or len(query) > 1 or any(len(values) != 1 or not values[0] for values in query.values()):
+            raise ValueError("Expected only one optional job or request id")
         queue = WorkQueue(store)
+        if "request_id" in query:
+            return {"ok": True, "job": queue.find_request(query["request_id"][0])}
         return {"ok": True, "job": queue.get(query["id"][0])} if "id" in query else {"ok": True, "jobs": queue.list()}
     if method != "POST" or url.query or url.path == "/api/work/tasks":
         raise ValueError("Unsupported work request")
     if not isinstance(body, dict):
         raise ValueError("Expected a JSON object")
+    if url.path == "/api/work/model/preview":
+        return {"ok": True, "preview": preview(body)}
     if url.path == "/api/work/model":
         if set(body) != {"task_id", "request_id", "prompt", "max_output_tokens", "max_cost_microusd", "approve_external_text"}:
             raise ValueError("Expected explicit text, limits and approval; no arbitrary model settings")

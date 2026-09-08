@@ -4,23 +4,26 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { Check, Cpu, Database, LockKeyhole, Pause, Play, RefreshCw, X } from 'lucide-react';
 import './connected-work.css';
+import ModelRequestForm from './model-request-form';
+import type { ModelPreview } from '../../lib/model-submission';
 
 type Task = { id: string; title: string };
-type Result = { ok: boolean; step: string; source_sha256?: string; files_checked?: number; reason?: string; failures?: { path: string; line: number | null }[] };
+type Result = { ok: boolean; step: string; text?: string; source_sha256?: string; files_checked?: number; reason?: string; failures?: { path: string; line: number | null }[] };
 type Job = {
-  kind: string; model_state?: string; reserved_microusd?: number; accounted_microusd?: number;
+  kind: string; request_id: string; model_state?: string; reserved_microusd?: number; accounted_microusd?: number;
   id: string; task_id: string; status: 'queued' | 'running' | 'paused' | 'succeeded' | 'failed' | 'cancelled';
   completed_steps: number; total_steps: number; results: Result[]; updated_at: number; error: string;
 };
-type ApiPayload = { error?: string; jobs?: Job[]; tasks?: Task[]; job?: Job; id?: string };
+type ApiPayload = { error?: string; jobs?: Job[]; tasks?: Task[]; job?: Job | null; id?: string; preview?: ModelPreview };
 const labels: Record<Job['status'], string> = {
   queued: 'In de wachtrij', running: 'In uitvoering', paused: 'Gepauzeerd',
   succeeded: 'Uitvoering afgerond', failed: 'Niet afgerond — bekijk het resultaat', cancelled: 'Geannuleerd',
 };
 const stepNames = ['Bronbestanden vastleggen', 'Python-syntax controleren', 'Resultaat en bronversie bevestigen'];
 
-async function api(resource: string, token: string, body?: unknown, signal?: AbortSignal) {
-  const response = await fetch(`/api/leon?resource=${resource}`, {
+async function api(resource: string, token: string, body?: unknown, signal?: AbortSignal, requestId?: string) {
+  const query = new URLSearchParams({ resource, ...(requestId ? { request_id: requestId } : {}) });
+  const response = await fetch(`/api/leon?${query}`, {
     method: body === undefined ? 'GET' : 'POST', signal, cache: 'no-store',
     headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
     ...(body === undefined ? {} : { body: JSON.stringify(body) }),
@@ -116,6 +119,7 @@ export default function ConnectedWork({ demo }: { demo: ReactNode }) {
                 {['queued', 'running', 'paused'].includes(job.status) && <><button type="button" className="pause-control" disabled={controlsDisabled} onClick={() => void mutate(async () => { await api('control', token, { id: job.id, action: job.status === 'paused' ? 'resume' : 'pause' }); })}>{job.status === 'paused' ? <Play size={15} /> : <Pause size={15} />}{job.status === 'paused' ? 'Hervat' : 'Pauzeer'}</button><button type="button" className="secondary-control" disabled={controlsDisabled} onClick={() => void mutate(async () => { await api('control', token, { id: job.id, action: 'cancel' }); })}><X size={15} /> Annuleer</button></>}
               </div>
               <details className="work-evidence"><summary>Bekijk opgeslagen bewijs</summary><pre>{JSON.stringify(job.results, null, 2)}</pre></details>
+              {job.kind === 'openai_text' && job.results.filter(result => result.text).map((result, index) => <div className="model-answer" key={index}><h3>{result.ok ? 'Modelantwoord' : 'Onvolledig modelantwoord'}</h3><p>{result.text}</p></div>)}
               {job.status === 'queued' && <p className="work-hint">De worker verwerkt deze wachtrij. Blijft de taak wachten? Start de worker op de backendserver.</p>}
             </> : <p className="work-hint">{connected ? 'Nog geen echte controles. Kies een taak en start de eerste controle.' : 'Verbind om opgeslagen taken en resultaten te laden.'}</p>}
           </section>
@@ -134,7 +138,10 @@ export default function ConnectedWork({ demo }: { demo: ReactNode }) {
                 setTaskId(result.id); pendingRequest.current = null;
               })}>Maak een controletaak</button>
             </section>
-            <section className="approval-gate"><div className="sidebar-heading"><span><LockKeyhole size={16} /> Begrensde uitvoering</span></div><p>De startknop doet alleen lokale syntaxcontrole. Modelwerk vereist apart goedgekeurde tekst en kostenlimieten via de backend. Geen shellopdrachten of installs; de bovenliggende taak wordt niet automatisch goedgekeurd.</p></section>
+            {token && <ModelRequestForm key={activeTask} taskId={activeTask} disabled={controlsDisabled}
+              request={(resource, body, requestId) => api(resource, token, body, undefined, requestId)}
+              onQueued={async id => { setSelectedId(id); await refresh(); }} />}
+            <section className="approval-gate"><div className="sidebar-heading"><span><LockKeyhole size={16} /> Begrensde uitvoering</span></div><p>De controleknop doet alleen lokale syntaxcontrole. AI-opdrachten vragen afzonderlijk jouw tekst- en kostenapproval. Geen shellopdrachten of installs; de bovenliggende taak wordt niet automatisch goedgekeurd.</p></section>
             <section className="resilience-log"><div className="sidebar-heading"><span><Database size={16} /> Opgeslagen in SQLite</span></div><p>Checkpoints blijven na browser- en workerherstart bestaan. Een onderbroken leesstap kan opnieuw worden gecontroleerd.</p><code>PYTHONPATH=src python3 -m leon_control_plane.local_worker</code></section>
           </aside>
         </div>

@@ -88,7 +88,7 @@ tekst gaat naar OpenAI, nooit automatisch de projectmap, database of taakcontext
   Herstart na dat opslagpunt hergebruikt het antwoord zonder nieuwe call.
   De taak kan incompleet/geannuleerd blijven terwijl verbruik wel is vastgelegd.
   Gaia-Werk toont het modeltype, één checkpoint, reservering/verbruik en een
-  onzekerheidsmelding. Modelinvoer via Gaia is nog niet aangesloten.
+  onzekerheidsmelding. Modelinvoer via Gaia is aangesloten zoals hieronder beschreven.
 
 ## Verificatie en volgende stap
 
@@ -117,3 +117,49 @@ voor providertransport/configuratie en kosten, bestaande queue uitgebreid,
 store ongewijzigd en server alleen wiring. De Agents-SDK dry-run blijft behouden
 voor zijn expliciete previewcontract; retireer pas als die bredere agentroute
 echt geïmplementeerd en de callers gemigreerd zijn. Geen verborgen API-fallback.
+
+## Gaia-invoer — 8 september 2026
+
+Start: `codex/night-queue-evidence`, HEAD `843bc0d`; alleen het aangepaste
+`.env.example` was bestaand gebruikerswerk en blijft buiten deze publicatie.
+Deze stap maakt de bestaande modelworker vanuit Gaia bruikbaar, zonder nieuwe
+provider-, budget- of algemene agentbevoegdheden. Dezelfde queue blijft eigenaar.
+
+- `POST /api/work/model/preview` valideert dezelfde tekst/limieten als verzenden,
+  vereist dashboard-Bearer en maakt geen job, reservering of providercall.
+- Gaia toont de exacte tekst, het model, de conservatieve reservering en het
+  USD-plafond. Approval is standaard leeg en vervalt bij wijziging van taak,
+  tekst of plafond. Budgetinstellingen van de worker worden niet veranderd.
+- Vóór verzenden bewaart de browser alleen een UUID in sessionStorage. Bij
+  onzekere ontvangst gebruikt een bewuste retry dezelfde UUID. De herstelknop
+  zoekt via `GET /api/work/jobs?request_id=…`, zonder POST/providercall. Geen
+  tekst, dashboardtoken of API-sleutel in browseropslag. Dit is herstel binnen
+  hetzelfde tabblad, geen synchronisatie van browsers/apparaten.
+- Succes wist de tijdelijke UUID; opgeslagen jobs/antwoorden blijven in SQLite.
+  Antwoorden worden als gewone tekst getoond, niet als uitvoerbare model-HTML.
+
+Bewijs: 238 backendtests + twee subtests, 14 webtests, TypeScript/build geslaagd;
+lint nul errors/vijf bestaande warnings. Nieuwe regressies dekken mutation-free
+preview, Bearer-auth, queryvalidatie, exacte micro-USD, approvalinvalidatie,
+opslagfouten, onzeker POST-antwoord en GET-herstel zonder herhaalde verzending.
+
+Desktopbrowser: tijdelijke SQLite, synthetisch dashboardtoken en neptransport
+uit `tests/ui_model_fixture.py`; preview toonde lege approval/uitgeschakelde
+verzendknop, tekstwijziging verwijderde de goedkeuring, daarna opnieuw goedkeuren
+en uitvoeren gaf één afgeronde job (1/1). Na herladen en opnieuw verbinden
+bleef dezelfde job `98beb90e` met leesbaar testantwoord aanwezig. Screenshot
+visueel gecontroleerd. De fixture roept nooit de echte provider aan.
+
+Vertrouwen B voor deze lokale UI/HTTP/SQLite-keten. Geen mobiele viewporttest,
+productiedeployment, echte API-betaling of M40-meting. De onzekere-POST-herstelweg
+is automatisch getest, niet door een browsernetwerkfout nagebootst. De
+publieke conceptwebsite is niet opnieuw gedeployd. Volgende code: gecontroleerde
+kostenreconciliatie en echte chat; volledige productacceptatie blijft open.
+De Werk-keuzelijst toont maximaal de 100 nieuwste jobs. UUID-herstel kan een
+oudere job vinden, maar die verschijnt nog niet automatisch buiten die lijst;
+detailnavigatie voor oudere jobs is een open UI-beperking.
+
+Complexiteit: kleine aparte formulier-/verzendowners, bestaande proxy/API/queue
+uitgebreid, grote server alleen wiring en store ongewijzigd. Demo blijft expliciet
+gescheiden tot de volledige chat/agentroute is geïmplementeerd; geen tweede
+runtime of fallback toegevoegd. Code en bewijs volgen backlogstappen 3–5.

@@ -1,9 +1,10 @@
 # Overdracht — Leon / Gaia
 
-Stand: **7 september 2026**. De gebruiker wil vooral coderen; houd deze overdracht kort.
+Stand: **8 september 2026**. De gebruiker wil vooral coderen; houd deze overdracht kort.
 
 ## Nieuwste werk
 
+- Gaia-Werk heeft nu tekstinvoer, lokale kostenpreview en een niet-vooraf aangevinkte approval. Wijzigingen wissen eerdere approval. Alleen een aanvraag-UUID wordt tijdelijk in sessionStorage bewaard voor een onzekere verzending; herstel zoekt zonder opnieuw te verzenden. Het modelantwoord is leesbaar buiten de ruwe bewijsweergave.
 - Begrensde OpenAI-tekstuitvoering toegevoegd aan dezelfde WorkQueue: expliciete tekst-/kostenapproval, vaste Responses-endpoint, geen tools/retries, transactionele reservering vóór verzenden en resultaatopslag vóór checkpoint. Onzekere uitkomst blokkeert nieuwe calls en wordt niet automatisch herhaald. Zie [modeluitvoering](model-work.md).
 - Sleutel lokaal aanwezig, maar geen live calls of echte budgetinstellingen gedaan. Worker ondersteunt expliciet `--env-file .env.local`; alleen key aanwezigheid activeert niets. Op expliciet verzoek sleutelachtige waarde uit `.env.example` verwijderd; `.env.local` hash-identiek gebleven. Overige voorbeeldwijzigingen van de gebruiker blijven lokaal/buiten de commit.
 
@@ -16,19 +17,19 @@ Stand: **7 september 2026**. De gebruiker wil vooral coderen; houd deze overdrac
 
 ## Verificatie
 
-Nieuwste modelwijziging: 231 backendtests + twee subtests, zeven webtests,
-TypeScript en build geslaagd. Lint nul errors/vijf bestaande warnings. Geen
-betaalde API-aanroep, nieuwe model-UI nog niet browsergetest. Details en
-reproduceerbaar commando in [model-work.md](model-work.md).
+Nieuwste UI-koppeling: 238 backendtests + twee subtests en 14 webtests geslaagd;
+TypeScript/build geslaagd, lint nul errors/vijf bestaande warnings. Browser:
+preview → approval vervalt na edit → opnieuw goedkeuren → afgerond 1/1 met
+leesbaar nepantwoord → herladen en opnieuw verbinden → hetzelfde antwoord.
+Geen betaalde API-aanroep. Details in [model-work.md](model-work.md).
 
 Zie [uitvoering en testbewijs](local-work.md). Browserketen getest met tijdelijke SQLite en nepcredential: taak maken → wachtrij → pauze → hervat → 1/3 checkpoint → pagina herladen → hetzelfde checkpoint → afzonderlijke workerprocessen → afgerond 3/3. Geen private recoverydatabase gebruikt.
 
 ## Volgende codewerk
 
-1. Gaia-modelinvoer en approval verbinden aan `/api/work/model`; de jobweergave onderscheidt modelwerk al van syntaxchecks. Test in de browser met fake transport vóór live gebruik.
-2. Gecontroleerde reconciliatie voor onzekere provideruitkomsten toevoegen; nooit zonder bewijs kosten vrijgeven of dezelfde aanvraag opnieuw betalen. Daarna live kleine call pas met gekozen budget en expliciet gedeelde tekst.
-3. Echte chat verbinden; daarna één read-only connector. Bewaar het bestaande ontwerp. Side-effecting tools hebben een eigen backendapproval-/idempotentiecontract nodig.
-4. Ubuntu-installatie/systemd, private backup/restore en doelhardware meten zodra de server beschikbaar is.
+1. Gecontroleerde reconciliatie voor onzekere provideruitkomsten toevoegen; nooit zonder bewijs kosten vrijgeven of dezelfde aanvraag opnieuw betalen. Daarna live kleine call pas met gekozen budget en expliciet gedeelde tekst.
+2. Echte chat verbinden; daarna één read-only connector. Bewaar het bestaande ontwerp. Side-effecting tools hebben een eigen backendapproval-/idempotentiecontract nodig.
+3. Ubuntu-installatie/systemd, private backup/restore en doelhardware meten zodra de server beschikbaar is.
 
 Store (~8.400 regels), server (~4.450) en oorspronkelijke tests (~5.150) blijven groot. Nieuwe verantwoordelijkheden in eigen modules houden, server alleen koppelen; geen brede refactor zonder relevante tests.
 

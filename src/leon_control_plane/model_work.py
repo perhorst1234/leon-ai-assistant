@@ -42,6 +42,16 @@ def insert(conn, job_id, approved_json):
                  (job_id, approved_json, hashlib.sha256(approved_json.encode()).hexdigest()))
 
 
+def preview(details):
+    """Local validation/quote only: no job, approval, reservation or provider call."""
+    if not isinstance(details, dict) or set(details) != {"prompt", "max_output_tokens", "max_cost_microusd"}:
+        raise ValueError("Expected shared text, output limit and cost cap")
+    approved = json.loads(prepare({**details, "approve_external_text": True}))
+    return {"model": approved["payload"]["model"], "reserved_microusd": reservation(approved["payload"]),
+            "max_cost_microusd": approved["max_cost_microusd"], "provider_calls_made": False,
+            "prompt_bytes": len(details["prompt"].encode("utf-8")), "execution_allowed": False}
+
+
 def same_request(conn, job_id, approved_json):
     row = conn.execute("SELECT approved_json FROM model_work WHERE job_id=?", (job_id,)).fetchone()
     return row is not None and row[0] == approved_json

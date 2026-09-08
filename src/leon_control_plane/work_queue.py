@@ -78,7 +78,7 @@ class WorkQueue:
 
     def _view(self, conn, row):
         return {key: row[key] for key in (
-            "id", "task_id", "kind", "status", "attempts", "error", "created_at", "updated_at",
+            "id", "request_id", "task_id", "kind", "status", "attempts", "error", "created_at", "updated_at",
         )} | {
             "completed_steps": row["next_step"], "total_steps": len(JOB_STEPS[row["kind"]]),
             "results": self._results(conn, row["id"]),
@@ -95,6 +95,15 @@ class WorkQueue:
             return [self._view(conn, row) for row in conn.execute(
                 "SELECT * FROM work_jobs ORDER BY created_at DESC, id DESC LIMIT 100",
             )]
+
+    def find_request(self, request_id):
+        try:
+            normalized = str(uuid.UUID(request_id))
+        except (ValueError, TypeError, AttributeError):
+            raise ValueError("request_id must be a UUID") from None
+        with closing(self.store.connect()) as conn:
+            row = conn.execute("SELECT * FROM work_jobs WHERE request_id=?", (normalized,)).fetchone()
+            return self._view(conn, row) if row is not None else None
 
     def enqueue(self, *, task_id: str, request_id: str, kind: str = KIND, model_request=None):
         if kind not in JOB_STEPS or (kind != MODEL_KIND and model_request is not None):

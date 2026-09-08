@@ -27,4 +27,15 @@
 .work-evidence summary { min-height: 44px; cursor: pointer; }
 .work-evidence pre { overflow: auto; max-height: 240px; padding: 12px; background: #07080f; border-radius: 12px; }
 .connected-work .resilience-log code { display: block; margin-top: 10px; overflow-wrap: anywhere; color: #b8f7dc; font-size: 11px; }
+.model-request-panel { padding: 18px; border: 1px solid rgba(167,149,255,.22); border-radius: 16px; background: rgba(20,22,34,.8); }
+.model-request-panel textarea, .model-request-panel input:not([type='checkbox']) { width: 100%; padding: 10px; border: 1px solid rgba(255,255,255,.18); border-radius: 12px; background: #171925; color: #f7f8ff; font: inherit; min-height: 44px; }
+.model-request-panel textarea { resize: vertical; min-height: 100px; }
+.model-request-panel .trace-action { margin-top: 8px; min-height: 44px; white-space: normal; text-align: left; }
+.model-review { border-top: 1px solid rgba(255,255,255,.14); margin-top: 16px; padding-top: 16px; font-size: 12px; }
+.model-review blockquote { margin: 12px 0; padding: 12px; white-space: pre-wrap; overflow-wrap: anywhere; max-height: 160px; overflow: auto; border-left: 2px solid #a795ff; background: rgba(255,255,255,.035); }
+.model-approval { display: flex; gap: 10px; align-items: flex-start; padding: 12px 0; line-height: 1.5; cursor: pointer; }
+.model-approval input { width: 20px; height: 20px; flex-shrink: 0; accent-color: #a795ff; }
+.model-answer { padding: 16px; background: rgba(184,247,220,.05); border-radius: 14px; margin-top: 16px; }
+.model-answer h3 { font-size: 14px; }.model-answer p { white-space: pre-wrap; overflow-wrap: anywhere; font-size: 14px; line-height: 1.6; }
+.model-request-panel :focus-visible { outline: 2px solid #a795ff; outline-offset: 3px; }
 @media (max-width: 700px) { .work-mode-switch { justify-content: center; padding-inline: 0; } .connected-work { height: auto; padding-top: 12px; } .connected-work .work-layout { top: auto; display: flex; flex-direction: column; } .connected-work .mission-console, .connected-work .work-sidebar { overflow: visible; } }

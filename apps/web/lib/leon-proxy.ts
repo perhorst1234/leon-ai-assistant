@@ -5,6 +5,8 @@ const routes: Record<string, Partial<Record<string, string>>> = {
   jobs: { GET: '/api/work/jobs', POST: '/api/work/jobs' },
   control: { POST: '/api/work/control' },
   tasks: { GET: '/api/work/tasks', POST: '/api/tasks' },
+  model: { POST: '/api/work/model' },
+  'model-preview': { POST: '/api/work/model/preview' },
 };
 const json = (data: unknown, status = 200) => Response.json(data, {
   status, headers: { 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' },
@@ -31,9 +33,11 @@ export async function forwardLeon(request: Request, config: Config, fetcher: typ
   }
   const resource = url.searchParams.get('resource') ?? '';
   const target = Object.hasOwn(routes, resource) ? routes[resource][request.method] : undefined;
-  if (!target || [...url.searchParams.keys()].some(key => !['resource', 'id'].includes(key))
+  if (!target || [...url.searchParams.keys()].some(key => !['resource', 'id', 'request_id'].includes(key))
       || url.searchParams.getAll('resource').length !== 1 || url.searchParams.getAll('id').length > 1
-      || (url.searchParams.has('id') && (resource !== 'jobs' || request.method !== 'GET'))) {
+      || url.searchParams.getAll('request_id').length > 1
+      || (url.searchParams.has('id') && url.searchParams.has('request_id'))
+      || ((url.searchParams.has('id') || url.searchParams.has('request_id')) && (resource !== 'jobs' || request.method !== 'GET'))) {
     return json({ error: 'Onbekende Leon-route.' }, 404);
   }
   let body: string | undefined;
@@ -48,6 +52,7 @@ export async function forwardLeon(request: Request, config: Config, fetcher: typ
   }
   const upstream = new URL(target, backend);
   if (url.searchParams.has('id')) upstream.searchParams.set('id', url.searchParams.get('id')!);
+  if (url.searchParams.has('request_id')) upstream.searchParams.set('request_id', url.searchParams.get('request_id')!);
   try {
     const response = await fetcher(upstream, {
       method: request.method, body, redirect: 'error', signal: AbortSignal.timeout(10000),

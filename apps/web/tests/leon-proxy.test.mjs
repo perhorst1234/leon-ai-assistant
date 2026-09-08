@@ -60,3 +60,20 @@ test('backend outage and invalid response never become successful work', async (
     assert.doesNotMatch(await response.text(), /private connection details/);
   }
 });
+
+test('model preview/submission and UUID recovery use only explicit local routes', async () => {
+  for (const [resource, method, path] of [
+    ['model-preview', 'POST', '/api/work/model/preview'], ['model', 'POST', '/api/work/model'],
+    ['jobs&request_id=aaaa', 'GET', '/api/work/jobs?request_id=aaaa'],
+  ]) {
+    const response = await forwardLeon(request(resource, { method, ...(method === 'POST' ? { body: '{}' } : {}) }), config, async url => {
+      assert.equal(String(url), `http://127.0.0.1:8765${path}`);
+      return Response.json({ ok: true });
+    });
+    assert.equal(response.status, 200);
+  }
+  for (const resource of ['model-preview', 'model', 'tasks&request_id=x', 'jobs&id=x&request_id=y', 'jobs&request_id=a&request_id=b']) {
+    assert.equal((await forwardLeon(request(resource), config, forbiddenFetch)).status, 404);
+  }
+  assert.equal((await forwardLeon(request('model', { method: 'POST', body: '{}', headers: { origin: 'https://elsewhere.invalid' } }), config, forbiddenFetch)).status, 403);
+});
