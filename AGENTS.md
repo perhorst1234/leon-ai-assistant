@@ -1,5 +1,7 @@
 # Werken aan Leon / Gaia
 
+- Kostenherstel (8 september): gevalideerd verbruik wordt vóór antwoordparsing opgeslagen; Gaia kan een onzekere job met dat bewijs na expliciete approval kosten-only reconciliëren. Geen bewijs = geen vrijgave; geen betaalde retry of fictief antwoord. 253 backendtests + twee subtests, 16 webtests, build en desktopbrowserketen geslaagd. Zie docs/model-work.md. Volgende code: echte chat en detailherstel buiten de 100 nieuwste jobs. Geen live kosten of doelhardware getest.
+
 - Nieuwste modelwerk (8 september): Gaia-invoer met lokale kostenpreview, expliciete tekstapproval, aanvraag-id-herstel en leesbaar antwoord aangesloten. Browserketen met tijdelijke SQLite/nepmodel getest, inclusief gewijzigde tekst en herladen; geen betaalde calls. Zie `docs/model-work.md`. Volgende code: gecontroleerde reconciliatie en echte chat. `.env.example` is op verzoek lokaal van een sleutelachtige waarde ontdaan; overige gebruikerswijzigingen daarin blijven buiten de commit. `.env.local` privé laten. Nieuwe providercode niet testen met de echte sleutel zonder expliciete budgetkeuze.
 
 - Nieuwste werk (7 september): bron geïntegreerd, 185 backendtests plus zeven webbridge-tests geslaagd; echte lokale worker en Gaia-Werk gekoppeld. Zie docs/local-work.md. Volgende code is begrensde modeluitvoering. De gebruiker vraagt minder procesadministratie en meer implementatie; houd handoff/checks kort.

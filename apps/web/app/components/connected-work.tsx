@@ -6,6 +6,8 @@ import { Check, Cpu, Database, LockKeyhole, Pause, Play, RefreshCw, X } from 'lu
 import './connected-work.css';
 import ModelRequestForm from './model-request-form';
 import type { ModelPreview } from '../../lib/model-submission';
+import ModelCostRecovery from './model-cost-recovery';
+import type { CostProposal } from '../../lib/model-reconciliation';
 
 type Task = { id: string; title: string };
 type Result = { ok: boolean; step: string; text?: string; source_sha256?: string; files_checked?: number; reason?: string; failures?: { path: string; line: number | null }[] };
@@ -14,7 +16,7 @@ type Job = {
   id: string; task_id: string; status: 'queued' | 'running' | 'paused' | 'succeeded' | 'failed' | 'cancelled';
   completed_steps: number; total_steps: number; results: Result[]; updated_at: number; error: string;
 };
-type ApiPayload = { error?: string; jobs?: Job[]; tasks?: Task[]; job?: Job | null; id?: string; preview?: ModelPreview };
+type ApiPayload = { error?: string; jobs?: Job[]; tasks?: Task[]; job?: Job | null; id?: string; preview?: ModelPreview; reconciliation?: CostProposal };
 const labels: Record<Job['status'], string> = {
   queued: 'In de wachtrij', running: 'In uitvoering', paused: 'Gepauzeerd',
   succeeded: 'Uitvoering afgerond', failed: 'Niet afgerond — bekijk het resultaat', cancelled: 'Geannuleerd',
@@ -22,7 +24,7 @@ const labels: Record<Job['status'], string> = {
 const stepNames = ['Bronbestanden vastleggen', 'Python-syntax controleren', 'Resultaat en bronversie bevestigen'];
 
 async function api(resource: string, token: string, body?: unknown, signal?: AbortSignal, requestId?: string) {
-  const query = new URLSearchParams({ resource, ...(requestId ? { request_id: requestId } : {}) });
+  const query = new URLSearchParams({ resource, ...(requestId ? { [resource === 'reconciliation' ? 'id' : 'request_id']: requestId } : {}) });
   const response = await fetch(`/api/leon?${query}`, {
     method: body === undefined ? 'GET' : 'POST', signal, cache: 'no-store',
     headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
@@ -120,6 +122,9 @@ export default function ConnectedWork({ demo }: { demo: ReactNode }) {
               </div>
               <details className="work-evidence"><summary>Bekijk opgeslagen bewijs</summary><pre>{JSON.stringify(job.results, null, 2)}</pre></details>
               {job.kind === 'openai_text' && job.results.filter(result => result.text).map((result, index) => <div className="model-answer" key={index}><h3>{result.ok ? 'Modelantwoord' : 'Onvolledig modelantwoord'}</h3><p>{result.text}</p></div>)}
+              {job.model_state === 'unknown' && <ModelCostRecovery key={job.id} jobId={job.id} disabled={controlsDisabled}
+                request={(resource, body, id) => api(resource, token, body, undefined, id)} onSaved={refresh} />}
+              {job.model_state === 'reconciled' && <p className="work-hint">Kosten afgeboekt op basis van ontvangen verbruik. Geen bevestigd antwoord; deze opdracht is niet opnieuw verstuurd.</p>}
               {job.status === 'queued' && <p className="work-hint">De worker verwerkt deze wachtrij. Blijft de taak wachten? Start de worker op de backendserver.</p>}
             </> : <p className="work-hint">{connected ? 'Nog geen echte controles. Kies een taak en start de eerste controle.' : 'Verbind om opgeslagen taken en resultaten te laden.'}</p>}
           </section>

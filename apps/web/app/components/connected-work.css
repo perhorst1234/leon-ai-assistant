@@ -38,4 +38,6 @@
 .model-answer { padding: 16px; background: rgba(184,247,220,.05); border-radius: 14px; margin-top: 16px; }
 .model-answer h3 { font-size: 14px; }.model-answer p { white-space: pre-wrap; overflow-wrap: anywhere; font-size: 14px; line-height: 1.6; }
 .model-request-panel :focus-visible { outline: 2px solid #a795ff; outline-offset: 3px; }
+.model-cost-recovery { margin-top: 16px; border-color: rgba(243,221,176,.35); }
+.model-cost-recovery h3 { font-size: 14px; color: #f3ddb0; }
 @media (max-width: 700px) { .work-mode-switch { justify-content: center; padding-inline: 0; } .connected-work { height: auto; padding-top: 12px; } .connected-work .work-layout { top: auto; display: flex; flex-direction: column; } .connected-work .mission-console, .connected-work .work-sidebar { overflow: visible; } }

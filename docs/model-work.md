@@ -82,7 +82,7 @@ tekst gaat naar OpenAI, nooit automatisch de projectmap, database of taakcontext
   autorisatie of localhost-bypass. De publieke website is niet opnieuw gedeployd.
 - Tijdelijke fouten worden niet automatisch opnieuw betaald. Onzekere uitkomst
   houdt de reservering vast en blokkeert volgende calls totdat gecontroleerde
-  reconciliatie is toegevoegd/uitgevoerd. Geen knop om onbewezen kosten vrij te
+  reconciliatie met ontvangen verbruik is uitgevoerd. Geen knop om onbewezen kosten vrij te
   geven. Pauze/annuleren kan een al verzonden HTTP-aanvraag niet terughalen.
 - Tokens/resultaat worden afzonderlijk vóór het queuecheckpoint opgeslagen.
   Herstart na dat opslagpunt hergebruikt het antwoord zonder nieuwe call.
@@ -158,6 +158,59 @@ kostenreconciliatie en echte chat; volledige productacceptatie blijft open.
 De Werk-keuzelijst toont maximaal de 100 nieuwste jobs. UUID-herstel kan een
 oudere job vinden, maar die verschijnt nog niet automatisch buiten die lijst;
 detailnavigatie voor oudere jobs is een open UI-beperking.
+
+## Werkafspraak: herstel van waargenomen kosten
+
+Start HEAD `33d4c1a`, alleen `.env.example` gebruikersdelta. Risico: middel/hoog
+omdat kosten vrijvallen; bestaande provider-/prijs-/approvalgrenzen blijven intact.
+Nodige code: verbruik vóór antwoordparsing duurzaam opslaan, daarna kosten-only
+reconciliatie met exact goedgekeurde receipthash. Geen imports van zelfverklaarde
+kosten en geen aannames bij timeout zonder verbruik. Architectuur: aparte kleine
+receipt-owner naast model_work; dezelfde SQLite-transactie en queue, server wiring.
+Test met neptransport: misvormd antwoord, ontbrekend/bovenmatig verbruik, crash,
+dubbele/concurrerende approval, rollback, late worker en HTTP-autorisatie.
+
+Uitgevoerd: `model_receipts.py` bewaart alleen gevalideerde model/status/token-
+aantallen, kostenberekening en job-/request-/approvalbinding, vóór de parsing
+van het antwoord. Geen ruwe response, tekst of API-key in de receipt. De
+bestaande SQLite-database is vertrouwd: de hash bindt de getoonde approval en
+detecteert inconsistentie, maar is geen bewijs tegen iemand met schrijfrecht
+op de database en geen geverifieerde factuur.
+
+`GET /api/work/model/reconciliation?id=…` geeft een kostenvoorstel, alleen voor
+unknown/reconciled met geldige receipt. `POST` accepteert uitsluitend `id`,
+`receipt_sha256` en `approve_cost_reconciliation=true`, met dashboard-Bearer
+ook op localhost/auth-off. Kosten zijn server-side berekend, nooit ingevoerd
+door de browser. Gaia gebruikt dezelfde lokaal begrensde proxy en toont het
+voorstel met een lege approval. Pas na bevestigen wordt de resterende hold
+vrijgegeven; andere reeds goedgekeurde jobs kunnen dan binnen hun budget verder.
+
+Kostenafboeking/audit zijn één transactie en idempotent. De oorspronkelijke job
+en foutcheckpoints blijven intact; er wordt geen antwoord of succes verzonnen.
+Een late worker respecteert de reconciled-status. Ontbrekende usage, onbekend
+model, niet-finale status, bovenmatige tokens of ontbrekende receipt blijven
+geblokkeerd. Oude jobs zonder deze receipt zijn niet achteraf bewijsbaar via
+dit pad. Geen automatische providerraadpleging of receipt-import.
+
+Verificatie: **253 backendtests + twee subtests in 23,54 s**, exit 0, Ubuntu/WSL
+in netwerknamespace met alleen loopback. **16 webtests**, TypeScript/build
+geslaagd; lint nul errors/vijf bestaande warnings. Gerichte nieuwe tests:
+readonly preview, onbruikbaar antwoord met geldige usage, ongeldige/ontbrekende
+usage, dubbele/concurrerende approval, auditrollback, receiptintegriteit,
+gereconstrueerde worker na opslag en een late worker tijdens reconciliatie.
+
+Desktopbrowser met `tests/ui_model_fixture.py --broken-answer`: tijdelijke SQLite,
+synthetische credentials/provider; job `9cac27a6` bleef na preview onveranderd.
+Goedkeuren veranderde de reservering van $0.000416 naar nul en boekte $0.000021
+synthetisch verbruik af. Job bleef onafgerond 0/1, herstelmelding zichtbaar en
+visueel gecontroleerd. Geen echte betaalde call of M40-/mobiele productieproef.
+Vertrouwen B voor dit afgebakende herstelpad; niet voor de volledige productvisie.
+
+Complexiteit binnen scope: receipt-owner 88 regels, aparte kleine UI/lib/tests,
+gedeelde usageparser en bestaande queue/DB; grote server alleen routing.
+Deze stap behoudt de no-retrygrens en maakt geen tweede runtime. Volgende code:
+echte chat en oudere-jobdetailherstel, daarna read-only connector. Bewijsloze
+netwerkuitkomsten blijven een bewuste blokkade, niet stilzwijgend kwijtgescholden.
 
 Complexiteit: kleine aparte formulier-/verzendowners, bestaande proxy/API/queue
 uitgebreid, grote server alleen wiring en store ongewijzigd. Demo blijft expliciet

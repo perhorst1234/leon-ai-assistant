@@ -3,12 +3,18 @@ from urllib.parse import parse_qs, urlsplit
 
 from leon_control_plane.work_queue import KIND, MODEL_KIND, WorkQueue
 from leon_control_plane.model_work import preview
+from leon_control_plane import model_receipts
 
 
 def work_request(store, *, method, path, body=None):
     url = urlsplit(path)
-    if url.path not in {"/api/work/jobs", "/api/work/control", "/api/work/tasks", "/api/work/model", "/api/work/model/preview"}:
+    if url.path not in {"/api/work/jobs", "/api/work/control", "/api/work/tasks", "/api/work/model", "/api/work/model/preview", "/api/work/model/reconciliation"}:
         return None
+    if method == "GET" and url.path == "/api/work/model/reconciliation":
+        query = parse_qs(url.query, keep_blank_values=True)
+        if set(query) != {"id"} or len(query["id"]) != 1 or not query["id"][0]:
+            raise ValueError("Expected one job id")
+        return {"ok": True, "reconciliation": model_receipts.preview(WorkQueue(store), query["id"][0])}
     if method == "GET" and url.path == "/api/work/tasks" and not url.query:
         from contextlib import closing
         store.initialize()
@@ -32,6 +38,10 @@ def work_request(store, *, method, path, body=None):
         raise ValueError("Expected a JSON object")
     if url.path == "/api/work/model/preview":
         return {"ok": True, "preview": preview(body)}
+    if url.path == "/api/work/model/reconciliation":
+        if set(body) != {"id", "receipt_sha256", "approve_cost_reconciliation"} or not isinstance(body["id"], str):
+            raise ValueError("Expected job, observed receipt and explicit cost reconciliation approval")
+        return {"ok": True, "job": model_receipts.reconcile(WorkQueue(store), body["id"], body["receipt_sha256"], body["approve_cost_reconciliation"])}
     if url.path == "/api/work/model":
         if set(body) != {"task_id", "request_id", "prompt", "max_output_tokens", "max_cost_microusd", "approve_external_text"}:
             raise ValueError("Expected explicit text, limits and approval; no arbitrary model settings")

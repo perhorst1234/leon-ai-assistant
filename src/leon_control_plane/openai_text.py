@@ -118,7 +118,8 @@ def send_response(payload, api_key):
         conn.close()
 
 
-def parse_response(data, payload):
+def parse_usage(data, payload):
+    """Validate final usage separately from answer content; never a billing invoice."""
     if not isinstance(data, dict) or data.get("model") != MODEL:
         raise ValueError("Unexpected response model")
     if data.get("status") not in {"completed", "incomplete"} or data.get("error"):
@@ -131,6 +132,13 @@ def parse_response(data, payload):
         raise ValueError("Invalid provider usage")
     if counts[0] > len(payload["input"].encode("utf-8")) + 1024 or counts[1] > payload["max_output_tokens"]:
         raise ValueError("Provider usage exceeded approved envelope")
+    return {"model": MODEL, "provider_status": data["status"],
+            "input_tokens": counts[0], "output_tokens": counts[1],
+            "accounted_microusd": cost_microusd(*counts)}
+
+
+def parse_response(data, payload):
+    usage = parse_usage(data, payload)
     chunks, refusal = [], False
     if not isinstance(data.get("output"), list):
         raise ValueError("Missing output")
@@ -151,7 +159,5 @@ def parse_response(data, payload):
         raise ValueError("Oversized output text")
     complete = data["status"] == "completed" and bool(text) and not refusal
     return {"ok": complete, "step": "model", "text": text,
-            "reason": "" if complete else "refused_or_incomplete", "model": MODEL,
-            "input_tokens": counts[0], "output_tokens": counts[1],
-            "accounted_microusd": cost_microusd(*counts), "provider_status": data["status"],
+            "reason": "" if complete else "refused_or_incomplete", **usage,
             "provider_calls_made": True, "billing_basis": "conservative_usage_not_invoice"}

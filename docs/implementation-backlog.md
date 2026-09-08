@@ -1,5 +1,7 @@
 # Leon / Gaia — uitvoeringsbacklog
 
+**Kostenherstel 8 september:** gevalideerde usage wordt vóór antwoordparsing duurzaam opgeslagen. Gaia-preview plus expliciete approval kan uitsluitend bewezen verbruik reconciliëren; geen antwoord-/taaksucces, geen herhaling en geen bewijsloze budgetvrijgave. 253 backendtests + twee subtests, 16 webtests/build en desktopbrowserproef geslaagd. Echte chat, oudere-jobdetailherstel en alle overige productcriteria blijven open.
+
 **Nieuwste code 8 september:** Gaia-modelinvoer aangesloten: lokale tekst-/kostenpreview, afzonderlijke approval, invalidatie bij edits en herstel van onzekere verzending met dezelfde aanvraag-id. Leesbaar antwoord blijft na herladen beschikbaar. 238 backendtests + twee subtests, 14 webtests en desktopbrowserketen met nepmodel geslaagd. Geen live API-/hardwarebewijs; reconciliatie, echte chat en de oorspronkelijke volledige agentvisie blijven open. Zie [model-work.md](model-work.md).
 
 **Nieuwste code 7 september:** stap 4 heeft nu echte Responses-transportcode en workerintegratie, standaard uit: tekst-/kostenapproval, gedeelde SQLite-reservering, usage-registratie en crashherstel zonder automatische betaalde herhaling. Gaia toont modeljobs met het juiste type/verbruik. Offline bewijs en open grenzen: [model-work.md](model-work.md). Nog geen live provider-/M40-test; Gaia-modelinvoer, reconciliatie en algemene agents blijven open. De oudere updates hieronder zijn historisch bewijs, geen actuele afronding van het volledige product.

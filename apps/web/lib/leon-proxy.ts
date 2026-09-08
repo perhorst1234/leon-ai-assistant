@@ -7,6 +7,7 @@ const routes: Record<string, Partial<Record<string, string>>> = {
   tasks: { GET: '/api/work/tasks', POST: '/api/tasks' },
   model: { POST: '/api/work/model' },
   'model-preview': { POST: '/api/work/model/preview' },
+  reconciliation: { GET: '/api/work/model/reconciliation', POST: '/api/work/model/reconciliation' },
 };
 const json = (data: unknown, status = 200) => Response.json(data, {
   status, headers: { 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' },
@@ -37,7 +38,9 @@ export async function forwardLeon(request: Request, config: Config, fetcher: typ
       || url.searchParams.getAll('resource').length !== 1 || url.searchParams.getAll('id').length > 1
       || url.searchParams.getAll('request_id').length > 1
       || (url.searchParams.has('id') && url.searchParams.has('request_id'))
-      || ((url.searchParams.has('id') || url.searchParams.has('request_id')) && (resource !== 'jobs' || request.method !== 'GET'))) {
+      || (url.searchParams.has('request_id') && (resource !== 'jobs' || request.method !== 'GET'))
+      || (url.searchParams.has('id') && (!['jobs', 'reconciliation'].includes(resource) || request.method !== 'GET'))
+      || (resource === 'reconciliation' && request.method === 'GET' && !url.searchParams.get('id'))) {
     return json({ error: 'Onbekende Leon-route.' }, 404);
   }
   let body: string | undefined;

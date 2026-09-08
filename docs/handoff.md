@@ -4,6 +4,7 @@ Stand: **8 september 2026**. De gebruiker wil vooral coderen; houd deze overdrac
 
 ## Nieuwste werk
 
+- Kostenherstel werkt met eerder ontvangen, gevalideerde usage-receipts. Gaia toont tokens/bedrag en vraagt aparte approval; de transactie boekt uitsluitend kosten af. Taak/checkpoint worden niet geslaagd gemaakt, geen nieuwe providercall. Timeout zonder bruikbaar verbruik blijft geblokkeerd. Late workers en dubbele approvals kunnen de afboeking niet terugdraaien of verdubbelen.
 - Gaia-Werk heeft nu tekstinvoer, lokale kostenpreview en een niet-vooraf aangevinkte approval. Wijzigingen wissen eerdere approval. Alleen een aanvraag-UUID wordt tijdelijk in sessionStorage bewaard voor een onzekere verzending; herstel zoekt zonder opnieuw te verzenden. Het modelantwoord is leesbaar buiten de ruwe bewijsweergave.
 - Begrensde OpenAI-tekstuitvoering toegevoegd aan dezelfde WorkQueue: expliciete tekst-/kostenapproval, vaste Responses-endpoint, geen tools/retries, transactionele reservering vóór verzenden en resultaatopslag vóór checkpoint. Onzekere uitkomst blokkeert nieuwe calls en wordt niet automatisch herhaald. Zie [modeluitvoering](model-work.md).
 - Sleutel lokaal aanwezig, maar geen live calls of echte budgetinstellingen gedaan. Worker ondersteunt expliciet `--env-file .env.local`; alleen key aanwezigheid activeert niets. Op expliciet verzoek sleutelachtige waarde uit `.env.example` verwijderd; `.env.local` hash-identiek gebleven. Overige voorbeeldwijzigingen van de gebruiker blijven lokaal/buiten de commit.
@@ -17,7 +18,12 @@ Stand: **8 september 2026**. De gebruiker wil vooral coderen; houd deze overdrac
 
 ## Verificatie
 
-Nieuwste UI-koppeling: 238 backendtests + twee subtests en 14 webtests geslaagd;
+Nieuwste kostenherstel: 253 backendtests + twee subtests en 16 webtests geslaagd;
+TypeScript/build geslaagd, lint nul errors/vijf bestaande warnings. Desktopbrowser
+met nepantwoordfout: onzeker → verbruiksbewijs → lege approval/verzendknop uit →
+goedkeuren → reservering nul, verbruik vastgelegd, opdracht blijft onafgerond 0/1.
+
+Eerdere UI-koppeling: 238 backendtests + twee subtests en 14 webtests geslaagd;
 TypeScript/build geslaagd, lint nul errors/vijf bestaande warnings. Browser:
 preview → approval vervalt na edit → opnieuw goedkeuren → afgerond 1/1 met
 leesbaar nepantwoord → herladen en opnieuw verbinden → hetzelfde antwoord.
@@ -27,8 +33,8 @@ Zie [uitvoering en testbewijs](local-work.md). Browserketen getest met tijdelijk
 
 ## Volgende codewerk
 
-1. Gecontroleerde reconciliatie voor onzekere provideruitkomsten toevoegen; nooit zonder bewijs kosten vrijgeven of dezelfde aanvraag opnieuw betalen. Daarna live kleine call pas met gekozen budget en expliciet gedeelde tekst.
-2. Echte chat verbinden; daarna één read-only connector. Bewaar het bestaande ontwerp. Side-effecting tools hebben een eigen backendapproval-/idempotentiecontract nodig.
+1. Echte chat verbinden en detailherstel buiten de 100 nieuwste jobs repareren; daarna één read-only connector. Bewaar het bestaande ontwerp. Side-effecting tools hebben een eigen backendapproval-/idempotentiecontract nodig.
+2. Netwerkuitkomsten zonder verbruiksbewijs blijven geblokkeerd; toekomstig extern bewijs mag alleen met betrouwbare aanvraagkoppeling worden verwerkt. Geen handmatig verzonnen bedrag of automatische betaalde retry. Live kleine call pas met gekozen budget en expliciet gedeelde tekst.
 3. Ubuntu-installatie/systemd, private backup/restore en doelhardware meten zodra de server beschikbaar is.
 
 Store (~8.400 regels), server (~4.450) en oorspronkelijke tests (~5.150) blijven groot. Nieuwe verantwoordelijkheden in eigen modules houden, server alleen koppelen; geen brede refactor zonder relevante tests.

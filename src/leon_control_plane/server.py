@@ -3595,12 +3595,12 @@ class Handler(BaseHTTPRequestHandler):
                 return
             if not self._require_auth():
                 return
-            if self.path in {"/api/work/model", "/api/work/model/preview"}:
+            if self.path in {"/api/work/model", "/api/work/model/preview", "/api/work/model/reconciliation"}:
                 token = dashboard_token()
                 if not token or not hmac.compare_digest(self.headers.get("authorization", ""), f"Bearer {token}"):
                     self._send_json({"error": "Explicit dashboard bearer authorization required"}, HTTPStatus.UNAUTHORIZED)
                     return
-            if self.path in {"/api/work/jobs", "/api/work/control", "/api/work/model", "/api/work/model/preview"}:
+            if self.path in {"/api/work/jobs", "/api/work/control", "/api/work/model", "/api/work/model/preview", "/api/work/model/reconciliation"}:
                 self._send_json(work_request(STORE, method="POST", path=self.path, body=self._read_body()))
                 return
             if self.path == "/api/secrets":

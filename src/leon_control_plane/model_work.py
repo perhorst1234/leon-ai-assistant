@@ -12,6 +12,7 @@ from leon_control_plane.openai_text import (
     ModelPreflightError, OpenAIConfig, parse_response, positive_int, request_payload, reservation, send_response,
 )
 from leon_control_plane.secret_scanner import assert_no_secrets
+from leon_control_plane import model_receipts
 
 
 def initialize(conn):
@@ -21,6 +22,7 @@ def initialize(conn):
         held_microusd INTEGER NOT NULL DEFAULT 0, charged_microusd INTEGER NOT NULL DEFAULT 0,
         sent_at REAL, result_json TEXT
     )""")
+    model_receipts.initialize(conn)
 
 
 def prepare(details):
@@ -131,7 +133,11 @@ class ModelExecutor:
         if cached is not None:
             return cached
         try:
-            result = parse_response(self.transport(payload, self.config.api_key), payload)
+            observed = self.transport(payload, self.config.api_key)
+            # Persist validated usage before answer parsing can fail or the process dies.
+            # Never store raw output, response bodies or credentials in this receipt.
+            model_receipts.record(self.queue, claim["id"], payload, observed)
+            result = parse_response(observed, payload)
             assert_no_secrets("Model result", result)
         except Exception:
             # HTTP status, parse, usage and transport errors can all be ambiguous.
@@ -140,6 +146,10 @@ class ModelExecutor:
         encoded = json.dumps(result, sort_keys=True)
         with self.queue._transaction() as conn:
             row = self.queue._job(conn, claim["id"])
+            ledger = conn.execute("SELECT state,result_json FROM model_work WHERE job_id=?", (claim["id"],)).fetchone()
+            if ledger["state"] == "reconciled":
+                # A late worker must not undo an approved cost-only recovery.
+                return json.loads(ledger["result_json"])
             if result["provider_calls_made"] is True:
                 conn.execute("UPDATE model_work SET state='settled',held_microusd=0,charged_microusd=?,result_json=? WHERE job_id=?",
                              (result["accounted_microusd"], encoded, claim["id"]))
