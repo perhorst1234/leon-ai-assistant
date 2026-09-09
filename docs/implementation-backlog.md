@@ -1,5 +1,12 @@
 # Leon / Gaia — uitvoeringsbacklog
 
+**9 september:** duurzame Chat, exacte context-/kostenapproval en Gaia-koppeling
+zijn toegevoegd; oudere Werk-jobs zijn direct opvraagbaar. Zie [chat.md](chat.md)
+en de actuele [handoff](handoff.md) voor verificatie. Installatie, echte Vandaag/
+Memory-data, connectors, autonomie en doelhardware blijven afzonderlijke open
+acceptatiestappen. Historische meetmomenten hieronder zijn geen actuele
+volledigheidsclaim.
+
 **Kostenherstel 8 september:** gevalideerde usage wordt vóór antwoordparsing duurzaam opgeslagen. Gaia-preview plus expliciete approval kan uitsluitend bewezen verbruik reconciliëren; geen antwoord-/taaksucces, geen herhaling en geen bewijsloze budgetvrijgave. 253 backendtests + twee subtests, 16 webtests/build en desktopbrowserproef geslaagd. Echte chat, oudere-jobdetailherstel en alle overige productcriteria blijven open.
 
 **Nieuwste code 8 september:** Gaia-modelinvoer aangesloten: lokale tekst-/kostenpreview, afzonderlijke approval, invalidatie bij edits en herstel van onzekere verzending met dezelfde aanvraag-id. Leesbaar antwoord blijft na herladen beschikbaar. 238 backendtests + twee subtests, 14 webtests en desktopbrowserketen met nepmodel geslaagd. Geen live API-/hardwarebewijs; reconciliatie, echte chat en de oorspronkelijke volledige agentvisie blijven open. Zie [model-work.md](model-work.md).

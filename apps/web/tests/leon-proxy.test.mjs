@@ -79,3 +79,22 @@ test('model preview/submission and UUID recovery use only explicit local routes'
   }
   assert.equal((await forwardLeon(request('model', { method: 'POST', body: '{}', headers: { origin: 'https://elsewhere.invalid' } }), config, forbiddenFetch)).status, 403);
 });
+
+test('chat routes keep conversation ids in the fixed local path and forward pagination', async () => {
+  const cases = [
+    ['chat-conversations&limit=25&before=chat-old', 'GET', '/api/chat/conversations?limit=25&before=chat-old'],
+    ['chat-conversation&id=chat-one', 'GET', '/api/chat/conversations/chat-one'],
+    ['chat-preview', 'POST', '/api/chat/preview'],
+    ['chat-messages&id=chat-one', 'POST', '/api/chat/conversations/chat-one/messages'],
+  ];
+  for (const [resource, method, path] of cases) {
+    const response = await forwardLeon(request(resource, { method, ...(method === 'POST' ? { body: '{}' } : {}) }), config, async url => {
+      assert.equal(String(url), `http://127.0.0.1:8765${path}`);
+      return Response.json({ ok: true });
+    });
+    assert.equal(response.status, 200);
+  }
+  for (const resource of ['chat-conversation', 'chat-messages&id=one&id=two', 'chat-conversations&before=x&before=y', 'chat-preview&id=x']) {
+    assert.equal((await forwardLeon(request(resource), config, forbiddenFetch)).status, 404);
+  }
+});

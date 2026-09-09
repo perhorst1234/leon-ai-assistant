@@ -22,9 +22,15 @@ is_positive_integer() {
 }
 
 log_file=""
+pipe_dir=""
 cleanup() {
   if [ -n "${log_file:-}" ] && [ -f "$log_file" ]; then
     command rm -f -- "$log_file"
+  fi
+  if [ -n "${pipe_dir:-}" ] && [ -d "$pipe_dir" ]; then
+    command rm -f -- "$pipe_dir/stdout" "$pipe_dir/stderr"
+    command rmdir -- "$pipe_dir"
+    pipe_dir=""
   fi
 }
 trap cleanup EXIT INT TERM
@@ -73,16 +79,17 @@ attempt=1
 while [ "$attempt" -le "$max_attempts" ]; do
   cleanup
   log_file="$(mktemp "${TMPDIR:-/tmp}/leon-resume-watch.XXXXXX")"
+  pipe_dir="$(mktemp -d "${TMPDIR:-/tmp}/leon-resume-pipes.XXXXXX")"
+  mkfifo "$pipe_dir/stdout" "$pipe_dir/stderr"
   set +e
-  # Process substitutions are asynchronous: wait for both collectors before
-  # inspecting or removing the log, while preserving stdout/stderr separately.
-  exec {out_fd}> >(tee -a "$log_file")
+  # Explicit child processes can be waited for on Bash 3.2 as well as Linux.
+  # Join both collectors before inspecting the log; keep output streams apart.
+  tee -a "$log_file" < "$pipe_dir/stdout" &
   out_pid=$!
-  exec {err_fd}> >(tee -a "$log_file" >&2)
+  tee -a "$log_file" < "$pipe_dir/stderr" >&2 &
   err_pid=$!
-  "$@" >&"$out_fd" 2>&"$err_fd"
+  "$@" > "$pipe_dir/stdout" 2> "$pipe_dir/stderr"
   status=$?
-  exec {out_fd}>&- {err_fd}>&-
   wait "$out_pid"
   out_status=$?
   wait "$err_pid"

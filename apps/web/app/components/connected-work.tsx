@@ -23,8 +23,8 @@ const labels: Record<Job['status'], string> = {
 };
 const stepNames = ['Bronbestanden vastleggen', 'Python-syntax controleren', 'Resultaat en bronversie bevestigen'];
 
-async function api(resource: string, token: string, body?: unknown, signal?: AbortSignal, requestId?: string) {
-  const query = new URLSearchParams({ resource, ...(requestId ? { [resource === 'reconciliation' ? 'id' : 'request_id']: requestId } : {}) });
+async function api(resource: string, token: string, body?: unknown, signal?: AbortSignal, requestId?: string, jobId?: string) {
+  const query = new URLSearchParams({ resource, ...(jobId ? { id: jobId } : requestId ? { [resource === 'reconciliation' ? 'id' : 'request_id']: requestId } : {}) });
   const response = await fetch(`/api/leon?${query}`, {
     method: body === undefined ? 'GET' : 'POST', signal, cache: 'no-store',
     headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
@@ -44,13 +44,14 @@ export default function ConnectedWork({ demo }: { demo: ReactNode }) {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [taskId, setTaskId] = useState('');
   const [selectedId, setSelectedId] = useState('');
+  const [detailJob, setDetailJob] = useState<Job | null>(null);
   const [error, setError] = useState('');
   const [connectionError, setConnectionError] = useState('');
   const [busy, setBusy] = useState(false);
   const [connected, setConnected] = useState(false);
   const pendingRequest = useRef<{ taskId: string; requestId: string } | null>(null);
   const refreshController = useRef<AbortController | null>(null);
-  const job = jobs.find(item => item.id === selectedId) ?? jobs[0];
+  const job = jobs.find(item => item.id === selectedId) ?? (detailJob?.id === selectedId ? detailJob : undefined) ?? jobs[0];
 
   const refresh = useCallback(async () => {
     refreshController.current?.abort();
@@ -63,11 +64,15 @@ export default function ConnectedWork({ demo }: { demo: ReactNode }) {
       if (controller.signal.aborted) return;
       if (!Array.isArray(work.jobs) || !Array.isArray(available.tasks)) throw new Error('Onverwacht antwoord van de backend.');
       setJobs(work.jobs); setTasks(available.tasks); setConnected(true); setConnectionError('');
+      if (selectedId && !work.jobs.some(item => item.id === selectedId)) {
+        const detail = await api('jobs', token, undefined, controller.signal, undefined, selectedId);
+        if (detail.job) setDetailJob(detail.job);
+      } else if (selectedId) setDetailJob(null);
     } catch (reason) {
       if (controller.signal.aborted) return;
       setConnected(false); setConnectionError(reason instanceof Error ? reason.message : 'Verbinding onderbroken.');
     }
-  }, [token]);
+  }, [selectedId, token]);
 
   useEffect(() => {
     if (!token || showDemo) return;
@@ -112,7 +117,7 @@ export default function ConnectedWork({ demo }: { demo: ReactNode }) {
             {token && <div className="work-actions"><button className="secondary-control" type="button" onClick={() => void refresh()} disabled={busy}><RefreshCw size={15} /> Ververs</button><button className="secondary-control" type="button" onClick={() => { refreshController.current?.abort(); setToken(''); setJobs([]); setTasks([]); setConnected(false); setError(''); }}>Verbreek verbinding</button></div>}
             <div className="console-goal"><div><h2>{job?.kind === 'openai_text' ? 'Begrensde modeluitvoering' : 'Python-projectcontrole'}</h2><p>{job?.kind === 'openai_text' ? 'Alleen de goedgekeurde tekst naar OpenAI. Geen tools of bronwijzigingen.' : 'Leg bestandshashes vast, controleer de syntax en bewaar het gemeten resultaat. Dit wijzigt geen broncode.'}</p></div><span className="console-eta"><small>verwachte duur</small><strong>—</strong><em>nog niet gemeten</em></span></div>
             {job ? <>
-              <label className="work-field">Opgeslagen controle<select value={job.id} onChange={event => setSelectedId(event.target.value)}>{jobs.map(item => <option key={item.id} value={item.id}>{labels[item.status]} · {item.id.slice(-8)}</option>)}</select></label>
+              <label className="work-field">Opgeslagen controle<select value={job.id} onChange={event => { setSelectedId(event.target.value); setDetailJob(null); }}>{jobs.map(item => <option key={item.id} value={item.id}>{labels[item.status]} · {item.id.slice(-8)}</option>)}</select></label>
               <p className="work-current-status" role="status">{labels[job.status]}{!connected && ' · laatst bekende status'}</p>
               <div className="console-progress-row"><span><strong>{job.completed_steps}/{job.total_steps}</strong><small>checkpoints</small></span><progress max={job.total_steps} value={job.completed_steps} aria-label="Voltooide checkpoints" /></div>
               <ol className="mission-timeline">{(job.kind === 'openai_text' ? ['Modelantwoord en verbruik vastleggen'] : stepNames).map((name, index) => <li key={name} data-state={index < job.completed_steps ? 'done' : 'planned'}><span className="timeline-marker">{index < job.completed_steps ? <Check size={14} /> : index + 1}</span><span><strong>{name}</strong><small>{job.results[index]?.ok ? 'Resultaat opgeslagen' : job.results[index] ? 'Afwijking gevonden' : 'Nog niet uitgevoerd'}</small></span></li>)}</ol>
@@ -135,7 +140,7 @@ export default function ConnectedWork({ demo }: { demo: ReactNode }) {
                 if (!pendingRequest.current || pendingRequest.current.taskId !== activeTask) pendingRequest.current = { taskId: activeTask, requestId: crypto.randomUUID() };
                 const result = await api('jobs', token, { task_id: activeTask, request_id: pendingRequest.current.requestId });
                 if (!result.job?.id) throw new Error('Taakaanmaak niet bevestigd. Ververs de status voordat je opnieuw probeert.');
-                setSelectedId(result.job.id); pendingRequest.current = null;
+                setSelectedId(result.job.id); setDetailJob(result.job); pendingRequest.current = null;
               })}><Play size={15} /> Start echte controle</button>
               <button type="button" className="trace-action" disabled={controlsDisabled} onClick={() => void mutate(async () => {
                 const result = await api('tasks', token, { title: 'Lokale Python-projectcontrole', goal: 'Controleer de Python-syntax van deze Leon-bronversie zonder bronwijzigingen.', risk_level: 'low' });
@@ -145,7 +150,7 @@ export default function ConnectedWork({ demo }: { demo: ReactNode }) {
             </section>
             {token && <ModelRequestForm key={activeTask} taskId={activeTask} disabled={controlsDisabled}
               request={(resource, body, requestId) => api(resource, token, body, undefined, requestId)}
-              onQueued={async id => { setSelectedId(id); await refresh(); }} />}
+              onQueued={async id => { setSelectedId(id); setDetailJob(null); await refresh(); }} />}
             <section className="approval-gate"><div className="sidebar-heading"><span><LockKeyhole size={16} /> Begrensde uitvoering</span></div><p>De controleknop doet alleen lokale syntaxcontrole. AI-opdrachten vragen afzonderlijk jouw tekst- en kostenapproval. Geen shellopdrachten of installs; de bovenliggende taak wordt niet automatisch goedgekeurd.</p></section>
             <section className="resilience-log"><div className="sidebar-heading"><span><Database size={16} /> Opgeslagen in SQLite</span></div><p>Checkpoints blijven na browser- en workerherstart bestaan. Een onderbroken leesstap kan opnieuw worden gecontroleerd.</p><code>PYTHONPATH=src python3 -m leon_control_plane.local_worker</code></section>
           </aside>

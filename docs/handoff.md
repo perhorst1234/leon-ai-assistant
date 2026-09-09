@@ -4,6 +4,37 @@ Stand: **8 september 2026**. De gebruiker wil vooral coderen; houd deze overdrac
 
 ## Nieuwste werk
 
+- Volledige lokale installatieproef geslaagd: setup → start → beide
+  geauthenticeerde API-verzoeken HTTP 200 → doctor → online backup → stop →
+  restore. Marker en SQLite-integriteit behouden; alle drie eigen
+  procesgroepen beëindigd. Eerdere 401 was deels onjuiste tokenparsing in
+  testscript; echte seed-race, procesherkenning en poortuitwijking zijn ook
+  hersteld. Herhaal met `./scripts/leon-delivery-smoke`; zie
+  [delivery-evidence.md](delivery-evidence.md).
+
+- Verificatie 9 september: **269 backendtests + twee subtests**, **19 webtests**,
+  TypeScript en build geslaagd. Lint: nul errors, vijf bestaande warnings.
+  Pakketupdates plus een gerichte sharp-override brengen npm audit op nul
+  kwetsbaarheden. Browser: preview blijft tijdens polling behouden; gewijzigde
+  tekst trekt approval in; nepantwoord en geschiedenis overleven herladen;
+  tweede beurt gebruikt zichtbaar goedgekeurde eerdere context.
+- Lokale setup/start/stop/doctor en SQLite-backup/restore toegevoegd. Backend
+  en worker krijgen dezelfde configureerbare private DB; web krijgt het juiste
+  backendadres bij aangepaste poort. Ubuntu-systemdvoorbeelden zijn aanwezig,
+  maar niet geïnstalleerd of op Ubuntu/M40 getest. Zie [installatie](installation.md).
+
+- 9 september: duurzame Chat en Gaia-koppeling toegevoegd op `codex/complete-leon`.
+  Exacte context/output-/kostenapproval, aanvraagdeduplicatie en herstel staan
+  in [chat.md](chat.md). Werk kan oudere jobs rechtstreeks op ID herstellen.
+  Hervatwatch gebruikt expliciete FIFO-collectoren en werkt ook met Bash 3.2.
+  De oudere updates hieronder beschrijven hun eigen meetmoment.
+
+- Actuele werkkloon op Mac: `/Users/perhorstmanshoff/.codex/worktrees/leon-completion-20260908`.
+  Gedeelde oorspronkelijke SSD-map niet overschrijven; daarin ontbreken
+  kernbestanden en `git diff` meldde een onleesbaar object. Deze kloon start vanaf
+  actuele GitHub-main `0bc67c6`. De kostenvoorkeur is expliciet: lichte agents,
+  compacte opdrachten en hoofdagent voor integratie/review.
+
 - Kostenherstel werkt met eerder ontvangen, gevalideerde usage-receipts. Gaia toont tokens/bedrag en vraagt aparte approval; de transactie boekt uitsluitend kosten af. Taak/checkpoint worden niet geslaagd gemaakt, geen nieuwe providercall. Timeout zonder bruikbaar verbruik blijft geblokkeerd. Late workers en dubbele approvals kunnen de afboeking niet terugdraaien of verdubbelen.
 - Gaia-Werk heeft nu tekstinvoer, lokale kostenpreview en een niet-vooraf aangevinkte approval. Wijzigingen wissen eerdere approval. Alleen een aanvraag-UUID wordt tijdelijk in sessionStorage bewaard voor een onzekere verzending; herstel zoekt zonder opnieuw te verzenden. Het modelantwoord is leesbaar buiten de ruwe bewijsweergave.
 - Begrensde OpenAI-tekstuitvoering toegevoegd aan dezelfde WorkQueue: expliciete tekst-/kostenapproval, vaste Responses-endpoint, geen tools/retries, transactionele reservering vóór verzenden en resultaatopslag vóór checkpoint. Onzekere uitkomst blokkeert nieuwe calls en wordt niet automatisch herhaald. Zie [modeluitvoering](model-work.md).
@@ -33,7 +64,7 @@ Zie [uitvoering en testbewijs](local-work.md). Browserketen getest met tijdelijk
 
 ## Volgende codewerk
 
-1. Echte chat verbinden en detailherstel buiten de 100 nieuwste jobs repareren; daarna één read-only connector. Bewaar het bestaande ontwerp. Side-effecting tools hebben een eigen backendapproval-/idempotentiecontract nodig.
+1. Vandaag en Memory op echte gegevens aansluiten; daarna één read-only connector. Chat en detailherstel buiten de 100 nieuwste jobs zijn inmiddels toegevoegd. Bewaar het bestaande ontwerp. Side-effecting tools hebben een eigen backendapproval-/idempotentiecontract nodig.
 2. Netwerkuitkomsten zonder verbruiksbewijs blijven geblokkeerd; toekomstig extern bewijs mag alleen met betrouwbare aanvraagkoppeling worden verwerkt. Geen handmatig verzonnen bedrag of automatische betaalde retry. Live kleine call pas met gekozen budget en expliciet gedeelde tekst.
 3. Ubuntu-installatie/systemd, private backup/restore en doelhardware meten zodra de server beschikbaar is.
 

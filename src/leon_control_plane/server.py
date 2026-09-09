@@ -36,6 +36,7 @@ from leon_control_plane.tool_adoption import build_tool_adoption_shortlist
 from leon_control_plane.tool_registry import classify_tool_action, normalize_tool_manifest, score_tool_candidate
 from leon_control_plane.tool_review import build_review_packets
 from leon_control_plane.work_api import work_request
+from leon_control_plane.chat_api import chat_request
 from leon_control_plane.ui_composition import (
     UI_POLICY_PATH,
     build_canvas_shell,
@@ -48,9 +49,9 @@ from leon_control_plane.ui_composition import (
 REPO_ROOT = Path(__file__).resolve().parents[2]
 STATE_DIR = REPO_ROOT / "state"
 STATE_PATH = STATE_DIR / "control-plane.json"
-SEED_PATH = STATE_DIR / "control-plane.seed.json"
-DB_PATH = STATE_DIR / "control-plane.sqlite"
-ENV_PATH = REPO_ROOT / ".env.local"
+SEED_PATH = Path(os.environ.get("LEON_SEED_PATH", STATE_DIR / "control-plane.seed.json")).expanduser()
+DB_PATH = Path(os.environ.get("LEON_DB_PATH", STATE_DIR / "control-plane.sqlite")).expanduser()
+ENV_PATH = Path(os.environ.get("LEON_ENV_FILE", REPO_ROOT / ".env.local")).expanduser()
 MODEL_POLICY_PATH = REPO_ROOT / "config" / "model-routing.json"
 ENV_KEY_RE = re.compile(r"^[A-Z][A-Z0-9_]{1,80}$")
 SESSION_COOKIE = "leon_session"
@@ -3564,6 +3565,11 @@ class Handler(BaseHTTPRequestHandler):
             return
         if not self._require_auth():
             return
+        if self.path.startswith("/api/chat"):
+            token = dashboard_token()
+            if not token or not hmac.compare_digest(self.headers.get("authorization", ""), f"Bearer {token}"):
+                self._send_json({"error": "Explicit dashboard bearer authorization required"}, HTTPStatus.UNAUTHORIZED)
+                return
         try:
             work_response = work_request(STORE, method="GET", path=self.path)
         except ValueError as exc:
@@ -3571,6 +3577,14 @@ class Handler(BaseHTTPRequestHandler):
             return
         if work_response is not None:
             self._send_json(work_response)
+            return
+        try:
+            chat_response = chat_request(STORE, method="GET", path=self.path)
+        except ValueError as exc:
+            self._send_json({"error": str(exc)}, HTTPStatus.BAD_REQUEST)
+            return
+        if chat_response is not None:
+            self._send_json(chat_response)
             return
         if self.path == "/" or self.path == "/dashboard":
             self._send_html(render_dashboard())
@@ -3595,13 +3609,16 @@ class Handler(BaseHTTPRequestHandler):
                 return
             if not self._require_auth():
                 return
-            if self.path in {"/api/work/model", "/api/work/model/preview", "/api/work/model/reconciliation"}:
+            if self.path in {"/api/work/model", "/api/work/model/preview", "/api/work/model/reconciliation"} or self.path.startswith("/api/chat"):
                 token = dashboard_token()
                 if not token or not hmac.compare_digest(self.headers.get("authorization", ""), f"Bearer {token}"):
                     self._send_json({"error": "Explicit dashboard bearer authorization required"}, HTTPStatus.UNAUTHORIZED)
                     return
             if self.path in {"/api/work/jobs", "/api/work/control", "/api/work/model", "/api/work/model/preview", "/api/work/model/reconciliation"}:
                 self._send_json(work_request(STORE, method="POST", path=self.path, body=self._read_body()))
+                return
+            if self.path.startswith("/api/chat"):
+                self._send_json(chat_request(STORE, method="POST", path=self.path, body=self._read_body()))
                 return
             if self.path == "/api/secrets":
                 self._handle_secret()
@@ -4461,12 +4478,24 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Run the Leon AI Assistant local control-plane dashboard.")
     parser.add_argument("--host", default="127.0.0.1")
     parser.add_argument("--port", default=8765, type=int)
+    parser.add_argument("--db", type=Path, default=None)
+    parser.add_argument("--seed", type=Path, default=None)
+    parser.add_argument("--env-file", type=Path, default=None)
     args = parser.parse_args(argv)
 
     if args.host not in {"127.0.0.1", "localhost"}:
         print("Refusing to bind non-localhost without adding authentication first.", file=sys.stderr)
         return 2
 
+    global DB_PATH, SEED_PATH, ENV_PATH, STORE, RUNNER
+    if args.db is not None:
+        DB_PATH = args.db.expanduser().resolve()
+    if args.seed is not None:
+        SEED_PATH = args.seed.expanduser().resolve()
+    if args.env_file is not None:
+        ENV_PATH = args.env_file.expanduser().resolve()
+    STORE = ControlPlaneStore(DB_PATH, SEED_PATH)
+    RUNNER = MockAgentRunner(STORE)
     STORE.initialize()
     server = ThreadingHTTPServer((args.host, args.port), Handler)
     print(f"Leon control plane running at http://{args.host}:{args.port}")

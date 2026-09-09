@@ -8,6 +8,10 @@ const routes: Record<string, Partial<Record<string, string>>> = {
   model: { POST: '/api/work/model' },
   'model-preview': { POST: '/api/work/model/preview' },
   reconciliation: { GET: '/api/work/model/reconciliation', POST: '/api/work/model/reconciliation' },
+  'chat-conversations': { GET: '/api/chat/conversations', POST: '/api/chat/conversations' },
+  'chat-conversation': { GET: '/api/chat/conversations' },
+  'chat-preview': { POST: '/api/chat/preview' },
+  'chat-messages': { POST: '/api/chat/conversations' },
 };
 const json = (data: unknown, status = 200) => Response.json(data, {
   status, headers: { 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' },
@@ -34,12 +38,21 @@ export async function forwardLeon(request: Request, config: Config, fetcher: typ
   }
   const resource = url.searchParams.get('resource') ?? '';
   const target = Object.hasOwn(routes, resource) ? routes[resource][request.method] : undefined;
-  if (!target || [...url.searchParams.keys()].some(key => !['resource', 'id', 'request_id'].includes(key))
+  const chatIdRoute = resource === 'chat-conversation' || resource === 'chat-messages';
+  const allowedQueryKeys = resource === 'chat-conversations'
+    ? ['resource', 'limit', 'before']
+    : ['resource', 'id', 'request_id'];
+  if (!target || [...url.searchParams.keys()].some(key => !allowedQueryKeys.includes(key))
       || url.searchParams.getAll('resource').length !== 1 || url.searchParams.getAll('id').length > 1
       || url.searchParams.getAll('request_id').length > 1
       || (url.searchParams.has('id') && url.searchParams.has('request_id'))
       || (url.searchParams.has('request_id') && (resource !== 'jobs' || request.method !== 'GET'))
-      || (url.searchParams.has('id') && (!['jobs', 'reconciliation'].includes(resource) || request.method !== 'GET'))
+      || (url.searchParams.has('id') && (!['jobs', 'reconciliation', 'chat-conversation', 'chat-messages'].includes(resource)
+        || (resource === 'chat-messages' ? request.method !== 'POST' : request.method !== 'GET')))
+      || (chatIdRoute && !url.searchParams.has('id'))
+      || (resource === 'chat-conversations' && request.method === 'GET' &&
+        (url.searchParams.getAll('limit').length > 1 || url.searchParams.getAll('before').length > 1))
+      || (resource === 'chat-conversations' && request.method === 'POST' && (url.searchParams.has('limit') || url.searchParams.has('before')))
       || (resource === 'reconciliation' && request.method === 'GET' && !url.searchParams.get('id'))) {
     return json({ error: 'Onbekende Leon-route.' }, 404);
   }
@@ -53,8 +66,14 @@ export async function forwardLeon(request: Request, config: Config, fetcher: typ
       if (!parsed || Array.isArray(parsed) || typeof parsed !== 'object') throw new Error();
     } catch { return json({ error: 'Ongeldige JSON.' }, 400); }
   }
-  const upstream = new URL(target, backend);
-  if (url.searchParams.has('id')) upstream.searchParams.set('id', url.searchParams.get('id')!);
+  let upstreamTarget = target;
+  if (resource === 'chat-conversation') upstreamTarget += `/${encodeURIComponent(url.searchParams.get('id')!)}`;
+  if (resource === 'chat-messages') upstreamTarget += `/${encodeURIComponent(url.searchParams.get('id')!)}/messages`;
+  const upstream = new URL(upstreamTarget, backend);
+  if (resource === 'chat-conversations') {
+    for (const key of ['limit', 'before']) if (url.searchParams.has(key)) upstream.searchParams.set(key, url.searchParams.get(key)!);
+  }
+  if (url.searchParams.has('id') && ['jobs', 'reconciliation'].includes(resource)) upstream.searchParams.set('id', url.searchParams.get('id')!);
   if (url.searchParams.has('request_id')) upstream.searchParams.set('request_id', url.searchParams.get('request_id')!);
   try {
     const response = await fetcher(upstream, {
