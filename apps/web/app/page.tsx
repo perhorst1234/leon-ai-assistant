@@ -4,6 +4,8 @@ import { FormEvent, useEffect, useRef, useState } from 'react';
 import type { RefObject } from 'react';
 import ConnectedWork from './components/connected-work';
 import ConnectedChat from './components/connected-chat';
+import ConnectedToday from './components/connected-today';
+import ConnectedMemory from './components/connected-memory';
 import type { ChatRequest } from './components/connected-chat';
 import { AnimatePresence, MotionConfig, motion } from 'motion/react';
 import {
@@ -1133,7 +1135,7 @@ function PromptIsland({
 }
 
 function CommandDock({ active, onOpenChat }: { active: SpaceId; onOpenChat: () => void }) {
-  const status = active === 'today' ? 'Voorbeeldmissie' : active === 'flows' ? 'Lokale taken · opgeslagen checkpoints' : 'Voorbeeldgeheugen';
+  const status = active === 'today' ? 'Vandaag' : active === 'flows' ? 'Lokale taken · opgeslagen checkpoints' : 'Geheugen';
   return (
     <div className="command-dock">
       <span><span className="status-pulse" />{status}</span>
@@ -1309,11 +1311,11 @@ export default function HomePage() {
           inert={overlayOpen || undefined}
         >
           {activeSpace === 'today' && (
-            <TodayView
+            <ConnectedToday
               onOpenChat={openChatCommand}
               onOpenWork={() => switchSpace('flows')}
-              onApprove={() => setReviewKind('approval')}
-              onReviewLearning={() => setReviewKind('learning')}
+              onOpenMemory={() => switchSpace('memory')}
+              demo={<TodayView onOpenChat={openChatCommand} onOpenWork={() => switchSpace('flows')} onApprove={() => setReviewKind('approval')} onReviewLearning={() => setReviewKind('learning')} />}
             />
           )}
           {activeSpace === 'chat' && (
@@ -1349,7 +1351,7 @@ export default function HomePage() {
               onApprove={() => setReviewKind('approval')}
             />} />
           )}
-          {activeSpace === 'memory' && <MemoryView selected={selectedMemory} onSelect={setSelectedMemory} />}
+          {activeSpace === 'memory' && <ConnectedMemory demo={<MemoryView selected={selectedMemory} onSelect={setSelectedMemory} />} />}
         </motion.div>
       </AnimatePresence>
 
@@ -1418,7 +1420,7 @@ export default function HomePage() {
         )}
       </AnimatePresence>
 
-      <div className="prototype-note">{activeSpace === 'flows' ? 'Werk: live backend of expliciet ontwerpvoorbeeld' : activeSpace === 'chat' ? (chatDemo ? 'Chat: expliciet ontwerpvoorbeeld' : 'Chat: verbonden met Leon') : 'Interactief concept · voorbeelddata'}</div>
+      {(activeSpace === 'flows' || activeSpace === 'chat') && <div className="prototype-note">{activeSpace === 'flows' ? 'Werk: lokale status of expliciet ontwerpvoorbeeld' : chatDemo ? 'Chat: expliciet ontwerpvoorbeeld' : 'Chat: verbonden met Leon'}</div>}
     </main>
     </MotionConfig>
   );

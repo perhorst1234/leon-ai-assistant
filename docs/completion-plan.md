@@ -1,4 +1,4 @@
-# Leon afronden — 8 september 2026
+# Leon afronden — 10 september 2026
 
 Doel: de bestaande productvisie afmaken met aantoonbare werking. Geen demo,
 mocktest of onbereikbare hardware als afgeronde integratie tellen.
@@ -28,11 +28,14 @@ mocktest of onbereikbare hardware als afgeronde integratie tellen.
 
 ## Bewijs en grenzen
 
-Stand 9 september: stappen 1–2 lokaal geïmplementeerd en met offline tests plus
+Stand 10 september: stappen 1–2 lokaal geïmplementeerd en met offline tests plus
 echte browserinteractie tegen een nepmodel gecontroleerd. Stap 3 heeft lokale
-  scripts en Ubuntu-unitvoorbeelden; doelserveracceptatie blijft open. Stappen
-4–8 blijven open. Bewijs en actuele aantallen: `handoff.md`,
-`chat-browser-evidence.md`, `web-validation.md`.
+scripts en Ubuntu-unitvoorbeelden; doelserveracceptatie blijft open. Stap 4 is
+lokaal geïmplementeerd en via browser tegen tijdelijke SQLite gecontroleerd.
+Stap 5 heeft clientwerk in review maar nog geen account-/UI-integratie. Stappen
+6–8 blijven open. Bewijs en actuele aantallen: `handoff.md`,
+`chat-browser-evidence.md`, `memory-today-browser-evidence.md` en
+`web-validation.md`.
 
 Elke afgeronde stap krijgt relevante regressietests, onafhankelijke review en
 een korte handoff. Geen betaalde providercall zonder gekozen budget en concrete

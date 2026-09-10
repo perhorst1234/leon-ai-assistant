@@ -12,6 +12,12 @@ const routes: Record<string, Partial<Record<string, string>>> = {
   'chat-conversation': { GET: '/api/chat/conversations' },
   'chat-preview': { POST: '/api/chat/preview' },
   'chat-messages': { POST: '/api/chat/conversations' },
+  memory: { GET: '/api/memory' },
+  overview: { GET: '/api/overview' },
+  'memory-create': { POST: '/api/memory' },
+  'memory-search': { POST: '/api/memory/search' },
+  'memory-update': { POST: '/api/memory/update' },
+  'memory-delete': { POST: '/api/memory/delete' },
 };
 const json = (data: unknown, status = 200) => Response.json(data, {
   status, headers: { 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' },

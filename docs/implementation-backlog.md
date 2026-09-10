@@ -1,5 +1,14 @@
 # Leon / Gaia — uitvoeringsbacklog
 
+**10 september:** Vandaag en Memory gebruiken echte lokale gegevens. Memory
+ondersteunt zoeken, bronweergave, toevoegen, corrigeren en verwijderen met reden;
+late zoekresultaten kunnen nieuwe verbinding niet overschrijven. 288 backendtests
+plus twee subtests, 23 webtests, TypeScript/build en browseracceptatie zijn
+geslaagd. Google Agenda/Gmail is gekozen als eerste alleen-lezen connector;
+begrensde client en offline tests zijn gereed; accountverbinding, server/UI en
+live acceptatie blijven open. Zie [acceptatiebewijs](memory-today-browser-evidence.md)
+en [Google alleen-lezen client](google-readonly.md).
+
 **9 september:** duurzame Chat, exacte context-/kostenapproval en Gaia-koppeling
 zijn toegevoegd; oudere Werk-jobs zijn direct opvraagbaar. Zie [chat.md](chat.md)
 en de actuele [handoff](handoff.md) voor verificatie. Installatie, echte Vandaag/

@@ -98,3 +98,24 @@ test('chat routes keep conversation ids in the fixed local path and forward pagi
     assert.equal((await forwardLeon(request(resource), config, forbiddenFetch)).status, 404);
   }
 });
+
+test('Today and Memory routes stay on the fixed local API boundary', async () => {
+  const cases = [
+    ['overview', 'GET', '/api/overview'],
+    ['memory', 'GET', '/api/memory'],
+    ['memory-create', 'POST', '/api/memory'],
+    ['memory-search', 'POST', '/api/memory/search'],
+    ['memory-update', 'POST', '/api/memory/update'],
+    ['memory-delete', 'POST', '/api/memory/delete'],
+  ];
+  for (const [resource, method, path] of cases) {
+    const response = await forwardLeon(request(resource, { method, ...(method === 'POST' ? { body: '{}' } : {}) }), config, async url => {
+      assert.equal(String(url), `http://127.0.0.1:8765${path}`);
+      return Response.json({ ok: true });
+    });
+    assert.equal(response.status, 200);
+  }
+  for (const resource of ['overview&id=x', 'memory&before=x', 'memory-create&id=x', 'memory-search&id=x']) {
+    assert.equal((await forwardLeon(request(resource), config, forbiddenFetch)).status, 404);
+  }
+});

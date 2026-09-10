@@ -36,6 +36,7 @@ from leon_control_plane.tool_adoption import build_tool_adoption_shortlist
 from leon_control_plane.tool_registry import classify_tool_action, normalize_tool_manifest, score_tool_candidate
 from leon_control_plane.tool_review import build_review_packets
 from leon_control_plane.work_api import work_request
+from leon_control_plane.overview_api import overview_request
 from leon_control_plane.chat_api import chat_request
 from leon_control_plane.ui_composition import (
     UI_POLICY_PATH,
@@ -3469,6 +3470,7 @@ class Handler(BaseHTTPRequestHandler):
         body = json.dumps(redact_value(data), ensure_ascii=False).encode("utf-8")
         self.send_response(status)
         self.send_header("content-type", "application/json; charset=utf-8")
+        self.send_header("cache-control", "no-store")
         self.send_header("content-length", str(len(body)))
         self.end_headers()
         self.wfile.write(body)
@@ -3577,6 +3579,14 @@ class Handler(BaseHTTPRequestHandler):
             return
         if work_response is not None:
             self._send_json(work_response)
+            return
+        try:
+            overview_response = overview_request(STORE, method="GET", path=self.path)
+        except ValueError as exc:
+            self._send_json({"error": str(exc)}, HTTPStatus.BAD_REQUEST)
+            return
+        if overview_response is not None:
+            self._send_json(overview_response)
             return
         try:
             chat_response = chat_request(STORE, method="GET", path=self.path)

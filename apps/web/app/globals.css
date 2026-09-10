@@ -1871,6 +1871,23 @@ input:focus-visible {
 .today-ribbon button { display: flex; min-height: 46px; align-items: center; gap: 7px; padding: 0 14px; border: 0; border-radius: 14px; color: #171721; background: #ebe8ff; cursor: pointer; font-size: 10px; font-weight: 650; }
 
 .work-view { display: flex; flex-direction: column; gap: 16px; padding: 10px clamp(28px, 4vw, 62px) 12px; }
+.connected-memory, .connected-today { overflow: auto; }
+.memory-layout, .today-live-grid { z-index: 2; display: grid; min-height: 0; flex: 1; grid-template-columns: minmax(0, 1.25fr) minmax(300px, .75fr); gap: 16px; }
+.memory-list-panel, .today-actual-side { display: flex; min-height: 0; flex-direction: column; gap: 14px; }
+.memory-search { display: flex; align-items: center; gap: 9px; padding: 8px 10px; border: 1px solid rgba(255,255,255,.1); border-radius: 14px; background: rgba(16,18,28,.82); }
+.memory-search input { min-width: 0; flex: 1; border: 0; outline: 0; color: var(--ink); background: transparent; font-size: 12px; }
+.memory-search button { min-height: 34px; padding: 0 11px; border: 0; border-radius: 10px; color: #171720; background: #e9e6fb; cursor: pointer; font-size: 10px; font-weight: 650; }
+.memory-list { min-height: 0; overflow: auto; padding: 4px; border-radius: 16px; background: rgba(16,18,28,.64); }
+.memory-list-item { display: flex; width: 100%; align-items: center; gap: 11px; padding: 12px; border: 0; border-radius: 12px; color: var(--ink); background: transparent; text-align: left; cursor: pointer; }
+.memory-list-item:hover, .memory-list-item[data-selected] { background: rgba(158,138,255,.13); }
+.memory-list-icon { display: grid; width: 32px; height: 32px; flex: 0 0 auto; place-items: center; border-radius: 10px; color: #c8bcff; background: rgba(158,138,255,.12); }
+.memory-list-item span:last-child { min-width: 0; } .memory-list-item strong { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; font-weight: 590; } .memory-list-item small { display: block; margin-top: 4px; color: var(--faint); font-size: 10px; }
+.memory-create { display: grid; gap: 10px; padding: 16px; border-radius: 16px; background: rgba(16,18,28,.82); } .memory-create textarea, .memory-form-grid input { width: 100%; border: 1px solid rgba(255,255,255,.1); border-radius: 10px; padding: 10px; color: var(--ink); background: rgba(255,255,255,.045); font-size: 12px; outline: 0; } .memory-create textarea { min-height: 65px; resize: vertical; } .memory-form-grid { display: grid; grid-template-columns: 1fr 100px; gap: 8px; }
+.connected-memory-inspector { position: relative; inset: auto; width: auto; min-height: 0; overflow: auto; padding: 20px; border-radius: 16px; }
+.memory-meta { display: grid; gap: 10px; margin: 22px 0; } .memory-meta div { display: flex; justify-content: space-between; gap: 14px; border-bottom: 1px solid rgba(255,255,255,.07); padding-bottom: 8px; } .memory-meta dt { color: var(--faint); font-size: 10px; } .memory-meta dd { max-width: 60%; margin: 0; overflow: hidden; color: var(--soft); font-size: 11px; text-align: right; text-overflow: ellipsis; white-space: nowrap; }
+.memory-related { display: grid; gap: 7px; margin: 16px 0; color: var(--soft); font-size: 10px; } .memory-related strong { display: flex; align-items: center; gap: 6px; color: var(--ink); } .memory-inspector-actions { display: flex; gap: 8px; flex-wrap: wrap; } .danger-control { color: #ffbaba; } .memory-privacy { display: flex; align-items: center; gap: 6px; color: var(--faint); font-size: 10px; }
+.today-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; margin: 18px 0; border-radius: 14px; background: rgba(255,255,255,.05); overflow: hidden; } .today-stats span { display: grid; gap: 4px; padding: 15px; } .today-stats svg { color: #b9aff7; } .today-stats strong { font-size: 22px; font-weight: 500; } .today-stats small { color: var(--faint); font-size: 10px; } .today-actual-side .attention-panel { min-height: 0; }
+@media (max-width: 700px) { .memory-layout, .today-live-grid { grid-template-columns: 1fr; } .connected-memory-inspector { min-height: 280px; } }
 .work-header { z-index: 2; display: flex; flex: 0 0 auto; min-height: 72px; align-items: end; justify-content: space-between; gap: 28px; }
 .work-header h1 { font-size: clamp(2rem, 3vw, 3.55rem); }
 .work-actions { display: flex; flex: 0 0 auto; gap: 8px; }
@@ -2494,4 +2511,73 @@ input:focus-visible {
 @media (prefers-reduced-transparency: reduce) {
   .review-sheet,
   .today-ribbon > span { background: #171925; backdrop-filter: none; }
+}
+
+/* Connected Today/Memory use document flow inside the spatial demo shell. */
+.space-view.connected-memory,
+.space-view.connected-today {
+  position: absolute;
+  inset: 54px 0 0;
+  display: flex;
+  width: 100%;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 10px clamp(28px, 4vw, 62px) 24px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  box-sizing: border-box;
+}
+
+.connected-memory .work-header,
+.connected-today .work-header {
+  position: relative;
+  inset: auto;
+  width: 100%;
+}
+
+.connected-memory .memory-layout,
+.connected-today .today-live-grid {
+  position: relative;
+  inset: auto;
+  width: 100%;
+  min-height: auto;
+  flex: 0 0 auto;
+  align-items: start;
+}
+
+.connected-today .mission-console {
+  position: relative;
+  inset: auto;
+  width: auto;
+  min-height: 0;
+}
+
+.connected-memory .memory-create > label,
+.connected-memory .memory-form-grid label {
+  display: grid;
+  gap: 6px;
+  color: var(--soft);
+  font-size: 11px;
+}
+
+.connected-memory-inspector h2 { overflow-wrap: anywhere; }
+
+@media (max-width: 700px) {
+  .space-view.connected-memory,
+  .space-view.connected-today {
+    position: relative;
+    inset: auto;
+    width: 100%;
+    height: auto;
+    padding: 6px 14px 32px;
+    overflow: visible;
+  }
+
+  .connected-memory .memory-layout,
+  .connected-today .today-live-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 14px;
+    margin-top: 16px;
+  }
 }

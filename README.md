@@ -15,6 +15,15 @@ Persoonlijke AI-assistent met de bestaande Gaia-frontend en Python/SQLite-backen
 - [Bestaande websitebroncode](apps/web)
 - [Frontend starten en herkomst](apps/web/README.md)
 
-Werk en Chat hebben een backendverbinding en een afzonderlijk ontwerpvoorbeeld. Vandaag, Memory en specialistische agents blijven demo; de voorbeelden bewijzen geen echte integraties.
+Werk, Chat, Vandaag en Memory hebben een backendverbinding en een afzonderlijk
+ontwerpvoorbeeld. Vandaag toont duurzame werk-/geheugenaantallen. Memory kan
+opgeslagen context met bron zoeken, toevoegen, corrigeren en met reden
+verwijderen. Zie [lokaal acceptatiebewijs](docs/memory-today-browser-evidence.md).
+Specialistische agents blijven ontwerpvoorbeeld; voorbeelden bewijzen geen
+externe integraties.
+
+Google Agenda/Gmail is gekozen als eerste alleen-lezen koppeling. Begrensde
+clientcode en offline tests staan in [Google alleen-lezen](docs/google-readonly.md);
+OAuth-accountverbinding en live gegevens blijven bewust nog niet geclaimd.
 
 GitHub bewaart code, besluiten, voortgang en hervatstappen. De repository is openbaar: credentials, persoonlijke gesprekken, databases, betaalgegevens en serverback-ups horen in een aparte private back-up. Een Git-push is geen back-up van de volledige server of van lopende agentprocessen.
