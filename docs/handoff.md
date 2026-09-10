@@ -5,15 +5,17 @@ Stand: **10 september 2026**. De gebruiker wil vooral coderen; houd deze overdra
 ## Lopende aanvulling — 10 september
 
 - Chat/installatie is gepubliceerd op `codex/complete-leon`: GitHub-commit `851d9880`, exact dezelfde bronboom als lokale `6fa2150` (`d05dd52a`).
-- Vandaag/Memory zijn lokaal afgerond maar nog niet gecommit. Backend: 288 tests
+- Vandaag/Memory zijn lokaal afgerond in commit `2bdb5d4`. Backend: 299 tests
   plus twee subtests geslaagd. Web: 23 tests, TypeScript, build en lint zonder
   fouten geslaagd. Browser: tokenherstel, bewaren, herladen, zoeken, inline
   corrigeren, verwijderen met verplichte reden en 1280×720-indeling geslaagd op
   tijdelijke SQLite. Zie [acceptatiebewijs](memory-today-browser-evidence.md).
 - Google Agenda/Gmail is door gebruiker gekozen als eerste alleen-lezen
-  koppeling. Begrensde client, 15 gerichte tests en onafhankelijke review zijn
-  afgerond. Accountverbinding, server/UI-integratie en live acceptatie zijn nog
-  niet gereed. Zie [Google alleen-lezen client](google-readonly.md).
+  koppeling. Begrensde client, geauthenticeerde serverroutes, 26 gerichte tests
+  en onafhankelijke reviews zijn afgerond. Preview schrijft geen mail- of
+  agendagegevens naar lokale opslag. Accountverbinding, Gaia-UI en live
+  acceptatie zijn nog niet gereed. Zie
+  [Google alleen-lezen client](google-readonly.md).
 - Kosten: vervolgcoördinatie is ingesteld op `gpt-5.6-sol` (medium). Gebruik smalle opdrachten, bewaar ruimte voor verificatie en controleer gedeeld limiet vóór nieuw groot werk. Het volledige productdoel blijft actief.
 
 ## Nieuwste werk

@@ -37,6 +37,8 @@ from leon_control_plane.tool_registry import classify_tool_action, normalize_too
 from leon_control_plane.tool_review import build_review_packets
 from leon_control_plane.work_api import work_request
 from leon_control_plane.overview_api import overview_request
+from leon_control_plane.google_api import google_request
+from leon_control_plane.google_readonly import GoogleReadonlyError
 from leon_control_plane.chat_api import chat_request
 from leon_control_plane.ui_composition import (
     UI_POLICY_PATH,
@@ -3567,6 +3569,11 @@ class Handler(BaseHTTPRequestHandler):
             return
         if not self._require_auth():
             return
+        if self.path.startswith("/api/google/"):
+            token = dashboard_token()
+            if not token or not hmac.compare_digest(self.headers.get("authorization", ""), f"Bearer {token}"):
+                self._send_json({"error": "Explicit dashboard bearer authorization required"}, HTTPStatus.UNAUTHORIZED)
+                return
         if self.path.startswith("/api/chat"):
             token = dashboard_token()
             if not token or not hmac.compare_digest(self.headers.get("authorization", ""), f"Bearer {token}"):
@@ -3587,6 +3594,14 @@ class Handler(BaseHTTPRequestHandler):
             return
         if overview_response is not None:
             self._send_json(overview_response)
+            return
+        try:
+            google_response = google_request(STORE, method="GET", path=self.path, values=parse_selected_env_values({"GOOGLE_READONLY_ENABLED", "GOOGLE_ACCESS_TOKEN", "GOOGLE_REFRESH_TOKEN", "GOOGLE_CLIENT_ID", "GOOGLE_CLIENT_SECRET", "GOOGLE_GRANTED_SCOPES"}))
+        except (ValueError, GoogleReadonlyError) as exc:
+            self._send_json({"error": str(exc)}, HTTPStatus.BAD_REQUEST)
+            return
+        if google_response is not None:
+            self._send_json(google_response)
             return
         try:
             chat_response = chat_request(STORE, method="GET", path=self.path)
@@ -3619,6 +3634,11 @@ class Handler(BaseHTTPRequestHandler):
                 return
             if not self._require_auth():
                 return
+            if self.path.startswith("/api/google/"):
+                token = dashboard_token()
+                if not token or not hmac.compare_digest(self.headers.get("authorization", ""), f"Bearer {token}"):
+                    self._send_json({"error": "Explicit dashboard bearer authorization required"}, HTTPStatus.UNAUTHORIZED)
+                    return
             if self.path in {"/api/work/model", "/api/work/model/preview", "/api/work/model/reconciliation"} or self.path.startswith("/api/chat"):
                 token = dashboard_token()
                 if not token or not hmac.compare_digest(self.headers.get("authorization", ""), f"Bearer {token}"):
@@ -3719,6 +3739,20 @@ class Handler(BaseHTTPRequestHandler):
                 return
             if self.path == "/api/memory":
                 self._handle_memory_create()
+                return
+            if self.path in {"/api/google/calendar/preview", "/api/google/mail/preview"}:
+                data = self._read_body()
+                try:
+                    result = google_request(STORE, method="POST", path=self.path, values=parse_selected_env_values({"GOOGLE_READONLY_ENABLED", "GOOGLE_ACCESS_TOKEN", "GOOGLE_REFRESH_TOKEN", "GOOGLE_CLIENT_ID", "GOOGLE_CLIENT_SECRET", "GOOGLE_GRANTED_SCOPES"}), data=data)
+                except GoogleReadonlyError as exc:
+                    code = str(exc)
+                    status = HTTPStatus.BAD_GATEWAY if code.startswith(("google_transport_failed", "google_http_status:", "google_transport_response")) else HTTPStatus.BAD_REQUEST
+                    self._send_json({"error": code}, status)
+                    return
+                except ValueError as exc:
+                    self._send_json({"error": str(exc)}, HTTPStatus.BAD_REQUEST)
+                    return
+                self._send_json(result)
                 return
             if self.path in {"/api/memory/retrieve", "/api/memory/search"}:
                 self._handle_memory_retrieve()

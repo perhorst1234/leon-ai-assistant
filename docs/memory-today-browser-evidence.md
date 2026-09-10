@@ -22,7 +22,7 @@ persoonlijke data of betaalde modelaanroep gebruikt.
 
 ## Geautomatiseerde controle
 
-- Backend: 288 tests plus twee subtests geslaagd.
+- Backend: 299 tests plus twee subtests geslaagd na Google-serverkoppeling.
 - Web: 23 tests geslaagd.
 - TypeScriptcontrole en productiebuild geslaagd.
 - Lint: nul fouten; vijf bestaande ongebruikte-importwaarschuwingen in

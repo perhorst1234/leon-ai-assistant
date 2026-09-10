@@ -2,11 +2,11 @@
 
 **10 september:** Vandaag en Memory gebruiken echte lokale gegevens. Memory
 ondersteunt zoeken, bronweergave, toevoegen, corrigeren en verwijderen met reden;
-late zoekresultaten kunnen nieuwe verbinding niet overschrijven. 288 backendtests
+late zoekresultaten kunnen nieuwe verbinding niet overschrijven. 299 backendtests
 plus twee subtests, 23 webtests, TypeScript/build en browseracceptatie zijn
 geslaagd. Google Agenda/Gmail is gekozen als eerste alleen-lezen connector;
-begrensde client en offline tests zijn gereed; accountverbinding, server/UI en
-live acceptatie blijven open. Zie [acceptatiebewijs](memory-today-browser-evidence.md)
+begrensde client, serverroutes en offline tests zijn gereed; accountverbinding,
+Gaia-UI en live acceptatie blijven open. Zie [acceptatiebewijs](memory-today-browser-evidence.md)
 en [Google alleen-lezen client](google-readonly.md).
 
 **9 september:** duurzame Chat, exacte context-/kostenapproval en Gaia-koppeling

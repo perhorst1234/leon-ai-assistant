@@ -1,8 +1,9 @@
 # Google Agenda en Gmail — alleen-lezen client
 
 Stand: 10 september 2026. Gebruiker koos Google Agenda/Gmail als eerste
-connector. Clientcode is aanwezig en offline getest. Accountverbinding,
-serverroute, Gaia-scherm en live Google-acceptatie zijn nog niet uitgevoerd.
+connector. Client en geauthenticeerde serverroutes zijn aanwezig en offline
+getest. Accountverbinding, Gaia-scherm en live Google-acceptatie zijn nog niet
+uitgevoerd.
 
 ## Gedrag
 
@@ -20,20 +21,26 @@ serverroute, Gaia-scherm en live Google-acceptatie zijn nog niet uitgevoerd.
   en geen redirects. Credentials worden niet uit omgeving gelezen, opgeslagen
   of in resultaat/fouttekst geplaatst.
 - Fouten zijn stabiele codes. Client doet geen automatische retries.
+- `GET /api/google/status` toont alleen aan/uit, configuratiestatus en toegekende
+  scope-status. Previewroutes voor agenda en mail vereisen expliciete bearer-
+  autorisatie.
+- Previewresultaten krijgen stabiele bronverwijzingen en worden niet automatisch
+  in Leon opgeslagen. Toestemmingsaudit wordt vóór uitvoering vastgelegd;
+  succes krijgt aanvullend uitvoeringsbewijs. Mislukking blijft zichtbaar zonder
+  ten onrechte geslaagde uitvoering te claimen.
 
 ## Bewijs
 
-- 15 gerichte clienttests geslaagd.
-- 18 connectorgerichte tests geslaagd.
-- Onafhankelijke Python-review: geen resterende P1/P2-bevindingen.
-- Volledige backendset na toevoeging: 288 tests plus twee subtests geslaagd.
+- 26 gerichte client-/HTTP-routetests geslaagd.
+- Onafhankelijke Python-reviews: geen resterende P1/P2-bevindingen.
+- Volledige backendset na serverkoppeling: 299 tests plus twee subtests geslaagd.
 
 ## Nog nodig voor echte koppeling
 
 1. Google Cloud OAuth-client en alleen-lezen toestemming door gebruiker.
 2. Private credential-provider met veilige opslag en rotatie buiten repository.
-3. Backendroutes die toestemming registreren, client aanroepen en genormaliseerde
-   bronrecords via bestaande Leon-store bewaren.
-4. Gaia-weergave plus offline HTTP/browsertests.
+3. Gaia-weergave plus browsertests voor status, agenda en mailmetadata.
+4. Aparte bewuste importactie als gebruiker geselecteerde resultaten in Leon
+   wil bewaren; preview zelf blijft zonder opslag.
 5. Kleine live acceptatie tegen gekozen Google-account; geen mail- of
    kalenderwijzigingen.

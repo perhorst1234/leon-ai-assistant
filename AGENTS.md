@@ -3,8 +3,8 @@
 - 10 september, `codex/complete-leon`: Vandaag en Memory gebruiken echte lokale
   gegevens; browserketen voor verbinden, bewaren, herladen, zoeken, corrigeren
   en verwijderen geslaagd. Google Agenda/Gmail alleen-lezen client is standaard
-  uit en offline getest; account-/server-/UI-integratie blijft open. 288
-  backendtests + twee subtests, 23 webtests, TypeScript/build geslaagd. Zie
+  uit; client en serverroutes zijn offline getest. Account-/UI-integratie blijft
+  open. 299 backendtests + twee subtests, 23 webtests, TypeScript/build geslaagd. Zie
   `docs/memory-today-browser-evidence.md` en `docs/google-readonly.md`. Volgende
   werk: Google OAuth credential-provider en server/UI-koppeling, zonder
   schrijfrechten.

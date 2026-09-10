@@ -32,7 +32,8 @@ Stand 10 september: stappen 1–2 lokaal geïmplementeerd en met offline tests p
 echte browserinteractie tegen een nepmodel gecontroleerd. Stap 3 heeft lokale
 scripts en Ubuntu-unitvoorbeelden; doelserveracceptatie blijft open. Stap 4 is
 lokaal geïmplementeerd en via browser tegen tijdelijke SQLite gecontroleerd.
-Stap 5 heeft clientwerk in review maar nog geen account-/UI-integratie. Stappen
+Stap 5 heeft client- en serverroutes offline getest; account-/UI-integratie en
+live acceptatie blijven open. Stappen
 6–8 blijven open. Bewijs en actuele aantallen: `handoff.md`,
 `chat-browser-evidence.md`, `memory-today-browser-evidence.md` en
 `web-validation.md`.
