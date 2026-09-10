@@ -119,3 +119,21 @@ test('Today and Memory routes stay on the fixed local API boundary', async () =>
     assert.equal((await forwardLeon(request(resource), config, forbiddenFetch)).status, 404);
   }
 });
+
+test('Google read-only routes use only their exact methods and local paths', async () => {
+  const cases = [
+    ['google-status', 'GET', '/api/google/status'],
+    ['google-calendar-preview', 'POST', '/api/google/calendar/preview'],
+    ['google-mail-preview', 'POST', '/api/google/mail/preview'],
+  ];
+  for (const [resource, method, path] of cases) {
+    const response = await forwardLeon(request(resource, { method, ...(method === 'POST' ? { body: '{}' } : {}) }), config, async url => {
+      assert.equal(String(url), `http://127.0.0.1:8765${path}`);
+      return Response.json({ ok: true });
+    });
+    assert.equal(response.status, 200);
+  }
+  assert.equal((await forwardLeon(request('google-status', { method: 'POST', body: '{}' }), config, forbiddenFetch)).status, 404);
+  assert.equal((await forwardLeon(request('google-calendar-preview'), config, forbiddenFetch)).status, 404);
+  assert.equal((await forwardLeon(request('google-mail-preview&id=x', { method: 'POST', body: '{}' }), config, forbiddenFetch)).status, 404);
+});

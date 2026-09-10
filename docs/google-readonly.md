@@ -2,8 +2,8 @@
 
 Stand: 10 september 2026. Gebruiker koos Google Agenda/Gmail als eerste
 connector. Client en geauthenticeerde serverroutes zijn aanwezig en offline
-getest. Accountverbinding, Gaia-scherm en live Google-acceptatie zijn nog niet
-uitgevoerd.
+getest. Gaia-scherm en lokale browserketen met synthetische Google-data zijn
+gereed. Accountverbinding en live Google-acceptatie zijn nog niet uitgevoerd.
 
 ## Gedrag
 
@@ -28,19 +28,23 @@ uitgevoerd.
   in Leon opgeslagen. Toestemmingsaudit wordt vóór uitvoering vastgelegd;
   succes krijgt aanvullend uitvoeringsbewijs. Mislukking blijft zichtbaar zonder
   ten onrechte geslaagde uitvoering te claimen.
+- Gaia Vandaag toont status en scopes zonder credentialvelden. Agenda en Gmail
+  worden elk pas na een expliciete klik opgehaald; token en previews verdwijnen
+  bij herladen.
 
 ## Bewijs
 
 - 26 gerichte client-/HTTP-routetests geslaagd.
 - Onafhankelijke Python-reviews: geen resterende P1/P2-bevindingen.
 - Volledige backendset na serverkoppeling: 299 tests plus twee subtests geslaagd.
+- 30 webtests, TypeScript, productiebouw en 1280x720-browseracceptatie geslaagd.
+  Zie [browseracceptatie](google-browser-evidence.md).
 
 ## Nog nodig voor echte koppeling
 
 1. Google Cloud OAuth-client en alleen-lezen toestemming door gebruiker.
 2. Private credential-provider met veilige opslag en rotatie buiten repository.
-3. Gaia-weergave plus browsertests voor status, agenda en mailmetadata.
-4. Aparte bewuste importactie als gebruiker geselecteerde resultaten in Leon
+3. Aparte bewuste importactie als gebruiker geselecteerde resultaten in Leon
    wil bewaren; preview zelf blijft zonder opslag.
-5. Kleine live acceptatie tegen gekozen Google-account; geen mail- of
+4. Kleine live acceptatie tegen gekozen Google-account; geen mail- of
    kalenderwijzigingen.

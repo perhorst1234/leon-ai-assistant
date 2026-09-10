@@ -1541,6 +1541,37 @@ input:focus-visible {
   .settings-sheet { top: 76px; right: 10px; bottom: 10px; width: calc(100% - 20px); padding: 18px; border-radius: 18px; }
 }
 
+.google-preview {
+  display: grid;
+  gap: 14px;
+  width: 100%;
+  padding: 20px;
+  border: 1px solid rgba(255,255,255,.09);
+  border-radius: 18px;
+  background: rgba(15,17,27,.76);
+  box-shadow: 0 24px 76px rgba(0,0,0,.3), inset 0 1px rgba(255,255,255,.08);
+}
+.google-preview > header { display: flex; align-items: start; justify-content: space-between; gap: 16px; }
+.google-preview h2 { margin: 5px 0 0; font-size: 18px; }
+.google-preview > header > span, .google-preview > p { color: var(--soft); font-size: 11px; }
+.google-preview > p { margin: 0; line-height: 1.5; }
+.google-private { display: inline-flex; align-items: center; gap: 6px; color: #f3ddb0; font-size: 10px; }
+.google-scopes { display: flex; flex-wrap: wrap; gap: 8px; }
+.google-scopes span { padding: 7px 10px; border-radius: 999px; color: var(--soft); background: rgba(255,255,255,.055); font-size: 10px; }
+.google-scopes span[data-ready] { color: #b8f7dc; background: rgba(184,247,220,.08); }
+.google-preview-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.google-preview-grid > section { display: grid; align-content: start; gap: 12px; min-width: 0; padding: 16px; border-radius: 16px; background: rgba(16,18,28,.7); }
+.google-preview-grid form { display: grid; gap: 10px; }
+.google-preview-grid label { display: grid; gap: 6px; color: var(--soft); font-size: 11px; }
+.google-preview-grid input { width: 100%; min-height: 42px; padding: 8px 10px; border: 1px solid rgba(255,255,255,.1); border-radius: 10px; color: var(--ink); background: rgba(255,255,255,.045); color-scheme: dark; }
+.google-preview-grid form > small { color: var(--faint); font-size: 10px; }
+.google-result-list { display: grid; gap: 8px; max-height: 300px; overflow-y: auto; }
+.google-result-list article { display: grid; gap: 4px; padding: 11px; border-radius: 11px; background: rgba(255,255,255,.045); }
+.google-result-list strong { overflow-wrap: anywhere; font-size: 12px; }
+.google-result-list span { overflow-wrap: anywhere; color: var(--soft); font-size: 10px; }
+.google-result-list small { overflow-wrap: anywhere; color: var(--faint); font-size: 9px; }
+@media (max-width: 700px) { .google-preview-grid { grid-template-columns: minmax(0,1fr); } .google-preview { padding: 15px; } }
+
 @media (max-height: 720px) and (min-width: 701px) {
   .space-transition { inset: 86px 0 100px; }
   .welcome-copy { top: 14%; }
@@ -2514,6 +2545,8 @@ input:focus-visible {
 }
 
 /* Connected Today/Memory use document flow inside the spatial demo shell. */
+.gaia-shell:has(.connected-today) .companion-stage { display: none; }
+
 .space-view.connected-memory,
 .space-view.connected-today {
   position: absolute;

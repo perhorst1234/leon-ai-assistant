@@ -6,16 +6,18 @@ Stand: **10 september 2026**. De gebruiker wil vooral coderen; houd deze overdra
 
 - Chat/installatie is gepubliceerd op `codex/complete-leon`: GitHub-commit `851d9880`, exact dezelfde bronboom als lokale `6fa2150` (`d05dd52a`).
 - Vandaag/Memory zijn lokaal afgerond in commit `2bdb5d4`. Backend: 299 tests
-  plus twee subtests geslaagd. Web: 23 tests, TypeScript, build en lint zonder
+  plus twee subtests geslaagd. Web: 30 tests, TypeScript, build en lint zonder
   fouten geslaagd. Browser: tokenherstel, bewaren, herladen, zoeken, inline
   corrigeren, verwijderen met verplichte reden en 1280×720-indeling geslaagd op
   tijdelijke SQLite. Zie [acceptatiebewijs](memory-today-browser-evidence.md).
 - Google Agenda/Gmail is door gebruiker gekozen als eerste alleen-lezen
-  koppeling. Begrensde client, geauthenticeerde serverroutes, 26 gerichte tests
-  en onafhankelijke reviews zijn afgerond. Preview schrijft geen mail- of
-  agendagegevens naar lokale opslag. Accountverbinding, Gaia-UI en live
-  acceptatie zijn nog niet gereed. Zie
-  [Google alleen-lezen client](google-readonly.md).
+  koppeling. Begrensde client, geauthenticeerde serverroutes, Gaia-preview,
+  gerichte tests en onafhankelijke reviews zijn afgerond. Browseracceptatie met
+  synthetische data bewijst klikgestuurde Agenda/Gmail-metadata, bronverwijzing,
+  herlaadgedrag, DST-grenzen en 1280x720-indeling. Preview schrijft geen mail- of
+  agendagegevens naar lokale opslag. Accountverbinding en live acceptatie zijn
+  nog niet gereed. Zie [Google alleen-lezen client](google-readonly.md) en
+  [browserbewijs](google-browser-evidence.md).
 - Kosten: vervolgcoördinatie is ingesteld op `gpt-5.6-sol` (medium). Gebruik smalle opdrachten, bewaar ruimte voor verificatie en controleer gedeeld limiet vóór nieuw groot werk. Het volledige productdoel blijft actief.
 
 ## Nieuwste werk
@@ -80,7 +82,10 @@ Zie [uitvoering en testbewijs](local-work.md). Browserketen getest met tijdelijk
 
 ## Volgende codewerk
 
-1. Vandaag en Memory op echte gegevens aansluiten; daarna één read-only connector. Chat en detailherstel buiten de 100 nieuwste jobs zijn inmiddels toegevoegd. Bewaar het bestaande ontwerp. Side-effecting tools hebben een eigen backendapproval-/idempotentiecontract nodig.
+1. Google-account via private credential-provider verbinden en kleine read-only
+   acceptatie uitvoeren. Vandaag, Memory, Chat, jobdetail en lokale
+   Google-preview zijn inmiddels toegevoegd. Side-effecting tools hebben een
+   eigen backendapproval-/idempotentiecontract nodig.
 2. Netwerkuitkomsten zonder verbruiksbewijs blijven geblokkeerd; toekomstig extern bewijs mag alleen met betrouwbare aanvraagkoppeling worden verwerkt. Geen handmatig verzonnen bedrag of automatische betaalde retry. Live kleine call pas met gekozen budget en expliciet gedeelde tekst.
 3. Ubuntu-installatie/systemd, private backup/restore en doelhardware meten zodra de server beschikbaar is.
 

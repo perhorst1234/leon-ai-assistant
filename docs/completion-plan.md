@@ -32,11 +32,11 @@ Stand 10 september: stappen 1–2 lokaal geïmplementeerd en met offline tests p
 echte browserinteractie tegen een nepmodel gecontroleerd. Stap 3 heeft lokale
 scripts en Ubuntu-unitvoorbeelden; doelserveracceptatie blijft open. Stap 4 is
 lokaal geïmplementeerd en via browser tegen tijdelijke SQLite gecontroleerd.
-Stap 5 heeft client- en serverroutes offline getest; account-/UI-integratie en
-live acceptatie blijven open. Stappen
+Stap 5 heeft client, serverroutes en Gaia-UI offline plus in de browser getest;
+accountverbinding en live acceptatie blijven open. Stappen
 6–8 blijven open. Bewijs en actuele aantallen: `handoff.md`,
-`chat-browser-evidence.md`, `memory-today-browser-evidence.md` en
-`web-validation.md`.
+`chat-browser-evidence.md`, `memory-today-browser-evidence.md`,
+`google-browser-evidence.md` en `web-validation.md`.
 
 Elke afgeronde stap krijgt relevante regressietests, onafhankelijke review en
 een korte handoff. Geen betaalde providercall zonder gekozen budget en concrete

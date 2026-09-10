@@ -23,7 +23,9 @@ Specialistische agents blijven ontwerpvoorbeeld; voorbeelden bewijzen geen
 externe integraties.
 
 Google Agenda/Gmail is gekozen als eerste alleen-lezen koppeling. Begrensde
-clientcode en offline tests staan in [Google alleen-lezen](docs/google-readonly.md);
-OAuth-accountverbinding en live gegevens blijven bewust nog niet geclaimd.
+client, geauthenticeerde serverroutes en Gaia-preview zijn lokaal getest. Zie
+[Google alleen-lezen](docs/google-readonly.md) en
+[browseracceptatie](docs/google-browser-evidence.md). OAuth-accountverbinding en
+live gegevens blijven bewust nog niet geclaimd.
 
 GitHub bewaart code, besluiten, voortgang en hervatstappen. De repository is openbaar: credentials, persoonlijke gesprekken, databases, betaalgegevens en serverback-ups horen in een aparte private back-up. Een Git-push is geen back-up van de volledige server of van lopende agentprocessen.

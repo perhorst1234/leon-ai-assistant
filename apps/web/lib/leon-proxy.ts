@@ -18,6 +18,9 @@ const routes: Record<string, Partial<Record<string, string>>> = {
   'memory-search': { POST: '/api/memory/search' },
   'memory-update': { POST: '/api/memory/update' },
   'memory-delete': { POST: '/api/memory/delete' },
+  'google-status': { GET: '/api/google/status' },
+  'google-calendar-preview': { POST: '/api/google/calendar/preview' },
+  'google-mail-preview': { POST: '/api/google/mail/preview' },
 };
 const json = (data: unknown, status = 200) => Response.json(data, {
   status, headers: { 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' },

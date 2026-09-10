@@ -3,11 +3,11 @@
 - 10 september, `codex/complete-leon`: Vandaag en Memory gebruiken echte lokale
   gegevens; browserketen voor verbinden, bewaren, herladen, zoeken, corrigeren
   en verwijderen geslaagd. Google Agenda/Gmail alleen-lezen client is standaard
-  uit; client en serverroutes zijn offline getest. Account-/UI-integratie blijft
-  open. 299 backendtests + twee subtests, 23 webtests, TypeScript/build geslaagd. Zie
-  `docs/memory-today-browser-evidence.md` en `docs/google-readonly.md`. Volgende
-  werk: Google OAuth credential-provider en server/UI-koppeling, zonder
-  schrijfrechten.
+  uit; client, serverroutes en Gaia-preview zijn offline/browser-getest.
+  Account-/live-integratie blijft open. 299 backendtests + twee subtests, 30
+  webtests, TypeScript/build geslaagd. Zie `docs/memory-today-browser-evidence.md`,
+  `docs/google-readonly.md` en `docs/google-browser-evidence.md`. Volgende werk:
+  private Google OAuth credential-provider en kleine live read-only acceptatie.
 
 - 9 september, `codex/complete-leon`: duurzame Chat + Gaia, goedkeuring bindt exacte context en beide kostengrenzen; replay/concurrency hersteld. Chatbrowserketen met nepmodel geslaagd. 269 backendtests + twee subtests, 19 webtests, typecheck/build geslaagd; npm audit nul kwetsbaarheden na gerichte updates. Installatie/backup/restore en configureerbare private DB toegevoegd; zie `docs/installation.md`, `docs/chat-browser-evidence.md`, `docs/web-validation.md` en nieuwste handoff. Volgende werk: echte Vandaag/Memory, read-only connector en Ubuntu/hardwareacceptatie. Gebruik lichte agents met smalle opdrachten; bewaak gedeeld limiet en reserveer ruimte voor verificatie/overdracht.
 
