@@ -1,5 +1,13 @@
 # Werken aan Leon / Gaia
 
+- 12 september, `codex/complete-leon`: Firecrawl v2 search-only Research-flow
+  toegevoegd, standaard uit. Backend gebruikt vaste host, expliciete domeinen,
+  caps, duurzame preview-ID/fingerprint, 15 minuten geldigheid en audit-outcomes;
+  Gaia vereist preview vóór start. 314 backendtests + twee subtests, 39 webtests,
+  TypeScript/build en browser-disabled-state geslaagd. Zie
+  `docs/research-executor.md` en `docs/research-browser-evidence.md`. Volgende:
+  kleine live provideracceptatie na key/budget, of doelserveracceptatie.
+
 - 12 september, `codex/complete-leon`: Gaia toont begrensde autonomiestatus en
   ochtendbrief. Handmatige knop en optionele systemd-timer voeren uitsluitend
   veilige lokale bronindex uit; geen provider/netwerk of stille memory/task/cache-

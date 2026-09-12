@@ -39,6 +39,7 @@ from leon_control_plane.work_api import work_request
 from leon_control_plane.overview_api import overview_request
 from leon_control_plane.google_api import google_request
 from leon_control_plane.google_readonly import GoogleReadonlyError
+from leon_control_plane.research_executor import ResearchExecutorError, research_request
 from leon_control_plane.chat_api import chat_request
 from leon_control_plane.ui_composition import (
     UI_POLICY_PATH,
@@ -3574,6 +3575,11 @@ class Handler(BaseHTTPRequestHandler):
             if not token or not hmac.compare_digest(self.headers.get("authorization", ""), f"Bearer {token}"):
                 self._send_json({"error": "Explicit dashboard bearer authorization required"}, HTTPStatus.UNAUTHORIZED)
                 return
+        if self.path.startswith("/api/research/"):
+            token = dashboard_token()
+            if not token or not hmac.compare_digest(self.headers.get("authorization", ""), f"Bearer {token}"):
+                self._send_json({"error": "Explicit dashboard bearer authorization required"}, HTTPStatus.UNAUTHORIZED)
+                return
         if self.path.startswith("/api/chat"):
             token = dashboard_token()
             if not token or not hmac.compare_digest(self.headers.get("authorization", ""), f"Bearer {token}"):
@@ -3602,6 +3608,14 @@ class Handler(BaseHTTPRequestHandler):
             return
         if google_response is not None:
             self._send_json(google_response)
+            return
+        try:
+            research_response = research_request(STORE, method="GET", path=self.path, values=parse_selected_env_values({"RESEARCH_EXECUTOR_ENABLED", "FIRECRAWL_API_KEY", "RESEARCH_ALLOWED_DOMAINS"}))
+        except (ValueError, ResearchExecutorError) as exc:
+            self._send_json({"error": str(exc)}, HTTPStatus.BAD_REQUEST)
+            return
+        if research_response is not None:
+            self._send_json(research_response)
             return
         try:
             chat_response = chat_request(STORE, method="GET", path=self.path)
@@ -3635,6 +3649,11 @@ class Handler(BaseHTTPRequestHandler):
             if not self._require_auth():
                 return
             if self.path.startswith("/api/google/"):
+                token = dashboard_token()
+                if not token or not hmac.compare_digest(self.headers.get("authorization", ""), f"Bearer {token}"):
+                    self._send_json({"error": "Explicit dashboard bearer authorization required"}, HTTPStatus.UNAUTHORIZED)
+                    return
+            if self.path.startswith("/api/research/"):
                 token = dashboard_token()
                 if not token or not hmac.compare_digest(self.headers.get("authorization", ""), f"Bearer {token}"):
                     self._send_json({"error": "Explicit dashboard bearer authorization required"}, HTTPStatus.UNAUTHORIZED)
@@ -3751,6 +3770,17 @@ class Handler(BaseHTTPRequestHandler):
                     return
                 except ValueError as exc:
                     self._send_json({"error": str(exc)}, HTTPStatus.BAD_REQUEST)
+                    return
+                self._send_json(result)
+                return
+            if self.path in {"/api/research/preview", "/api/research/run"}:
+                data = self._read_body()
+                try:
+                    result = research_request(STORE, method="POST", path=self.path, values=parse_selected_env_values({"RESEARCH_EXECUTOR_ENABLED", "FIRECRAWL_API_KEY", "RESEARCH_ALLOWED_DOMAINS"}), data=data)
+                except ResearchExecutorError as exc:
+                    code = str(exc)
+                    status = HTTPStatus.BAD_GATEWAY if code in {"research_provider_unavailable", "research_provider_error", "research_provider_invalid_response", "research_response_limit"} else HTTPStatus.BAD_REQUEST
+                    self._send_json({"error": code}, status)
                     return
                 self._send_json(result)
                 return

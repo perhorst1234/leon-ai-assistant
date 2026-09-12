@@ -138,3 +138,18 @@ test('Google read-only routes use only their exact methods and local paths', asy
   assert.equal((await forwardLeon(request('google-calendar-preview'), config, forbiddenFetch)).status, 404);
   assert.equal((await forwardLeon(request('google-mail-preview&id=x', { method: 'POST', body: '{}' }), config, forbiddenFetch)).status, 404);
 });
+
+test('Research preview and run use only fixed local POST routes', async () => {
+  for (const [resource, path] of [
+    ['research-preview', '/api/research/preview'],
+    ['research-run', '/api/research/run'],
+  ]) {
+    const response = await forwardLeon(request(resource, { method: 'POST', body: '{}' }), config, async url => {
+      assert.equal(String(url), `http://127.0.0.1:8765${path}`);
+      return Response.json({ ok: true });
+    });
+    assert.equal(response.status, 200);
+    assert.equal((await forwardLeon(request(resource), config, forbiddenFetch)).status, 404);
+  }
+  assert.equal((await forwardLeon(request('research-run&id=x', { method: 'POST', body: '{}' }), config, forbiddenFetch)).status, 404);
+});

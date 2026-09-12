@@ -34,12 +34,14 @@ scripts en Ubuntu-unitvoorbeelden; doelserveracceptatie blijft open. Stap 4 is
 lokaal geïmplementeerd en via browser tegen tijdelijke SQLite gecontroleerd.
 Stap 5 heeft client, serverroutes en Gaia-UI offline plus in de browser getest;
 accountverbinding en live acceptatie blijven open. Stap 6 heeft begrensde
-autonomiestatus, ochtendbrief en optionele dagelijkse lokale bronscan; echte
-externe research en self-improvement blijven open. Stappen 7–8 blijven open.
+autonomiestatus, ochtendbrief, optionele dagelijkse lokale bronscan en een
+config-gated Firecrawl search-only executor. Researchcontract en disabled-state
+zijn offline/browser-getest; live provideracceptatie en self-improvement blijven
+open. Stappen 7–8 blijven open.
 Bewijs en actuele aantallen: `handoff.md`,
 `chat-browser-evidence.md`, `memory-today-browser-evidence.md`,
-`google-browser-evidence.md`, `autonomy-browser-evidence.md` en
-`web-validation.md`.
+`google-browser-evidence.md`, `autonomy-browser-evidence.md`,
+`research-browser-evidence.md` en `web-validation.md`.
 
 Elke afgeronde stap krijgt relevante regressietests, onafhankelijke review en
 een korte handoff. Geen betaalde providercall zonder gekozen budget en concrete

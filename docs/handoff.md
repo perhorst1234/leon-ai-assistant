@@ -4,6 +4,14 @@ Stand: **12 september 2026**. De gebruiker wil vooral coderen; houd deze overdra
 
 ## Lopende aanvulling
 
+- 12 september: begrensde Firecrawl v2 search-only executor en Gaia Research-
+  kaart lokaal gereed, standaard uit. Preview-ID/fingerprint is server-side
+  gebonden en verloopt na 15 minuten; auth, caps, domein/IP-filter en provider-
+  outcomeaudit getest. Browser toont disabled-state eerlijk en blokkeert start.
+  Stand: 314 backendtests + twee subtests, 39 webtests, TypeScript/build, lint
+  nul fouten. Live Firecrawl-call/key/budget blijft open. Zie
+  [research](research-executor.md) en [browserbewijs](research-browser-evidence.md).
+
 - 12 september: bestaande nachtqueue, value scoring en ochtendbrief gekoppeld
   aan Gaia. Veilige vaste bronscan werkt handmatig en via optionele 22:00-
   systemd-timer; geen provider/netwerk of memory/task/cache-mutatie. Browser:
@@ -89,10 +97,10 @@ Zie [uitvoering en testbewijs](local-work.md). Browserketen getest met tijdelijk
 
 ## Volgende codewerk
 
-1. Echte begrensde read-only research-executor achter bestaande nachtqueue
-   toevoegen. Google-account via private credential-provider verbinden en kleine
+1. Google-account via private credential-provider verbinden en kleine
    live read-only acceptatie uitvoeren. Side-effecting tools hebben een eigen
-   backendapproval-/idempotentiecontract nodig.
+   backendapproval-/idempotentiecontract nodig. Voer daarna één kleine live
+   Firecrawl-search uit met gekozen budget en allowlist.
 2. Netwerkuitkomsten zonder verbruiksbewijs blijven geblokkeerd; toekomstig extern bewijs mag alleen met betrouwbare aanvraagkoppeling worden verwerkt. Geen handmatig verzonnen bedrag of automatische betaalde retry. Live kleine call pas met gekozen budget en expliciet gedeelde tekst.
 3. Ubuntu-installatie/systemd, private backup/restore en doelhardware meten zodra de server beschikbaar is.
 

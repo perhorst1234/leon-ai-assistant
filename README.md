@@ -31,6 +31,10 @@ live gegevens blijven bewust nog niet geclaimd.
 
 Gaia toont opgeslagen nachtvoorbereiding en ochtendbrief. Veilige lokale
 bronscan kan handmatig of via optionele Ubuntu-timer om 22:00 draaien, zonder
-provider- of netwerkverzoek. Externe research en self-improvement blijven open.
+provider- of netwerkverzoek. Gaia heeft ook een begrensde Firecrawl search-only
+Research-flow met duurzame previewbinding en bronallowlist, standaard uit. Zie
+[researchconfiguratie](docs/research-executor.md) en
+[browserbewijs](docs/research-browser-evidence.md). Live provideracceptatie en
+self-improvement blijven open.
 
 GitHub bewaart code, besluiten, voortgang en hervatstappen. De repository is openbaar: credentials, persoonlijke gesprekken, databases, betaalgegevens en serverback-ups horen in een aparte private back-up. Een Git-push is geen back-up van de volledige server of van lopende agentprocessen.

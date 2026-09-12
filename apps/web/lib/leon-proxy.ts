@@ -22,6 +22,8 @@ const routes: Record<string, Partial<Record<string, string>>> = {
   'google-status': { GET: '/api/google/status' },
   'google-calendar-preview': { POST: '/api/google/calendar/preview' },
   'google-mail-preview': { POST: '/api/google/mail/preview' },
+  'research-preview': { POST: '/api/research/preview' },
+  'research-run': { POST: '/api/research/run' },
 };
 const json = (data: unknown, status = 200) => Response.json(data, {
   status, headers: { 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' },

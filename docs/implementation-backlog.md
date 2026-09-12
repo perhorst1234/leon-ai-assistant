@@ -1,11 +1,19 @@
 # Leon / Gaia — uitvoeringsbacklog
 
-**12 september:** bestaande nachtqueue/value engine/ochtendbrief hergebruikt.
+**12 september, research:** Firecrawl v2 search-only executor, vaste host,
+HTTPS/domein/IP-filter, caps, server-side preview-ID/fingerprint met 15 minuten
+geldigheid, provider-outcomeaudit en Gaia tweestapsflow toegevoegd. Standaard
+uit; geen live call of sleutel gebruikt. 314 backendtests plus twee subtests,
+39 webtests, TypeScript/build en browser-disabled-state geslaagd. Live provider-
+acceptatie blijft open. Zie [research](research-executor.md) en
+[browserbewijs](research-browser-evidence.md).
+
+**12 september, autonomie:** bestaande nachtqueue/value engine/ochtendbrief hergebruikt.
 Gaia toont begrensde status en ochtendbrief; vaste veilige bronscan werkt
 handmatig en via optionele systemd-timer om 22:00. Scan doet geen provider- of
 netwerkverzoek en maakt geen memory/task/cache-records. 305 backendtests plus
-twee subtests, 35 webtests, TypeScript/build en browserherstel geslaagd. Echte
-externe research, muterende nachtacties en self-improvement blijven open. Zie
+twee subtests, 35 webtests, TypeScript/build en browserherstel geslaagd. Live
+externe researchacceptatie, muterende nachtacties en self-improvement blijven open. Zie
 [autonomiebewijs](autonomy-browser-evidence.md).
 
 **10 september:** Vandaag en Memory gebruiken echte lokale gegevens. Memory

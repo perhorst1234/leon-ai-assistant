@@ -7957,6 +7957,9 @@ class ControlPlaneStore:
                     "connector_executed": executed,
                     "write_performed": performed_write,
                     "raw_secret_values_stored": False,
+                    "research_outcome": str(check.get("research_outcome") or "")[:80],
+                    "accepted_result_count": max(0, int(check.get("accepted_result_count") or 0)),
+                    "rejected_result_count": max(0, int(check.get("rejected_result_count") or 0)),
                 },
                 timestamp=timestamp,
             )
