@@ -1,5 +1,13 @@
 # Leon / Gaia — uitvoeringsbacklog
 
+**12 september:** bestaande nachtqueue/value engine/ochtendbrief hergebruikt.
+Gaia toont begrensde status en ochtendbrief; vaste veilige bronscan werkt
+handmatig en via optionele systemd-timer om 22:00. Scan doet geen provider- of
+netwerkverzoek en maakt geen memory/task/cache-records. 305 backendtests plus
+twee subtests, 35 webtests, TypeScript/build en browserherstel geslaagd. Echte
+externe research, muterende nachtacties en self-improvement blijven open. Zie
+[autonomiebewijs](autonomy-browser-evidence.md).
+
 **10 september:** Vandaag en Memory gebruiken echte lokale gegevens. Memory
 ondersteunt zoeken, bronweergave, toevoegen, corrigeren en verwijderen met reden;
 late zoekresultaten kunnen nieuwe verbinding niet overschrijven. 299 backendtests

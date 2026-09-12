@@ -2595,6 +2595,14 @@ input:focus-visible {
 
 .connected-memory-inspector h2 { overflow-wrap: anywhere; }
 
+.autonomy-card { display: grid; gap: 14px; margin: 0 0 18px; padding: 18px; border: 1px solid rgba(180, 205, 255, .18); border-radius: 18px; background: rgba(22, 24, 40, .72); }
+.autonomy-card h2 { margin: 3px 0 6px; }
+.autonomy-card p { max-width: 70ch; color: var(--soft); }
+.autonomy-card button { justify-self: start; }
+.autonomy-card [role="status"] { margin: 0; color: var(--mint, #b4f8da); }
+.autonomy-brief { display: grid; gap: 5px; padding-top: 8px; border-top: 1px solid rgba(180, 205, 255, .12); }
+.autonomy-brief p { margin: 0; }
+
 @media (max-width: 700px) {
   .space-view.connected-memory,
   .space-view.connected-today {

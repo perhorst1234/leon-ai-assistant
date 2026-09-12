@@ -7,6 +7,7 @@ Persoonlijke AI-assistent met de bestaande Gaia-frontend en Python/SQLite-backen
 - [Installeren, starten en private backups](docs/installation.md)
 - [Geteste installatie- en herstelketen](docs/delivery-evidence.md)
 - [Chatbrowsercontrole](docs/chat-browser-evidence.md) en [webtests/pakketscan](docs/web-validation.md)
+- [Veilige nachtvoorbereiding en ochtendbrief](docs/autonomy-browser-evidence.md)
 - [Actuele status en hervatinstructies](docs/handoff.md)
 - [Servercode: wat bestaat, wat getest is en wat ontbreekt](docs/server-recovery-audit.md)
 - [Uitvoerbare backlog met acceptatiecriteria](docs/implementation-backlog.md)
@@ -27,5 +28,9 @@ client, geauthenticeerde serverroutes en Gaia-preview zijn lokaal getest. Zie
 [Google alleen-lezen](docs/google-readonly.md) en
 [browseracceptatie](docs/google-browser-evidence.md). OAuth-accountverbinding en
 live gegevens blijven bewust nog niet geclaimd.
+
+Gaia toont opgeslagen nachtvoorbereiding en ochtendbrief. Veilige lokale
+bronscan kan handmatig of via optionele Ubuntu-timer om 22:00 draaien, zonder
+provider- of netwerkverzoek. Externe research en self-improvement blijven open.
 
 GitHub bewaart code, besluiten, voortgang en hervatstappen. De repository is openbaar: credentials, persoonlijke gesprekken, databases, betaalgegevens en serverback-ups horen in een aparte private back-up. Een Git-push is geen back-up van de volledige server of van lopende agentprocessen.

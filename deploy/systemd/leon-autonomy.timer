@@ -1,0 +1,10 @@
+[Unit]
+Description=Run Leon safe local source scan daily
+
+[Timer]
+OnCalendar=*-*-* 22:00:00 Europe/Amsterdam
+Persistent=true
+Unit=leon-autonomy.service
+
+[Install]
+WantedBy=timers.target

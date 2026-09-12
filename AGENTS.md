@@ -1,5 +1,13 @@
 # Werken aan Leon / Gaia
 
+- 12 september, `codex/complete-leon`: Gaia toont begrensde autonomiestatus en
+  ochtendbrief. Handmatige knop en optionele systemd-timer voeren uitsluitend
+  veilige lokale bronindex uit; geen provider/netwerk of stille memory/task/cache-
+  mutaties. Run blijft na herladen zichtbaar. 305 backendtests + twee subtests,
+  35 webtests, TypeScript/build en browseracceptatie geslaagd. Zie
+  `docs/autonomy-browser-evidence.md`. Volgende werk: echte read-only research-
+  executor, daarna doelserveracceptatie.
+
 - 10 september, `codex/complete-leon`: Vandaag en Memory gebruiken echte lokale
   gegevens; browserketen voor verbinden, bewaren, herladen, zoeken, corrigeren
   en verwijderen geslaagd. Google Agenda/Gmail alleen-lezen client is standaard

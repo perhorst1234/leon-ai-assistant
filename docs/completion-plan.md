@@ -1,4 +1,4 @@
-# Leon afronden — 10 september 2026
+# Leon afronden — 12 september 2026
 
 Doel: de bestaande productvisie afmaken met aantoonbare werking. Geen demo,
 mocktest of onbereikbare hardware als afgeronde integratie tellen.
@@ -33,10 +33,13 @@ echte browserinteractie tegen een nepmodel gecontroleerd. Stap 3 heeft lokale
 scripts en Ubuntu-unitvoorbeelden; doelserveracceptatie blijft open. Stap 4 is
 lokaal geïmplementeerd en via browser tegen tijdelijke SQLite gecontroleerd.
 Stap 5 heeft client, serverroutes en Gaia-UI offline plus in de browser getest;
-accountverbinding en live acceptatie blijven open. Stappen
-6–8 blijven open. Bewijs en actuele aantallen: `handoff.md`,
+accountverbinding en live acceptatie blijven open. Stap 6 heeft begrensde
+autonomiestatus, ochtendbrief en optionele dagelijkse lokale bronscan; echte
+externe research en self-improvement blijven open. Stappen 7–8 blijven open.
+Bewijs en actuele aantallen: `handoff.md`,
 `chat-browser-evidence.md`, `memory-today-browser-evidence.md`,
-`google-browser-evidence.md` en `web-validation.md`.
+`google-browser-evidence.md`, `autonomy-browser-evidence.md` en
+`web-validation.md`.
 
 Elke afgeronde stap krijgt relevante regressietests, onafhankelijke review en
 een korte handoff. Geen betaalde providercall zonder gekozen budget en concrete

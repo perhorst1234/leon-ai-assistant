@@ -102,6 +102,7 @@ test('chat routes keep conversation ids in the fixed local path and forward pagi
 test('Today and Memory routes stay on the fixed local API boundary', async () => {
   const cases = [
     ['overview', 'GET', '/api/overview'],
+    ['autonomy-run', 'POST', '/api/night-queue/run'],
     ['memory', 'GET', '/api/memory'],
     ['memory-create', 'POST', '/api/memory'],
     ['memory-search', 'POST', '/api/memory/search'],

@@ -1,8 +1,15 @@
 # Overdracht — Leon / Gaia
 
-Stand: **10 september 2026**. De gebruiker wil vooral coderen; houd deze overdracht kort.
+Stand: **12 september 2026**. De gebruiker wil vooral coderen; houd deze overdracht kort.
 
-## Lopende aanvulling — 10 september
+## Lopende aanvulling
+
+- 12 september: bestaande nachtqueue, value scoring en ochtendbrief gekoppeld
+  aan Gaia. Veilige vaste bronscan werkt handmatig en via optionele 22:00-
+  systemd-timer; geen provider/netwerk of memory/task/cache-mutatie. Browser:
+  run → ochtendbrief → herladen → opnieuw verbinden → zelfde bewijs. Volledige
+  stand: 305 backendtests + twee subtests, 35 webtests, TypeScript/build, lint
+  nul fouten. Zie [autonomiebewijs](autonomy-browser-evidence.md).
 
 - Chat/installatie is gepubliceerd op `codex/complete-leon`: GitHub-commit `851d9880`, exact dezelfde bronboom als lokale `6fa2150` (`d05dd52a`).
 - Vandaag/Memory zijn lokaal afgerond in commit `2bdb5d4`. Backend: 299 tests
@@ -82,10 +89,10 @@ Zie [uitvoering en testbewijs](local-work.md). Browserketen getest met tijdelijk
 
 ## Volgende codewerk
 
-1. Google-account via private credential-provider verbinden en kleine read-only
-   acceptatie uitvoeren. Vandaag, Memory, Chat, jobdetail en lokale
-   Google-preview zijn inmiddels toegevoegd. Side-effecting tools hebben een
-   eigen backendapproval-/idempotentiecontract nodig.
+1. Echte begrensde read-only research-executor achter bestaande nachtqueue
+   toevoegen. Google-account via private credential-provider verbinden en kleine
+   live read-only acceptatie uitvoeren. Side-effecting tools hebben een eigen
+   backendapproval-/idempotentiecontract nodig.
 2. Netwerkuitkomsten zonder verbruiksbewijs blijven geblokkeerd; toekomstig extern bewijs mag alleen met betrouwbare aanvraagkoppeling worden verwerkt. Geen handmatig verzonnen bedrag of automatische betaalde retry. Live kleine call pas met gekozen budget en expliciet gedeelde tekst.
 3. Ubuntu-installatie/systemd, private backup/restore en doelhardware meten zodra de server beschikbaar is.
 
