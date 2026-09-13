@@ -41,7 +41,9 @@ Self-improvement heeft een geauthenticeerde tweestaps review-API: preview maakt
 een exact gebonden R3-approval; run verbruikt die één keer en controleert patch
 alleen statisch in een disposable tijdelijke Git-repository. Gewijzigde code
 wordt niet uitgevoerd. Zie
-[review-only patchvalidatie](docs/self-improvement-sandbox.md). Volledige tests
+[review-only patchvalidatie](docs/self-improvement-sandbox.md) en
+[Gaia-browserbewijs](docs/self-improvement-browser-evidence.md). Gaia Werk biedt
+hiervoor een ingeklapte geavanceerde preview/approval/review. Volledige tests
 vereisen later bewezen OS-procesisolatie op doelserver.
 
 Vandaag toont ook een geauthenticeerde, alleen-lezen serverstatus met begrensde

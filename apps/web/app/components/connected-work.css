@@ -40,6 +40,14 @@
 .model-request-panel :focus-visible { outline: 2px solid #a795ff; outline-offset: 3px; }
 .model-cost-recovery { margin-top: 16px; border-color: rgba(243,221,176,.35); }
 .model-cost-recovery h3 { font-size: 14px; color: #f3ddb0; }
+.self-improvement-card { padding: 14px 16px; border: 1px solid rgba(167,149,255,.22); border-radius: 16px; background: rgba(20,22,34,.8); }
+.self-improvement-card summary { display: flex; justify-content: space-between; gap: 10px; min-height: 34px; align-items: center; cursor: pointer; color: var(--command-pearl, #ece9ff); font-size: 12px; font-weight: 620; }
+.self-improvement-card summary span { display: inline-flex; align-items: center; gap: 8px; }
+.self-improvement-card summary small, .self-improvement-note { color: var(--soft); font-size: 10px; }
+.self-improvement-body { padding-top: 10px; }
+.self-improvement-body textarea { width: 100%; min-height: 100px; resize: vertical; border: 1px solid rgba(255,255,255,.18); border-radius: 12px; padding: 10px; background: #171925; color: #f7f8ff; font: inherit; }
+.self-improvement-review { margin-top: 14px; padding-top: 14px; border-top: 1px solid rgba(255,255,255,.14); }
+.self-improvement-review > p { color: var(--soft); font-size: 11px; line-height: 1.5; overflow-wrap: anywhere; }
 .connected-chat { height: calc(100% - 54px); padding: 0 4%; }
 .connected-chat .chat-workspace { position: relative; display: grid; grid-template-columns: minmax(190px, 260px) minmax(0, 1fr); gap: 18px; height: 100%; max-width: 1180px; margin: 0 auto; padding: 22px 0 26px; }
 .chat-conversation-list, .chat-panel { min-height: 0; border: 1px solid rgba(255,255,255,.09); border-radius: 18px; background: rgba(20,22,34,.64); backdrop-filter: blur(15px); }

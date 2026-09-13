@@ -1,16 +1,25 @@
 # Overdracht — Leon / Gaia
 
-Stand: **12 september 2026**. De gebruiker wil vooral coderen; houd deze overdracht kort.
+Stand: **13 september 2026**. De gebruiker wil vooral coderen; houd deze overdracht kort.
 
 ## Lopende aanvulling
+
+- 13 september: Gaia Werk-bediening voor review-only self-improvement gereed.
+  Ingeklapte operatorflow bewaart patch alleen in componentstate, maakt exacte
+  preview, wist preview/checkbox na edit en gebruikt apart scoped atomisch
+  approve-endpoint vóór run. Browserketen bewees preview → invalidatie → nieuwe
+  preview → approval → statische review, zonder bronmutatie of achtergebleven
+  tempmap. Stand: 345 backendtests + twee subtests, 46 webtests,
+  TypeScript/build/lint; Python/security/React-review zonder P1/P2. Zie
+  [browserbewijs](self-improvement-browser-evidence.md).
 
 - 13 september: geauthenticeerde tweestaps self-improvement-API gereed. Preview
   maakt uit een vaste bronroot een schone tijdelijke Git-repository en exacte
   R3-approval; run verbruikt die approval atomisch en voert alleen statische
   review uit. Een uur expiry/cleanup, concurrency, symlink-/rename-races,
   secretblokkade en HTTP-keten getest. Geen raw patch of paden in publieke
-  state; gewijzigde code draait nooit. Stand: 343 backendtests + twee subtests;
-  Python- en security-review zonder P1/P2. Gaia-bediening, OS-sandbox en echte
+  state; gewijzigde code draait nooit. Stand na Gaia-koppeling: 345 backendtests
+  + twee subtests; Python- en security-review zonder P1/P2. OS-sandbox en echte
   patchtests blijven open. Zie [sandboxgrens](self-improvement-sandbox.md).
 
 - 13 september: lokale agentrun-review sluit nu oudertaaklevenscyclus. Acceptatie

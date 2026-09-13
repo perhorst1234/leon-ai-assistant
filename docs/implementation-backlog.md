@@ -20,11 +20,14 @@ review-only patchvalidator toegevoegd. Exacte R3-approval bindt opaque tijdelijk
 repository, base commit, patchhash, filelijst en statische validatie en wordt
 atomisch één keer verbruikt. Een uur expiry/cleanup, concurrentie en
 descriptor-relatieve symlink-/renamebescherming zijn getest. Geen gewijzigde
-code wordt uitgevoerd; publieke state bevat geen raw patch of paden. Volledige
-backend: 343 tests plus twee subtests; Python- en security-review zonder P1/P2.
-Volledige self-improvement blijft open tot Gaia-bediening, OS-sandbox, echte
-tests en gecontroleerde nachtqueue-integratie aantoonbaar werken. Zie
-[sandboxgrens](self-improvement-sandbox.md).
+code wordt uitgevoerd; publieke state bevat geen raw patch of paden. Gaia Werk
+heeft nu ingeklapte exacte preview/checkbox/run-bediening; browserproef
+bevestigt invalidatie na edit, reviewbewijs, bronbehoud en cleanup. Volledige
+stand: 345 backendtests plus twee subtests en 46 webtests; Python-, security- en
+React-review zonder P1/P2. Volledige self-improvement blijft open tot OS-sandbox,
+echte tests en gecontroleerde nachtqueue-integratie aantoonbaar werken. Zie
+[sandboxgrens](self-improvement-sandbox.md) en
+[browserbewijs](self-improvement-browser-evidence.md).
 
 **12 september, research:** Firecrawl v2 search-only executor, vaste host,
 HTTPS/domein/IP-filter, caps, server-side preview-ID/fingerprint met 15 minuten

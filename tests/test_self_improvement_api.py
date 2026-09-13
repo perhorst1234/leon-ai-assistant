@@ -10,7 +10,7 @@ import pytest
 
 from leon_control_plane import server
 from leon_control_plane import self_improvement_api
-from leon_control_plane.self_improvement_api import preview_self_improvement, run_self_improvement
+from leon_control_plane.self_improvement_api import approve_self_improvement, preview_self_improvement, run_self_improvement
 from leon_control_plane.store import ControlPlaneStore
 
 
@@ -75,6 +75,47 @@ def test_concurrent_run_has_exactly_one_claimant(tmp_path):
     for thread in threads:
         thread.join()
     assert sorted(outcomes) == ["ValueError", "review_required"]
+
+
+def test_specialized_approval_accepts_only_live_self_improvement_preview(tmp_path):
+    store = _store(tmp_path)
+    root, patch = _source(tmp_path)
+    preview = preview_self_improvement(store, {
+        "patch": patch, "allowed_files": ["value.py"], "validation_profile": "python_syntax",
+    }, repo_root=root)
+    approved = approve_self_improvement(store, {"approval_id": preview["approval_id"]})
+    assert approved["status"] == "approved"
+    assert approved["patch_digest"] == preview["patch_digest"]
+    assert approved["changed_code_executed"] is False
+    assert approve_self_improvement(store, {"approval_id": preview["approval_id"]}) == approved
+    foreign_id = store.create_approval(
+        task_id=None, action_type="read_only_analysis", summary="Unrelated approval",
+        reason="Test separate approval boundary", risk_level="low",
+    )
+    with pytest.raises(ValueError, match="not a self-improvement"):
+        approve_self_improvement(store, {"approval_id": foreign_id})
+    with pytest.raises(ValueError, match="only approval_id"):
+        approve_self_improvement(store, {"approval_id": preview["approval_id"], "choice": "approved"})
+
+
+def test_specialized_approval_cannot_resurrect_concurrent_rejection(tmp_path, monkeypatch):
+    store = _store(tmp_path)
+    root, patch = _source(tmp_path)
+    preview = preview_self_improvement(store, {
+        "patch": patch, "allowed_files": ["value.py"], "validation_profile": "python_syntax",
+    }, repo_root=root)
+    original = store.approve_pending_approval
+
+    def reject_then_approve(approval_id, note, **kwargs):
+        store.update_approval(approval_id, "rejected", "Concurrent rejection wins")
+        return original(approval_id, note, **kwargs)
+
+    monkeypatch.setattr(store, "approve_pending_approval", reject_then_approve)
+    with pytest.raises(ValueError, match="no longer pending"):
+        approve_self_improvement(store, {"approval_id": preview["approval_id"]})
+    state = store.get_state()
+    record = next(item for item in state["approvals"] if item["id"] == preview["approval_id"])
+    assert record["status"] == "rejected"
 
 
 def test_sweep_only_deletes_old_strictly_marked_owned_directories(tmp_path, monkeypatch):
@@ -219,7 +260,15 @@ def test_http_requires_exact_bearer(tmp_path, monkeypatch):
         with urllib.request.urlopen(request) as response:
             assert response.status == 201
             preview = json.loads(response.read())
-        store.update_approval(preview["approval_id"], "approved", "Reviewed exact bounded change")
+        approve_url = f"http://127.0.0.1:{http.server_address[1]}/api/self-improvement/approve"
+        approve_data = json.dumps({"approval_id": preview["approval_id"]}).encode()
+        approve_request = urllib.request.Request(
+            approve_url, data=approve_data, method="POST",
+            headers={"Authorization": "Bearer secret", "Content-Type": "application/json"},
+        )
+        with urllib.request.urlopen(approve_request) as response:
+            assert response.status == 200
+            assert json.loads(response.read())["status"] == "approved"
         run_url = f"http://127.0.0.1:{http.server_address[1]}/api/self-improvement/run"
         run_data = json.dumps({"approval_id": preview["approval_id"], "patch": patch}).encode()
         run_request = urllib.request.Request(

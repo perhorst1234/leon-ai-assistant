@@ -7,6 +7,7 @@ import './connected-work.css';
 import ModelRequestForm from './model-request-form';
 import type { ModelPreview } from '../../lib/model-submission';
 import ModelCostRecovery from './model-cost-recovery';
+import SelfImprovementReview from './self-improvement-review';
 import type { CostProposal } from '../../lib/model-reconciliation';
 
 type Task = { id: string; title: string };
@@ -151,6 +152,12 @@ export default function ConnectedWork({ demo }: { demo: ReactNode }) {
             {token && <ModelRequestForm key={activeTask} taskId={activeTask} disabled={controlsDisabled}
               request={(resource, body, requestId) => api(resource, token, body, undefined, requestId)}
               onQueued={async id => { setSelectedId(id); setDetailJob(null); await refresh(); }} />}
+            {token && <SelfImprovementReview disabled={controlsDisabled} request={async (path, body) => {
+              const response = await fetch(`/api/self-improvement/${path}`, { method: 'POST', cache: 'no-store', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+              const data = await response.json() as unknown;
+              if (!response.ok) throw new Error(data && typeof data === 'object' && 'error' in data ? String(data.error) : 'Verzoek mislukt.');
+              return data;
+            }} />}
             <section className="approval-gate"><div className="sidebar-heading"><span><LockKeyhole size={16} /> Begrensde uitvoering</span></div><p>De controleknop doet alleen lokale syntaxcontrole. AI-opdrachten vragen afzonderlijk jouw tekst- en kostenapproval. Geen shellopdrachten of installs; de bovenliggende taak wordt niet automatisch goedgekeurd.</p></section>
             <section className="resilience-log"><div className="sidebar-heading"><span><Database size={16} /> Opgeslagen in SQLite</span></div><p>Checkpoints blijven na browser- en workerherstart bestaan. Een onderbroken leesstap kan opnieuw worden gecontroleerd.</p><code>PYTHONPATH=src python3 -m leon_control_plane.local_worker</code></section>
           </aside>

@@ -163,3 +163,14 @@ test('Server status uses only fixed local read route', async () => {
   assert.equal((await forwardLeon(request('server-status', { method: 'POST', body: '{}' }), config, forbiddenFetch)).status, 404);
   assert.equal((await forwardLeon(request('server-status&id=x'), config, forbiddenFetch)).status, 404);
 });
+
+test('self-improvement routes use exact local POST paths and reject query parameters', async () => {
+  for (const [resource, path] of [['self-improvement-preview', '/api/self-improvement/preview'], ['self-improvement-approve', '/api/self-improvement/approve'], ['self-improvement-run', '/api/self-improvement/run']]) {
+    const response = await forwardLeon(request(resource, { method: 'POST', body: '{}' }), config, async url => {
+      assert.equal(String(url), `http://127.0.0.1:8765${path}`);
+      return Response.json({ status: 'approved', changed_code_executed: false });
+    });
+    assert.equal(response.status, 200);
+    assert.equal((await forwardLeon(request(`${resource}&id=unexpected`), config, forbiddenFetch)).status, 404);
+  }
+});

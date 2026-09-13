@@ -3197,6 +3197,78 @@ class ControlPlaneStore:
                     timestamp=timestamp,
                 )
 
+    def approve_pending_approval(
+        self,
+        approval_id: str,
+        note: str,
+        *,
+        expected_action_type: str,
+        expected_requested_by: str,
+        actor_type: str = "user",
+        actor_id: str = "dashboard",
+    ) -> None:
+        """Atomically approve one still-live pending approval of expected origin."""
+        _reject_secret_like_text("approval decision_note", note)
+        self.initialize()
+        timestamp = now_iso()
+        with self.connect() as conn:
+            row = conn.execute(
+                """
+                SELECT id, status, consumed_at, expires_at, task_id, risk_level,
+                       risk_class, expected_change, rollback_plan, failure_mode,
+                       plan_fingerprint, action_type, requested_by
+                FROM approvals WHERE id = ?
+                """,
+                (approval_id,),
+            ).fetchone()
+            if row is None or row["action_type"] != expected_action_type or row["requested_by"] != expected_requested_by:
+                raise ValueError("Approval does not match expected action origin")
+            live = not row["consumed_at"] and (
+                not row["expires_at"]
+                or datetime.fromisoformat(str(row["expires_at"]).replace("Z", "+00:00")).astimezone(UTC) > datetime.now(UTC)
+            )
+            if row["status"] == "approved" and live:
+                return
+            cursor = conn.execute(
+                """
+                UPDATE approvals
+                SET status = 'approved', decided_at = ?, decision_note = ?, updated_at = ?
+                WHERE id = ? AND action_type = ? AND requested_by = ?
+                  AND status = 'pending' AND consumed_at IS NULL
+                  AND (expires_at IS NULL OR datetime(expires_at) > datetime(?))
+                """,
+                (
+                    timestamp, note, timestamp, approval_id, expected_action_type,
+                    expected_requested_by, timestamp,
+                ),
+            )
+            if cursor.rowcount != 1:
+                raise ValueError("Approval is no longer pending and available")
+            self.append_audit_event(
+                conn,
+                actor_type=actor_type,
+                actor_id=actor_id,
+                event_type="approval_decided",
+                summary=f"Approval {approval_id} changed from pending to approved.",
+                approval_id=approval_id,
+                task_id=row["task_id"],
+                risk_level=row["risk_level"] or "medium",
+                evidence="scoped atomic approval API",
+                redacted_payload={
+                    "old_status": "pending",
+                    "new_status": "approved",
+                    "note_present": bool(note),
+                    "risk_class": row["risk_class"],
+                    "approval_state": "approved",
+                    "expected_change": row["expected_change"],
+                    "rollback_plan": row["rollback_plan"],
+                    "failure_mode": row["failure_mode"],
+                    "plan_fingerprint": row["plan_fingerprint"],
+                    "retry_allowed_without_changed_plan": True,
+                },
+                timestamp=timestamp,
+            )
+
     def create_approval(
         self,
         *,

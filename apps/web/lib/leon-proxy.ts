@@ -25,6 +25,9 @@ const routes: Record<string, Partial<Record<string, string>>> = {
   'research-preview': { POST: '/api/research/preview' },
   'research-run': { POST: '/api/research/run' },
   'server-status': { GET: '/api/server/status' },
+  'self-improvement-preview': { POST: '/api/self-improvement/preview' },
+  'self-improvement-approve': { POST: '/api/self-improvement/approve' },
+  'self-improvement-run': { POST: '/api/self-improvement/run' },
 };
 const json = (data: unknown, status = 200) => Response.json(data, {
   status, headers: { 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' },
@@ -52,7 +55,8 @@ export async function forwardLeon(request: Request, config: Config, fetcher: typ
   const resource = url.searchParams.get('resource') ?? '';
   const target = Object.hasOwn(routes, resource) ? routes[resource][request.method] : undefined;
   const chatIdRoute = resource === 'chat-conversation' || resource === 'chat-messages';
-  const allowedQueryKeys = resource === 'chat-conversations'
+  const fixedSelfImprovement = resource.startsWith('self-improvement-');
+  const allowedQueryKeys = fixedSelfImprovement ? ['resource'] : resource === 'chat-conversations'
     ? ['resource', 'limit', 'before']
     : ['resource', 'id', 'request_id'];
   if (!target || [...url.searchParams.keys()].some(key => !allowedQueryKeys.includes(key))

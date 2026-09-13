@@ -30,9 +30,14 @@ Passing output remains `review_required`; no production branch or workspace is
 touched. Static failure resets disposable repository to approved base and
 records rollback evidence. API and sandbox tests include auth, exact binding,
 expiry, concurrency, symlink/path replacement, secret rejection and cleanup
-races. Full backend result on 13 September: **343 tests plus two subtests
-passed**; independent Python and security reviews found no P1/P2 issue.
+races. Scoped approval uses one conditional SQLite update so concurrent reject
+or expiry cannot be resurrected. Full backend result on 13 September: **345
+tests plus two subtests passed**; independent Python and security reviews found
+no P1/P2 issue.
 
-Gaia has no self-improvement patch screen yet. Real unit/integration tests remain blocked until an
+Gaia Werk has a collapsed advanced review card. Patch stays in component memory,
+every edit invalidates preview and approval, and a separate unchecked checkbox
+is required. See [browser evidence](self-improvement-browser-evidence.md). Real
+unit/integration tests remain blocked until an
 OS-level sandbox with network, filesystem, process and resource isolation is
 available and verified on target Ubuntu host.

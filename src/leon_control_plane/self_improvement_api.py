@@ -30,6 +30,7 @@ _TEMP_TTL_SECONDS = 60 * 60
 _OWNED_TEMP_ROOTS: dict[str, tuple[Path, Path]] = {}
 _OWNERS_LOCK = threading.Lock()
 _REQUEST_KEYS = {"patch", "allowed_files", "validation_profile"}
+_APPROVE_KEYS = {"approval_id"}
 _RUN_KEYS = {"approval_id", "patch"}
 
 
@@ -396,6 +397,61 @@ def _approval_binding(store: Any, approval_id: str) -> dict[str, Any]:
     return binding
 
 
+def approve_self_improvement(store: Any, body: dict[str, Any]) -> dict[str, Any]:
+    """Approve only a live self-improvement preview, never another action."""
+    if set(body) != _APPROVE_KEYS or not isinstance(body.get("approval_id"), str):
+        raise ValueError("approve accepts only approval_id")
+    approval_id = body["approval_id"].strip()
+    if not approval_id or len(approval_id) > 128:
+        raise ValueError("approval_id is invalid")
+    store.initialize()
+    with store.connect() as conn:
+        row = conn.execute(
+            """
+            SELECT status, consumed_at, expires_at, action_type, requested_by, expected_change
+            FROM approvals WHERE id = ?
+            """,
+            (approval_id,),
+        ).fetchone()
+    if row is None or row["action_type"] != "apply_controlled_self_improvement" or row["requested_by"] != "self-improvement-api":
+        raise ValueError("approval is not a self-improvement preview")
+    if row["status"] not in {"pending", "approved"} or row["consumed_at"]:
+        raise ValueError("self-improvement approval is no longer available")
+    if row["expires_at"]:
+        try:
+            expiry = datetime.fromisoformat(str(row["expires_at"]).replace("Z", "+00:00"))
+        except ValueError:
+            raise ValueError("approval expiry is invalid") from None
+        if expiry.astimezone(timezone.utc) <= datetime.now(timezone.utc):
+            raise ValueError("self-improvement approval is no longer available")
+    try:
+        binding = json.loads(row["expected_change"])
+    except (TypeError, json.JSONDecodeError):
+        raise ValueError("approval lacks exact sandbox binding") from None
+    if not isinstance(binding, dict) or set(binding) != {
+        "repository_id", "base_commit", "patch_digest", "allowed_files", "validation_profile",
+    }:
+        raise ValueError("approval lacks exact sandbox binding")
+    with _OWNERS_LOCK:
+        repository_live = str(binding["repository_id"]) in _OWNED_TEMP_ROOTS
+    if not repository_live:
+        raise ValueError("approval temporary repository is not server-owned")
+    store.approve_pending_approval(
+        approval_id, "Approved exact static self-improvement review in Gaia.",
+        expected_action_type="apply_controlled_self_improvement",
+        expected_requested_by="self-improvement-api",
+        actor_type="user", actor_id="gaia-self-improvement",
+    )
+    return {
+        "status": "approved",
+        "approval_id": approval_id,
+        "patch_digest": str(binding["patch_digest"]),
+        "allowed_files": list(binding["allowed_files"]),
+        "validation_profile": str(binding["validation_profile"]),
+        "changed_code_executed": False,
+    }
+
+
 def run_self_improvement(store: Any, body: dict[str, Any]) -> dict[str, Any]:
     if set(body) != _RUN_KEYS or not isinstance(body.get("approval_id"), str) or not isinstance(body.get("patch"), str):
         raise ValueError("run accepts only approval_id and patch")
@@ -460,6 +516,8 @@ def run_self_improvement(store: Any, body: dict[str, Any]) -> dict[str, Any]:
 def self_improvement_request(store: Any, *, path: str, body: dict[str, Any], repo_root: Path) -> dict[str, Any] | None:
     if path == "/api/self-improvement/preview":
         return preview_self_improvement(store, body, repo_root=repo_root)
+    if path == "/api/self-improvement/approve":
+        return approve_self_improvement(store, body)
     if path == "/api/self-improvement/run":
         return run_self_improvement(store, body)
     return None

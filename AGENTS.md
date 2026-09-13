@@ -1,5 +1,14 @@
 # Werken aan Leon / Gaia
 
+- 13 september, `codex/complete-leon`: Gaia Werk heeft nu ingeklapte
+  self-improvement preview/checkbox/run-bediening met scoped atomische approval.
+  Edit wist preview en checkbox; patch blijft clientstate; geen retry bij
+  onbekende run. Browser bewees statische review, bronbehoud en tempcleanup.
+  345 backendtests + twee subtests, 46 webtests, TypeScript/build/lint;
+  Python/security/React-review zonder P1/P2. Zie
+  `docs/self-improvement-browser-evidence.md`. Volgende: OS-sandbox voor echte
+  tests en gecontroleerde nachtqueuekoppeling.
+
 - 13 september, `codex/complete-leon`: geauthenticeerde self-improvement
   preview/run-API met exacte eenmalige R3-approval gereed. Server-owned temp
   repo, een uur expiry/cleanup, CAS-consume, concurrency en fd-gepinde
