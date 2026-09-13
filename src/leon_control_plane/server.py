@@ -42,6 +42,7 @@ from leon_control_plane.google_api import google_request
 from leon_control_plane.google_readonly import GoogleReadonlyError
 from leon_control_plane.research_executor import ResearchExecutorError, research_request
 from leon_control_plane.chat_api import chat_request
+from leon_control_plane.self_improvement_api import self_improvement_request
 from leon_control_plane.ui_composition import (
     UI_POLICY_PATH,
     build_canvas_shell,
@@ -3663,6 +3664,11 @@ class Handler(BaseHTTPRequestHandler):
                 return
             if not self._require_auth():
                 return
+            if self.path.startswith("/api/self-improvement/"):
+                token = dashboard_token()
+                if not token or not hmac.compare_digest(self.headers.get("authorization", ""), f"Bearer {token}"):
+                    self._send_json({"error": "Explicit dashboard bearer authorization required"}, HTTPStatus.UNAUTHORIZED)
+                    return
             if self.path.startswith("/api/google/"):
                 token = dashboard_token()
                 if not token or not hmac.compare_digest(self.headers.get("authorization", ""), f"Bearer {token}"):
@@ -3683,6 +3689,13 @@ class Handler(BaseHTTPRequestHandler):
                 return
             if self.path.startswith("/api/chat"):
                 self._send_json(chat_request(STORE, method="POST", path=self.path, body=self._read_body()))
+                return
+            if self.path.startswith("/api/self-improvement/"):
+                response = self_improvement_request(STORE, path=self.path, body=self._read_body(), repo_root=REPO_ROOT)
+                if response is None:
+                    self._send_json({"error": "Not found"}, HTTPStatus.NOT_FOUND)
+                else:
+                    self._send_json(response, HTTPStatus.CREATED if self.path.endswith("/preview") else HTTPStatus.OK)
                 return
             if self.path == "/api/secrets":
                 self._handle_secret()

@@ -37,9 +37,10 @@ Research-flow met duurzame previewbinding en bronallowlist, standaard uit. Zie
 [browserbewijs](docs/research-browser-evidence.md). Live provideracceptatie en
 self-improvement blijven open.
 
-Self-improvement heeft een eerste veilige reviewlaag: exact goedgekeurde patches
-kunnen alleen in een disposable tijdelijke Git-repository statisch worden
-gecontroleerd. Gewijzigde code wordt niet uitgevoerd. Zie
+Self-improvement heeft een geauthenticeerde tweestaps review-API: preview maakt
+een exact gebonden R3-approval; run verbruikt die één keer en controleert patch
+alleen statisch in een disposable tijdelijke Git-repository. Gewijzigde code
+wordt niet uitgevoerd. Zie
 [review-only patchvalidatie](docs/self-improvement-sandbox.md). Volledige tests
 vereisen later bewezen OS-procesisolatie op doelserver.
 

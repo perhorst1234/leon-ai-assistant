@@ -15,14 +15,15 @@ plus twee subtests, 42 webtests, TypeScript/build/lint en lokale browserproef
 geslaagd. Doelservermeting en muterende beheeracties blijven open. Zie
 [servermonitor](server-monitor.md) en [browserbewijs](server-monitor-browser-evidence.md).
 
-**13 september, self-improvement basis:** review-only patchvalidator toegevoegd.
-Exacte approval bindt tijdelijke repository, base commit, patchhash, filelijst en
-statische validatie. Approval wordt één keer verbruikt. Geen gewijzigde code
-wordt uitgevoerd; Git filters/attributes/hooks/configroutes, verborgen paden,
-symlinks, traversal, binaire/mode-/bestandmutaties en secretachtige patches zijn
-geblokkeerd. Zeven gerichte tests en onafhankelijke code-review geslaagd. Volledige
-self-improvement blijft open tot OS-sandbox, echte tests, crashherstel en Gaia/
-nachtqueue-integratie aantoonbaar werken. Zie
+**13 september, self-improvement kern:** geauthenticeerde preview/run-API rond
+review-only patchvalidator toegevoegd. Exacte R3-approval bindt opaque tijdelijke
+repository, base commit, patchhash, filelijst en statische validatie en wordt
+atomisch één keer verbruikt. Een uur expiry/cleanup, concurrentie en
+descriptor-relatieve symlink-/renamebescherming zijn getest. Geen gewijzigde
+code wordt uitgevoerd; publieke state bevat geen raw patch of paden. Volledige
+backend: 343 tests plus twee subtests; Python- en security-review zonder P1/P2.
+Volledige self-improvement blijft open tot Gaia-bediening, OS-sandbox, echte
+tests en gecontroleerde nachtqueue-integratie aantoonbaar werken. Zie
 [sandboxgrens](self-improvement-sandbox.md).
 
 **12 september, research:** Firecrawl v2 search-only executor, vaste host,

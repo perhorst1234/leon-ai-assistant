@@ -4,6 +4,15 @@ Stand: **12 september 2026**. De gebruiker wil vooral coderen; houd deze overdra
 
 ## Lopende aanvulling
 
+- 13 september: geauthenticeerde tweestaps self-improvement-API gereed. Preview
+  maakt uit een vaste bronroot een schone tijdelijke Git-repository en exacte
+  R3-approval; run verbruikt die approval atomisch en voert alleen statische
+  review uit. Een uur expiry/cleanup, concurrency, symlink-/rename-races,
+  secretblokkade en HTTP-keten getest. Geen raw patch of paden in publieke
+  state; gewijzigde code draait nooit. Stand: 343 backendtests + twee subtests;
+  Python- en security-review zonder P1/P2. Gaia-bediening, OS-sandbox en echte
+  patchtests blijven open. Zie [sandboxgrens](self-improvement-sandbox.md).
+
 - 13 september: lokale agentrun-review sluit nu oudertaaklevenscyclus. Acceptatie
   beweegt `new/planned/active` via geldige transities atomisch naar `review` en
   bewaart begrensde runprovenance. Afwijzing en wijzigingsverzoek veranderen
@@ -20,12 +29,13 @@ Stand: **12 september 2026**. De gebruiker wil vooral coderen; houd deze overdra
   tijdelijke fixture; geen absolute paden zichtbaar. Zie
   [servermonitor](server-monitor.md) en [browserbewijs](server-monitor-browser-evidence.md).
 
-- 13 september: veilige self-improvement basis toegevoegd. Alleen exact gebonden,
+- 13 september: veilige self-improvement kern toegevoegd. Alleen exact gebonden,
   eenmalig goedgekeurde patches in system-temp Git-repositories; statische Git-
   en Python-syntaxcontrole, rollbackbewijs, geen uitvoering van gewijzigde code.
   Git clean-filter exploit uit review gerepareerd en met markerregressie bewezen.
-  Volledige self-improvement blijft open tot OS-sandbox, echte tests, crashherstel
-  en productintegratie. Zie [sandboxgrens](self-improvement-sandbox.md).
+  De latere HTTP-koppeling en crashcleanup staan hierboven. Volledige
+  self-improvement blijft open tot OS-sandbox, echte tests en Gaia-integratie.
+  Zie [sandboxgrens](self-improvement-sandbox.md).
 
 - 12 september: begrensde Firecrawl v2 search-only executor en Gaia Research-
   kaart lokaal gereed, standaard uit. Preview-ID/fingerprint is server-side

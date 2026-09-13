@@ -10,6 +10,7 @@ import hashlib
 import json
 import os
 import re
+import stat
 import subprocess
 import tempfile
 from dataclasses import dataclass
@@ -43,6 +44,8 @@ class SandboxRequest:
     validation_profile: str
     approval_id: str
     store: Any
+    retain_patch_snapshot: bool = True
+    approval_binding: dict[str, Any] | None = None
 
 
 def _run(
@@ -137,7 +140,7 @@ def _check_approval(request: SandboxRequest) -> None:
         approved = json.loads(row["expected_change"])
     except (TypeError, json.JSONDecodeError):
         raise ValueError("approval lacks exact sandbox binding") from None
-    if approved != _binding(request):
+    if approved != (request.approval_binding or _binding(request)):
         raise ValueError("approval binding does not match workspace, base, patch or validation")
 
 
@@ -189,6 +192,48 @@ def _validate_patch(request: SandboxRequest, workspace: Path) -> tuple[str, ...]
                 raise ValueError("symlink parent is forbidden")
             parent = parent.parent
     return touched
+
+
+def _safe_read_relative(
+    root: Path, name: str, cap: int, *, expected: tuple[int, int] | None = None,
+) -> bytes:
+    """Read a regular file without following links or accepting path-component swaps."""
+    flags = os.O_RDONLY | getattr(os, "O_CLOEXEC", 0) | getattr(os, "O_NOFOLLOW", 0)
+    directory_flags = flags | getattr(os, "O_DIRECTORY", 0)
+    fds: list[int] = []
+    try:
+        current = os.open(root, directory_flags)
+        fds.append(current)
+        parts = Path(_relative_path(name)).parts
+        for part in parts[:-1]:
+            current = os.open(part, directory_flags, dir_fd=current)
+            fds.append(current)
+        fd = os.open(parts[-1], flags, dir_fd=current)
+        fds.append(fd)
+        info = os.fstat(fd)
+        if not stat.S_ISREG(info.st_mode):
+            raise ValueError("file must be an existing regular file")
+        if expected is not None and (info.st_dev, info.st_ino) != expected:
+            raise ValueError("file changed after validation")
+        if info.st_size > cap:
+            raise ValueError("file exceeds size cap")
+        chunks: list[bytes] = []
+        remaining = cap + 1
+        while remaining:
+            chunk = os.read(fd, min(64 * 1024, remaining))
+            if not chunk:
+                break
+            chunks.append(chunk)
+            remaining -= len(chunk)
+        data = b"".join(chunks)
+        if len(data) > cap:
+            raise ValueError("file exceeds size cap")
+        return data
+    except OSError as exc:
+        raise ValueError("file traversal changed or contains a symlink") from exc
+    finally:
+        for fd in reversed(fds):
+            os.close(fd)
 
 
 def _rollback(workspace: Path, base_commit: str) -> tuple[bool, str]:
@@ -266,9 +311,7 @@ def execute_review_only(request: SandboxRequest) -> dict[str, Any]:
     elif request.validation_profile == "python_syntax":
         try:
             for name in touched:
-                data = (workspace / name).read_bytes()
-                if len(data) > MAX_FILE_BYTES:
-                    raise ValueError("changed file exceeds syntax cap")
+                data = _safe_read_relative(workspace, name, MAX_FILE_BYTES)
                 ast.parse(data.decode("utf-8"), filename=name)
         except (UnicodeDecodeError, SyntaxError, ValueError) as exc:
             validation_error = _summary(str(exc))
@@ -288,14 +331,18 @@ def execute_review_only(request: SandboxRequest) -> dict[str, Any]:
         "allowed_files": list(touched),
         "validation": {"profile": request.validation_profile, "passed": passed, "error": validation_error},
         "after_hash": hashlib.sha256(after.encode()).hexdigest(),
-        "patch_snapshot": _summary(after),
+        "patch_snapshot": _summary(after) if request.retain_patch_snapshot else "",
         "rolled_back": False,
         "changed_code_executed": False,
     }
     if not passed:
         result["rolled_back"], result["rollback_error"] = _rollback(workspace, request.base_commit)
     request.store.record_code_change_rollback(
-        target_ref=str(workspace), patch_snapshot=after,
+        target_ref=str(workspace) if request.retain_patch_snapshot else f"approval:{request.approval_id}",
+        patch_snapshot=(after if request.retain_patch_snapshot else json.dumps({
+            "patch_digest": hashlib.sha256(after.encode()).hexdigest(),
+            "byte_count": len(after.encode()), "files": list(touched),
+        }, sort_keys=True)),
         test_results={"passed": passed, "profile": request.validation_profile, "changed_code_executed": False},
         summary="Review-only temporary sandbox patch validation",
         action_ref_type="approval", action_ref_id=request.approval_id,

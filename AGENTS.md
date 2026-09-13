@@ -1,5 +1,13 @@
 # Werken aan Leon / Gaia
 
+- 13 september, `codex/complete-leon`: geauthenticeerde self-improvement
+  preview/run-API met exacte eenmalige R3-approval gereed. Server-owned temp
+  repo, een uur expiry/cleanup, CAS-consume, concurrency en fd-gepinde
+  symlink-/renamebescherming; geen code-uitvoering of raw patch/paden in
+  publieke state. 343 backendtests + twee subtests; Python/security-review
+  zonder P1/P2. Zie `docs/self-improvement-sandbox.md`. Volgende: Gaia-bediening
+  en bewezen OS-sandbox voor echte tests.
+
 - 13 september, `codex/complete-leon`: geaccepteerde agentrun-review beweegt
   oudertaak atomisch via canonieke transities naar `review`, met begrensde
   runprovenance. Rejected/changes-requested laat taak staan; dubbele review is

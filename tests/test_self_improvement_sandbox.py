@@ -5,6 +5,7 @@ from pathlib import Path
 
 import pytest
 
+from leon_control_plane import self_improvement_sandbox
 from leon_control_plane.self_improvement_sandbox import SandboxRequest, execute_review_only
 
 
@@ -197,3 +198,27 @@ def test_git_clean_filter_cannot_execute_changed_code(tmp_path):
     with pytest.raises(ValueError, match="forbidden"):
         execute_review_only(request)
     assert not marker.exists()
+
+
+def test_safe_syntax_read_holds_parent_directory_during_swap(tmp_path, monkeypatch):
+    root = tmp_path / "root"
+    nested = root / "nested"
+    nested.mkdir(parents=True)
+    (nested / "value.py").write_text("SAFE = True\n")
+    outside = tmp_path / "outside"
+    outside.mkdir()
+    (outside / "value.py").write_text("SAFE = False\n")
+    real_open = self_improvement_sandbox.os.open
+    swapped = False
+
+    def swapping_open(path, flags, *args, **kwargs):
+        nonlocal swapped
+        fd = real_open(path, flags, *args, **kwargs)
+        if path == "nested" and not swapped:
+            nested.replace(root / "original")
+            nested.symlink_to(outside, target_is_directory=True)
+            swapped = True
+        return fd
+
+    monkeypatch.setattr(self_improvement_sandbox.os, "open", swapping_open)
+    assert self_improvement_sandbox._safe_read_relative(root, "nested/value.py", 1024) == b"SAFE = True\n"

@@ -3213,6 +3213,7 @@ class ControlPlaneStore:
         expected_change: str = "",
         rollback_plan: str = "",
         failure_mode: str = "",
+        expires_at: str | None = None,
         requested_by: str = "orchestrator",
         actor_type: str = "system",
         actor_id: str = "orchestrator",
@@ -3230,6 +3231,14 @@ class ControlPlaneStore:
         expected_change = expected_change.strip() or summary
         rollback_plan = rollback_plan.strip()
         failure_mode = failure_mode.strip() or "If this fails or is rejected, no action runs until a changed plan is reviewed."
+        expires_at = str(expires_at or "").strip() or None
+        if expires_at:
+            try:
+                expiry = datetime.fromisoformat(expires_at.replace("Z", "+00:00"))
+            except ValueError:
+                raise ValueError("Approval expires_at must be an ISO timestamp") from None
+            if expiry.tzinfo is None or expiry.astimezone(UTC) <= datetime.now(UTC):
+                raise ValueError("Approval expires_at must be a future timezone-aware timestamp")
         if risk_class in {"R3", "R4", "R5"} and not rollback_plan:
             raise ValueError("Risky approvals require rollback_plan before approval")
         for label, value in {
@@ -3243,6 +3252,7 @@ class ControlPlaneStore:
             "approval expected_change": expected_change,
             "approval rollback_plan": rollback_plan,
             "approval failure_mode": failure_mode,
+            "approval expires_at": expires_at or "",
             "approval requested_by": requested_by,
         }.items():
             _reject_secret_like_text(label, value)
@@ -3290,9 +3300,9 @@ class ControlPlaneStore:
                   id, task_id, action_type, summary, reason, affected_systems,
                   permissions, external_effect, cost_estimate, risk_level,
                   risk_class, expected_change, rollback_plan, failure_mode,
-                  plan_fingerprint, status, requested_by, created_at, updated_at
+                  plan_fingerprint, status, requested_by, expires_at, created_at, updated_at
                 )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?, ?, ?)
                 """,
                 (
                     approval_id,
@@ -3311,6 +3321,7 @@ class ControlPlaneStore:
                     failure_mode,
                     plan_fingerprint,
                     requested_by,
+                    expires_at,
                     timestamp,
                     timestamp,
                 ),
@@ -3335,6 +3346,7 @@ class ControlPlaneStore:
                     "rollback_plan": rollback_plan,
                     "failure_mode": failure_mode,
                     "approval_state": "pending",
+                    "expires_at": expires_at,
                     "plan_fingerprint": plan_fingerprint,
                 },
                 timestamp=timestamp,
@@ -3358,12 +3370,14 @@ class ControlPlaneStore:
             row = conn.execute("SELECT id, status, task_id FROM approvals WHERE id = ?", (approval_id,)).fetchone()
             if row is None:
                 raise ValueError("Unknown approval id")
-            if row["status"] != "approved":
-                raise ValueError("Only approved approvals can be consumed")
-            conn.execute(
-                "UPDATE approvals SET status = 'consumed', consumed_at = ?, updated_at = ? WHERE id = ?",
-                (timestamp, timestamp, approval_id),
+            updated = conn.execute(
+                "UPDATE approvals SET status = 'consumed', consumed_at = ?, updated_at = ? "
+                "WHERE id = ? AND status = 'approved' AND consumed_at IS NULL "
+                "AND (expires_at IS NULL OR datetime(expires_at) > datetime(?))",
+                (timestamp, timestamp, approval_id, timestamp),
             )
+            if updated.rowcount != 1:
+                raise ValueError("Only approved, unconsumed approvals can be consumed")
             self.append_audit_event(
                 conn,
                 actor_type=actor_type,
