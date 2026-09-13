@@ -37,7 +37,9 @@ accountverbinding en live acceptatie blijven open. Stap 6 heeft begrensde
 autonomiestatus, ochtendbrief, optionele dagelijkse lokale bronscan en een
 config-gated Firecrawl search-only executor. Researchcontract en disabled-state
 zijn offline/browser-getest; live provideracceptatie en self-improvement blijven
-open. Stappen 7–8 blijven open.
+open. Self-improvement heeft inmiddels een review-only statische patchvalidator;
+uitvoering van gewijzigde code blijft geblokkeerd tot bewezen OS-isolatie.
+Stappen 7–8 blijven open.
 Bewijs en actuele aantallen: `handoff.md`,
 `chat-browser-evidence.md`, `memory-today-browser-evidence.md`,
 `google-browser-evidence.md`, `autonomy-browser-evidence.md`,

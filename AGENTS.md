@@ -1,5 +1,12 @@
 # Werken aan Leon / Gaia
 
+- 13 september, `codex/complete-leon`: review-only self-improvement validator
+  toegevoegd voor disposable Git-repositories. Exacte approvalbinding, eenmalig
+  verbruik, pad-/secret-/Git-configblokkades en statische syntaxcontrole; gewijzigde
+  code wordt nooit uitgevoerd. Zeven gerichte tests plus onafhankelijke review
+  geslaagd. Zie `docs/self-improvement-sandbox.md`. Volgende stap: OS-sandbox en
+  echte tests, of read-only servermonitor.
+
 - 12 september, `codex/complete-leon`: Firecrawl v2 search-only Research-flow
   toegevoegd, standaard uit. Backend gebruikt vaste host, expliciete domeinen,
   caps, duurzame preview-ID/fingerprint, 15 minuten geldigheid en audit-outcomes;

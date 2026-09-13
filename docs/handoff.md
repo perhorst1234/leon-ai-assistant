@@ -4,6 +4,13 @@ Stand: **12 september 2026**. De gebruiker wil vooral coderen; houd deze overdra
 
 ## Lopende aanvulling
 
+- 13 september: veilige self-improvement basis toegevoegd. Alleen exact gebonden,
+  eenmalig goedgekeurde patches in system-temp Git-repositories; statische Git-
+  en Python-syntaxcontrole, rollbackbewijs, geen uitvoering van gewijzigde code.
+  Git clean-filter exploit uit review gerepareerd en met markerregressie bewezen.
+  Volledige self-improvement blijft open tot OS-sandbox, echte tests, crashherstel
+  en productintegratie. Zie [sandboxgrens](self-improvement-sandbox.md).
+
 - 12 september: begrensde Firecrawl v2 search-only executor en Gaia Research-
   kaart lokaal gereed, standaard uit. Preview-ID/fingerprint is server-side
   gebonden en verloopt na 15 minuten; auth, caps, domein/IP-filter en provider-

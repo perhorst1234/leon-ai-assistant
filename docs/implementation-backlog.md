@@ -1,5 +1,15 @@
 # Leon / Gaia — uitvoeringsbacklog
 
+**13 september, self-improvement basis:** review-only patchvalidator toegevoegd.
+Exacte approval bindt tijdelijke repository, base commit, patchhash, filelijst en
+statische validatie. Approval wordt één keer verbruikt. Geen gewijzigde code
+wordt uitgevoerd; Git filters/attributes/hooks/configroutes, verborgen paden,
+symlinks, traversal, binaire/mode-/bestandmutaties en secretachtige patches zijn
+geblokkeerd. Zeven gerichte tests en onafhankelijke code-review geslaagd. Volledige
+self-improvement blijft open tot OS-sandbox, echte tests, crashherstel en Gaia/
+nachtqueue-integratie aantoonbaar werken. Zie
+[sandboxgrens](self-improvement-sandbox.md).
+
 **12 september, research:** Firecrawl v2 search-only executor, vaste host,
 HTTPS/domein/IP-filter, caps, server-side preview-ID/fingerprint met 15 minuten
 geldigheid, provider-outcomeaudit en Gaia tweestapsflow toegevoegd. Standaard

@@ -37,4 +37,10 @@ Research-flow met duurzame previewbinding en bronallowlist, standaard uit. Zie
 [browserbewijs](docs/research-browser-evidence.md). Live provideracceptatie en
 self-improvement blijven open.
 
+Self-improvement heeft een eerste veilige reviewlaag: exact goedgekeurde patches
+kunnen alleen in een disposable tijdelijke Git-repository statisch worden
+gecontroleerd. Gewijzigde code wordt niet uitgevoerd. Zie
+[review-only patchvalidatie](docs/self-improvement-sandbox.md). Volledige tests
+vereisen later bewezen OS-procesisolatie op doelserver.
+
 GitHub bewaart code, besluiten, voortgang en hervatstappen. De repository is openbaar: credentials, persoonlijke gesprekken, databases, betaalgegevens en serverback-ups horen in een aparte private back-up. Een Git-push is geen back-up van de volledige server of van lopende agentprocessen.
