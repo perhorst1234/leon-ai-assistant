@@ -43,4 +43,10 @@ gecontroleerd. Gewijzigde code wordt niet uitgevoerd. Zie
 [review-only patchvalidatie](docs/self-improvement-sandbox.md). Volledige tests
 vereisen later bewezen OS-procesisolatie op doelserver.
 
+Vandaag toont ook een geauthenticeerde, alleen-lezen serverstatus met begrensde
+OS-, uptime-, load-, geheugen-, schijf- en Leon-procesmetadata. Vaste
+schijflabels vervangen lokale paden; elke probe wordt als connectorcontrole
+gelogd. Zie [servermonitor](docs/server-monitor.md) en
+[browserbewijs](docs/server-monitor-browser-evidence.md).
+
 GitHub bewaart code, besluiten, voortgang en hervatstappen. De repository is openbaar: credentials, persoonlijke gesprekken, databases, betaalgegevens en serverback-ups horen in een aparte private back-up. Een Git-push is geen back-up van de volledige server of van lopende agentprocessen.

@@ -15,6 +15,22 @@ ENV_KEY_RE = re.compile(r"^[A-Z][A-Z0-9_]{1,80}$")
 
 DEFAULT_CONNECTOR_MANIFESTS: list[dict[str, Any]] = [
     {
+        "connector_id": "server-monitor",
+        "name": "Local server monitor",
+        "connector_type": "files",
+        "status": "approved_readonly",
+        "purpose": "Bounded local OS and Leon process health metadata.",
+        "read_scopes": ["server:status_read"],
+        "write_scopes": [],
+        "external_system": False,
+        "external_effects": [],
+        "required_env_keys": [],
+        "approval_required_for": ["write", "external_write", "connect"],
+        "allowed_without_approval": ["read"],
+        "forbidden_actions": ["read_raw_secret", "read_secret_value", "command_execution"],
+        "notes": "Read-only standard-library probes; execution is audited as connector execution.",
+    },
+    {
         "connector_id": "browser-research",
         "name": "Browser and research",
         "connector_type": "browser_research",

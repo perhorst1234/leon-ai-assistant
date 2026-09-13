@@ -4,6 +4,14 @@ Stand: **12 september 2026**. De gebruiker wil vooral coderen; houd deze overdra
 
 ## Lopende aanvulling
 
+- 13 september: geauthenticeerde read-only servermonitor en Gaia-kaart gereed.
+  Alleen begrensde aggregaten en vaste schijflabels; geen logs, secrets,
+  caller-paden, commando's of achtergrondprobe. Connectoraudit en uit-schakelaar
+  getest. Stand: 328 backendtests + twee subtests, 42 webtests, TypeScript,
+  productiebuild en lint zonder fouten. Browser: laden en verversen geslaagd op
+  tijdelijke fixture; geen absolute paden zichtbaar. Zie
+  [servermonitor](server-monitor.md) en [browserbewijs](server-monitor-browser-evidence.md).
+
 - 13 september: veilige self-improvement basis toegevoegd. Alleen exact gebonden,
   eenmalig goedgekeurde patches in system-temp Git-repositories; statische Git-
   en Python-syntaxcontrole, rollbackbewijs, geen uitvoering van gewijzigde code.

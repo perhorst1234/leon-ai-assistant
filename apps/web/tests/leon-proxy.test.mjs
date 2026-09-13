@@ -153,3 +153,13 @@ test('Research preview and run use only fixed local POST routes', async () => {
   }
   assert.equal((await forwardLeon(request('research-run&id=x', { method: 'POST', body: '{}' }), config, forbiddenFetch)).status, 404);
 });
+
+test('Server status uses only fixed local read route', async () => {
+  const response = await forwardLeon(request('server-status'), config, async url => {
+    assert.equal(String(url), 'http://127.0.0.1:8765/api/server/status');
+    return Response.json({ status: 'healthy' });
+  });
+  assert.equal(response.status, 200);
+  assert.equal((await forwardLeon(request('server-status', { method: 'POST', body: '{}' }), config, forbiddenFetch)).status, 404);
+  assert.equal((await forwardLeon(request('server-status&id=x'), config, forbiddenFetch)).status, 404);
+});

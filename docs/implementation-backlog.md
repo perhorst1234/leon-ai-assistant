@@ -1,5 +1,13 @@
 # Leon / Gaia — uitvoeringsbacklog
 
+**13 september, servermonitor:** read-only `GET /api/server/status`, connector-
+audit en Gaia-kaart toegevoegd. Endpoint accepteert geen caller-paden of
+commando's en toont alleen begrensde OS-, uptime-, load-, geheugen-, vaste
+schijflabel- en processtatus. Uitgeschakeld betekent geen probe. 328 backendtests
+plus twee subtests, 42 webtests, TypeScript/build/lint en lokale browserproef
+geslaagd. Doelservermeting en muterende beheeracties blijven open. Zie
+[servermonitor](server-monitor.md) en [browserbewijs](server-monitor-browser-evidence.md).
+
 **13 september, self-improvement basis:** review-only patchvalidator toegevoegd.
 Exacte approval bindt tijdelijke repository, base commit, patchhash, filelijst en
 statische validatie. Approval wordt één keer verbruikt. Geen gewijzigde code

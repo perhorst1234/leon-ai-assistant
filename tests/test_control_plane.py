@@ -1600,9 +1600,11 @@ def test_default_connector_manifests_declare_separate_read_and_write_scopes() ->
     assert {"browser-research", "mail", "calendar", "files", "tasks", "memory-sources"}.issubset(by_id)
     assert by_id["mail"]["status"] == "approved_readonly"
     assert by_id["calendar"]["status"] == "approved_readonly"
+    assert by_id["server-monitor"]["write_scopes"] == []
     for manifest in manifests:
         assert manifest["read_scopes"]
-        assert manifest["write_scopes"]
+        if manifest["connector_id"] != "server-monitor":
+            assert manifest["write_scopes"]
         assert set(manifest["read_scopes"]).isdisjoint(set(manifest["write_scopes"]))
         assert manifest["secret_handling"]["raw_secret_values_visible"] is False
         assert manifest["secret_handling"]["secret_values_allowed_in_ui"] is False

@@ -37,6 +37,7 @@ from leon_control_plane.tool_registry import classify_tool_action, normalize_too
 from leon_control_plane.tool_review import build_review_packets
 from leon_control_plane.work_api import work_request
 from leon_control_plane.overview_api import overview_request
+from leon_control_plane.server_monitor import server_status_request
 from leon_control_plane.google_api import google_request
 from leon_control_plane.google_readonly import GoogleReadonlyError
 from leon_control_plane.research_executor import ResearchExecutorError, research_request
@@ -3580,6 +3581,11 @@ class Handler(BaseHTTPRequestHandler):
             if not token or not hmac.compare_digest(self.headers.get("authorization", ""), f"Bearer {token}"):
                 self._send_json({"error": "Explicit dashboard bearer authorization required"}, HTTPStatus.UNAUTHORIZED)
                 return
+        if self.path.startswith("/api/server/"):
+            token = dashboard_token()
+            if not token or not hmac.compare_digest(self.headers.get("authorization", ""), f"Bearer {token}"):
+                self._send_json({"error": "Explicit dashboard bearer authorization required"}, HTTPStatus.UNAUTHORIZED)
+                return
         if self.path.startswith("/api/chat"):
             token = dashboard_token()
             if not token or not hmac.compare_digest(self.headers.get("authorization", ""), f"Bearer {token}"):
@@ -3594,6 +3600,15 @@ class Handler(BaseHTTPRequestHandler):
             self._send_json(work_response)
             return
         try:
+            if self.path == "/api/server/status":
+                values = parse_selected_env_values({"LEON_SERVER_MONITOR_ENABLED"})
+                enabled = str(values.get("LEON_SERVER_MONITOR_ENABLED", "true")).lower() in {"1", "true", "yes"}
+                self._send_json(server_status_request(
+                    STORE, method="GET", path=self.path,
+                    paths=(("repository", REPO_ROOT), ("state", STATE_DIR), ("database", DB_PATH.parent)),
+                    enabled=enabled,
+                ))
+                return
             overview_response = overview_request(STORE, method="GET", path=self.path)
         except ValueError as exc:
             self._send_json({"error": str(exc)}, HTTPStatus.BAD_REQUEST)

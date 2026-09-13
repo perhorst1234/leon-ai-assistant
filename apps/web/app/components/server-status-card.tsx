@@ -1,0 +1,18 @@
+'use client';
+import { useEffect, useRef, useState } from 'react';
+import { Activity, Clock3, HardDrive, MemoryStick, Server } from 'lucide-react';
+import { normalizeServerStatus, type ServerStatus } from '../../lib/server-status-contract';
+import './server-status-card.css';
+
+const bytes = (value?: number) => value === undefined ? '—' : value < 1024 ** 3 ? `${(value / 1024 ** 2).toFixed(0)} MB` : `${(value / 1024 ** 3).toFixed(1)} GB`;
+const duration = (value?: number | string) => typeof value !== 'number' ? '—' : value < 3600 ? `${Math.floor(value / 60)} min` : value < 86400 ? `${(value / 3600).toFixed(1)} uur` : `${(value / 86400).toFixed(1)} dagen`;
+const responseError = (data: unknown) => data && typeof data === 'object' && 'error' in data && typeof data.error === 'string' ? data.error : 'Serverstatus niet bereikbaar.';
+async function fetchStatus(token: string, signal: AbortSignal) { const response = await fetch('/api/leon?resource=server-status', { signal, cache: 'no-store', headers: { Authorization: `Bearer ${token}` } }); const data: unknown = await response.json(); if (!response.ok) throw new Error(responseError(data)); return normalizeServerStatus(data); }
+export default function ServerStatusCard({ token, refreshId }: { token: string; refreshId: number }) {
+  const [data, setData] = useState<ServerStatus | null>(null); const [error, setError] = useState(''); const request = useRef<AbortController | null>(null); const version = useRef(0);
+  useEffect(() => { const controller = new AbortController(); request.current?.abort(); request.current = controller; const current = ++version.current; fetchStatus(token, controller.signal).then(value => { if (!controller.signal.aborted && current === version.current) { setData(value); setError(''); } }).catch(reason => { if (!controller.signal.aborted && current === version.current) { setData(null); setError(reason instanceof Error ? reason.message : 'Serverstatus niet beschikbaar.'); } }); return () => controller.abort(); }, [token, refreshId]);
+  if (error) return <section className="server-status-card" aria-label="Serverstatus"><header><Server size={17}/><h2>Serverstatus</h2></header><p className="work-error" role="alert">{error}</p></section>;
+  if (!data) return <section className="server-status-card" aria-label="Serverstatus"><header><Server size={17}/><h2>Serverstatus</h2></header><p className="work-hint">Status laden…</p></section>;
+  if (!data.enabled || data.status === 'disabled') return <section className="server-status-card" aria-label="Serverstatus"><header><Server size={17}/><h2>Serverstatus</h2></header><p className="work-hint">Serverstatus is uitgeschakeld.</p></section>;
+  return <section className="server-status-card" aria-label="Serverstatus"><header><Server size={17}/><h2>Serverstatus</h2><span>{data.health.status ?? data.status}</span></header><div className="server-status-grid"><span><Activity size={14}/> Load {data.load.value.length ? data.load.value.map(v => v.toFixed(2)).join(' · ') : '—'}</span><span><MemoryStick size={14}/> Beschikbaar geheugen {bytes(data.memory.available_bytes)} / {bytes(data.memory.total_bytes)}</span><span><Clock3 size={14}/> Uptime {duration(data.uptime.value)}</span><span><Server size={14}/> OS {[data.os.system, data.os.machine].filter(Boolean).join(' · ') || '—'}</span><span><HardDrive size={14}/> Schijven {data.disk.length ? data.disk.map(d => `${d.label ?? 'schijf'} ${bytes(d.free_bytes)}`).join(' · ') : '—'}</span><span>Proces {data.process.running === undefined ? 'onbekend' : data.process.running ? 'actief' : 'niet actief'}</span></div></section>;
+}

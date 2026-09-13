@@ -1,5 +1,13 @@
 # Werken aan Leon / Gaia
 
+- 13 september, `codex/complete-leon`: geauthenticeerde read-only servermonitor
+  en Gaia-kaart toegevoegd. Begrensde OS/uptime/load/memory/disk/procesmetadata,
+  vaste schijflabels, connectoraudit en uit-schakelaar; geen commando's, logs,
+  secrets of caller-paden. 328 backendtests + twee subtests, 42 webtests,
+  TypeScript/build/lint en lokale browserproef geslaagd. Zie
+  `docs/server-monitor.md` en `docs/server-monitor-browser-evidence.md`. Volgende:
+  Ubuntu/M40-doelserveracceptatie of OS-sandbox voor echte patchtests.
+
 - 13 september, `codex/complete-leon`: review-only self-improvement validator
   toegevoegd voor disposable Git-repositories. Exacte approvalbinding, eenmalig
   verbruik, pad-/secret-/Git-configblokkades en statische syntaxcontrole; gewijzigde
