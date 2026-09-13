@@ -5186,7 +5186,14 @@ class ControlPlaneStore:
         self.initialize()
         timestamp = now_iso()
         with self.connect() as conn:
-            row = conn.execute("SELECT id, task_id, risk, status FROM agent_runs WHERE id = ?", (run_id,)).fetchone()
+            row = conn.execute(
+                """
+                SELECT id, task_id, risk, status, result_summary, length(evidence_json) AS evidence_size
+                FROM agent_runs
+                WHERE id = ?
+                """,
+                (run_id,),
+            ).fetchone()
             if row is None:
                 raise ValueError("Unknown agent run id")
             if row["status"] not in {"waiting_for_review", "failed"}:
@@ -5227,6 +5234,79 @@ class ControlPlaneStore:
                 },
                 timestamp=timestamp,
             )
+            if review_status == "accepted":
+                task = conn.execute("SELECT id, status FROM tasks WHERE id = ?", (row["task_id"],)).fetchone()
+                if task is not None and task["status"] in {"new", "planned", "active"}:
+                    evidence_oversized = int(row["evidence_size"] or 0) > 65_536
+                    raw_evidence = []
+                    if not evidence_oversized:
+                        evidence_row = conn.execute(
+                            "SELECT evidence_json FROM agent_runs WHERE id = ?",
+                            (run_id,),
+                        ).fetchone()
+                        raw_evidence = _json_loads(evidence_row["evidence_json"], [])
+                    if not isinstance(raw_evidence, list):
+                        raw_evidence = []
+                    evidence = []
+                    for item in raw_evidence[:8]:
+                        if isinstance(item, dict):
+                            evidence.append({
+                                "type": _compact_summary(item.get("type"), "evidence"),
+                                "summary": _compact_summary(item.get("summary"), "Evidence recorded by agent run."),
+                            })
+                    evidence_projection = {
+                        "items": evidence,
+                        "total_count": None if evidence_oversized else len(raw_evidence),
+                        "truncated": evidence_oversized or len(raw_evidence) > len(evidence),
+                    }
+                    result_summary = _compact_summary(row["result_summary"], f"Accepted agent run {run_id}.")
+                    verification = {
+                        "agent_run_id": run_id,
+                        "evidence": evidence_projection,
+                    }
+                    paths = {
+                        "new": ("planned", "active", "review"),
+                        "planned": ("active", "review"),
+                        "active": ("review",),
+                    }
+                    old_status = task["status"]
+                    for new_status in paths[old_status]:
+                        self._validate_task_transition(
+                            conn, task_id=row["task_id"], old_status=old_status, new_status=new_status,
+                            blocked_reason="", result="", verification_note="", review_note="",
+                            approval_id=None, secret_key=None, reopen=False,
+                        )
+                        review_transition = new_status == "review"
+                        conn.execute(
+                            """
+                            UPDATE tasks
+                            SET status = ?,
+                                result = CASE WHEN ? THEN ? ELSE result END,
+                                verification_note = CASE WHEN ? THEN ? ELSE verification_note END,
+                                updated_at = ?
+                            WHERE id = ?
+                            """,
+                            (new_status, review_transition, result_summary, review_transition, _json_dumps(verification), timestamp, row["task_id"]),
+                        )
+                        self.append_audit_event(
+                            conn,
+                            actor_type=actor_type,
+                            actor_id=actor_id,
+                            event_type="task_status_changed",
+                            task_id=row["task_id"],
+                            risk_level="low",
+                            summary=f"Task {row['task_id']} changed from {old_status} to {new_status}.",
+                            evidence="accepted agent run review",
+                            redacted_payload={
+                                "old_status": old_status,
+                                "new_status": new_status,
+                                "agent_run_id": run_id,
+                                "result_summary": result_summary if review_transition else "",
+                                "evidence": evidence_projection if review_transition else {},
+                            },
+                            timestamp=timestamp,
+                        )
+                        old_status = new_status
 
     def upsert_tool_manifest(
         self,

@@ -1,5 +1,13 @@
 # Werken aan Leon / Gaia
 
+- 13 september, `codex/complete-leon`: geaccepteerde agentrun-review beweegt
+  oudertaak atomisch via canonieke transities naar `review`, met begrensde
+  runprovenance. Rejected/changes-requested laat taak staan; dubbele review is
+  schrijfloos; `review → done` blijft expliciet. Evidenceprojectie max acht
+  korte items; JSON boven 65.536 tekens wordt niet geparseerd. 332 backendtests
+  plus twee subtests en Python-review zonder P1/P2. Zie
+  `docs/agent-runtime-adapter-implementation.md`.
+
 - 13 september, `codex/complete-leon`: geauthenticeerde read-only servermonitor
   en Gaia-kaart toegevoegd. Begrensde OS/uptime/load/memory/disk/procesmetadata,
   vaste schijflabels, connectoraudit en uit-schakelaar; geen commando's, logs,

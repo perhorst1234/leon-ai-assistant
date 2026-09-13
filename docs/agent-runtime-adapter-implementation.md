@@ -1,6 +1,6 @@
 # Leon AI Assistant — Agent Runtime Adapter implementation
 
-Status: implemented slice, in review.
+Status: implemented local slice.
 
 ## Purpose
 
@@ -14,6 +14,9 @@ Leon needs bounded, reviewable agent work before real OpenAI/Codex/LLM execution
 - Local-only `MockAgentRunner`.
 - Agent run start/completion audit events.
 - Agent run review API.
+- Accepted run review advances its parent task through valid lifecycle states to
+  `review`, with bounded run provenance; task completion remains a separate
+  explicit review action.
 - Dashboard agent-runs panel.
 
 ## Runtime contract
@@ -76,6 +79,14 @@ Examples:
   - `POST /api/agent-runs/review`;
   - `GET /api/state` shows agent runs;
   - audit hash-chain valid.
+- Lifecycle tests:
+  - accepted runs advance `new`, `planned` and `active` tasks through canonical
+    transitions to `review` in one transaction;
+  - rejected or changes-requested runs leave parent status unchanged;
+  - repeat review creates no state or audit change;
+  - task `review → done` still requires explicit result and verification note;
+  - copied evidence is capped at eight short type/summary records and oversized
+    JSON is not parsed.
 
 ## Not done yet
 
@@ -84,4 +95,3 @@ Examples:
 - Long-running queue worker.
 - Retry/rate-limit integration into the runtime loop.
 - Per-agent file write scopes.
-

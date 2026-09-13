@@ -1,5 +1,12 @@
 # Leon / Gaia — uitvoeringsbacklog
 
+**13 september, agenttaaklevenscyclus:** geaccepteerde lokale agentruns brengen
+hun oudertaak atomisch via geldige statusovergangen naar `review`, met begrensde
+runprovenance. Afwijzingen blijven actiegericht, review is eenmalig en `done`
+vereist nog expliciet resultaat plus verificatienotitie. Oversized bewijs wordt
+niet geparseerd. 332 backendtests plus twee subtests en onafhankelijke Python-
+review geslaagd. Echte provideruitvoering en capability-isolatie blijven open.
+
 **13 september, servermonitor:** read-only `GET /api/server/status`, connector-
 audit en Gaia-kaart toegevoegd. Endpoint accepteert geen caller-paden of
 commando's en toont alleen begrensde OS-, uptime-, load-, geheugen-, vaste

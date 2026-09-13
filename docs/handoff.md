@@ -4,6 +4,14 @@ Stand: **12 september 2026**. De gebruiker wil vooral coderen; houd deze overdra
 
 ## Lopende aanvulling
 
+- 13 september: lokale agentrun-review sluit nu oudertaaklevenscyclus. Acceptatie
+  beweegt `new/planned/active` via geldige transities atomisch naar `review` en
+  bewaart begrensde runprovenance. Afwijzing en wijzigingsverzoek veranderen
+  taakstatus niet; dubbele review schrijft niets; `review → done` blijft een
+  aparte expliciete stap. Onbeperkt bewijs wordt niet geparseerd of gekopieerd.
+  Stand: 332 backendtests + twee subtests; Python-review zonder P1/P2. Zie
+  [agent runtime](agent-runtime-adapter-implementation.md).
+
 - 13 september: geauthenticeerde read-only servermonitor en Gaia-kaart gereed.
   Alleen begrensde aggregaten en vaste schijflabels; geen logs, secrets,
   caller-paden, commando's of achtergrondprobe. Connectoraudit en uit-schakelaar
