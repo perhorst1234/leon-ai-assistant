@@ -228,6 +228,25 @@ def test_disabled_template_is_inert_and_config_is_exact(tmp_path):
         load_podman_sandbox_config(config)
 
 
+def test_enabled_config_must_be_private_regular_and_not_symlink(tmp_path):
+    config = tmp_path / "sandbox.json"
+    values = {
+        "enabled": True, "executable": "/usr/bin/podman",
+        "image": "registry.example/leon@sha256:" + "a" * 64,
+        "base_commit": "b" * 40, "allowed_podman_versions": ["5.0.0"],
+        "service_uid": os.getuid(), "service_gid": os.getgid(),
+    }
+    config.write_text(json.dumps(values))
+    with pytest.raises(ValueError, match="private"):
+        load_podman_sandbox_config(config)
+    config.chmod(0o600)
+    assert load_podman_sandbox_config(config).enabled is True
+    link = tmp_path / "sandbox-link.json"
+    link.symlink_to(config)
+    with pytest.raises(ValueError, match="unreadable"):
+        load_podman_sandbox_config(link)
+
+
 def test_client_environment_drops_proxy_socket_and_credentials(monkeypatch):
     monkeypatch.setenv("HTTPS_PROXY", "http://user:pass@example.test")
     monkeypatch.setenv("CONTAINER_HOST", "unix:///dangerous.sock")

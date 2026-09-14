@@ -1,8 +1,12 @@
 # Rootless Podman test sandbox
 
-This execution contract is deliberately not connected to the API. The example
-configuration is disabled and has no image or commit; deployment must fill every
-value before execution can proceed.
+Self-improvement API calls this contract only when preview bound exact enabled
+policy and user approved same execution mode. Example configuration stays
+disabled and has no image or commit; deployment must fill every value and set
+`LEON_SELF_IMPROVEMENT_SANDBOX_CONFIG` to its absolute path before execution can
+proceed. Enabled config must be absolute-path,
+bounded, regular, non-symlink, mode `0600` (or stricter), and owned by root or
+configured Leon service UID.
 
 Build a dedicated Linux base image from exactly `base_commit`, with source,
 locked dependencies, and test tooling baked into `/app`. Publish it only as an
@@ -32,7 +36,8 @@ name; result cannot pass unless cleanup succeeds. Consult official Podman
 [`info`](https://docs.podman.io/en/latest/markdown/podman-info.1.html),
 [`image inspect`](https://docs.podman.io/en/latest/markdown/podman-image-inspect.1.html),
 and [`rm`](https://docs.podman.io/en/latest/markdown/podman-rm.1.html)
-documentation. This document makes no live deployment or API-wiring claim.
+documentation. API wiring is locally tested with synthetic runner evidence; this
+document makes no live Podman image or target-server acceptance claim.
 Target service account must be dedicated to Leon and must not run untrusted host
 processes. That account boundary protects private staging paths from same-UID
 replacement; untrusted code belongs only inside Podman isolation.

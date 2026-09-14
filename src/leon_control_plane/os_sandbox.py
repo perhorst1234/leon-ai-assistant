@@ -1,4 +1,4 @@
-"""Fail-closed rootless Podman execution contract; deliberately not API-wired."""
+"""Fail-closed rootless Podman execution for exactly approved test runs."""
 from __future__ import annotations
 
 import hashlib
@@ -21,6 +21,7 @@ OUTPUT_CAP_BYTES = 64 * 1024
 FILE_CAP_BYTES = 512 * 1024
 TOTAL_FILE_CAP_BYTES = 2 * 1024 * 1024
 MAX_FILES = 32
+CONFIG_CAP_BYTES = 32 * 1024
 TIMEOUT_SECONDS = 60
 FIXED_PYTEST_ARGV = ("python", "-I", "-m", "pytest", "-q", "--disable-warnings", "--maxfail=1")
 _IMAGE = re.compile(r"^[a-z0-9][a-z0-9._/-]*@sha256:[0-9a-f]{64}$")
@@ -138,10 +139,33 @@ def _output(value: Any) -> dict[str, Any]:
 
 
 def load_podman_sandbox_config(path: Path | str) -> PodmanSandboxConfig:
+    config_path = Path(path)
+    if not config_path.is_absolute():
+        raise _err("configuration path must be absolute")
+    flags = os.O_RDONLY | getattr(os, "O_CLOEXEC", 0) | getattr(os, "O_NOFOLLOW", 0)
+    descriptor: int | None = None
     try:
-        raw = json.loads(Path(path).read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError) as exc:
+        descriptor = os.open(config_path, flags)
+        info = os.fstat(descriptor)
+        if not stat.S_ISREG(info.st_mode) or info.st_size > CONFIG_CAP_BYTES:
+            raise _err("configuration must be bounded regular file")
+        chunks: list[bytes] = []
+        remaining = CONFIG_CAP_BYTES + 1
+        while remaining:
+            chunk = os.read(descriptor, min(8192, remaining))
+            if not chunk:
+                break
+            chunks.append(chunk)
+            remaining -= len(chunk)
+        data = b"".join(chunks)
+        if len(data) > CONFIG_CAP_BYTES:
+            raise _err("configuration exceeds size cap")
+        raw = json.loads(data.decode("utf-8"))
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
         raise _err("configuration is unreadable") from exc
+    finally:
+        if descriptor is not None:
+            os.close(descriptor)
     fields = {"enabled", "executable", "image", "base_commit", "allowed_podman_versions", "service_uid", "service_gid"}
     if not isinstance(raw, dict) or set(raw) != fields or type(raw["enabled"]) is not bool:
         raise _err("configuration is invalid")
@@ -161,6 +185,8 @@ def load_podman_sandbox_config(path: Path | str) -> PodmanSandboxConfig:
         raise _err("configuration has invalid field types")
     if cfg.enabled:
         _validate_config(cfg)
+        if info.st_uid not in {0, cfg.service_uid} or stat.S_IMODE(info.st_mode) & 0o077:
+            raise _err("enabled configuration must be private and service-owned")
     return cfg
 
 

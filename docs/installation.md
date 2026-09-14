@@ -43,3 +43,10 @@ before restoring so no process keeps the old database open.
 The files under `deploy/systemd/` are examples for Ubuntu user services. They
 bind to `127.0.0.1`, have bounded restart behavior, and are never installed or
 enabled by setup.
+
+Self-improvement stays static-review-only by default. To enable isolated tests,
+build and pin Linux image described in [OS sandbox contract](os-sandbox.md),
+store completed config as private `0600` root/service-owned file, and set
+`LEON_SELF_IMPROVEMENT_SANDBOX_CONFIG` to its absolute path. Preview must then
+show `podman_tests` plus expected image commit before user approval. Never share
+Leon service account with untrusted host processes.

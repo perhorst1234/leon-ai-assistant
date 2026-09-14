@@ -6,10 +6,12 @@ root-owned executable/inode, lokale rootless cgroup-v2/seccomp-probe, vaste
 network/proxy/image-volume/filesystem/process/resourcegrenzen en non-root smoke
 zijn verplicht. Workspacepaden worden niet gemount: toegestane bytes gaan via
 descriptor-veilige reads naar private read-only snapshots. Output is tijdens
-uitvoering begrensd en geredigeerd; cleanup is verplicht voor succes. 14 gerichte
-tests en volledige backend 359 tests + twee subtests geslaagd; security-herreview
-zonder P1/P2. Open: doelimage bouwen/pinnen, Ubuntu-hostacceptatie en exacte
-self-improvement API/approval-koppeling. Zie [OS-sandbox](os-sandbox.md).
+uitvoering begrensd en geredigeerd; cleanup is verplicht voor succes. 15 gerichte
+sandboxtests en volledige backend 368 tests + twee subtests, 46 webtests,
+typecheck/build/lint geslaagd. Reviews zonder resterende P1/P2. API/approval en Gaia binden nu exact execution
+mode, policyhash en imagecommit, met durable sanitized testbewijs; static blijft
+default. Open: doelimage bouwen/pinnen, Ubuntu-hostacceptatie en browserbewijs
+voor static/Podman-modi. Zie [OS-sandbox](os-sandbox.md).
 
 **13 september, agenttaaklevenscyclus:** geaccepteerde lokale agentruns brengen
 hun oudertaak atomisch via geldige statusovergangen naar `review`, met begrensde

@@ -5,10 +5,11 @@
   base commit, root-owned executable/inode, lokale rootless cgroup-v2/seccomp,
   vaste resource-/netwerk-/proxy-/volumegrenzen, descriptor-veilige private
   snapshots, geïsoleerde Python, begrensde geredigeerde output en verplichte
-  cleanup. 359 backendtests + twee subtests; security-review zonder P1/P2.
-  Python-reviewbevindingen zijn gerepareerd en regressiegetest. Zie
-  `docs/os-sandbox.md`. Volgende: API-binding en Ubuntu-doelhostbewijs met
-  gebouwde digest-gepinde image.
+  cleanup. API/Gaia bindt vooraf modus, policyhash en imagecommit. 368
+  backendtests + twee subtests, 46 webtests, typecheck/build/lint; Python-,
+  security-, React- en TypeScript-review zonder resterende P1/P2. Zie
+  `docs/os-sandbox.md`. Static blijft default. Volgende: Ubuntu-doelhostbewijs met
+  gebouwde digest-gepinde image en browserbewijs voor beide modi.
 
 - 13 september, `codex/complete-leon`: Gaia Werk heeft nu ingeklapte
   self-improvement preview/checkbox/run-bediening met scoped atomische approval.

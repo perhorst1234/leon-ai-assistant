@@ -1,4 +1,6 @@
 import json
+import os
+import subprocess
 import threading
 import time
 import urllib.error
@@ -11,6 +13,7 @@ import pytest
 from leon_control_plane import server
 from leon_control_plane import self_improvement_api
 from leon_control_plane.self_improvement_api import approve_self_improvement, preview_self_improvement, run_self_improvement
+from leon_control_plane.os_sandbox import PodmanSandboxConfig
 from leon_control_plane.store import ControlPlaneStore
 
 
@@ -26,6 +29,25 @@ def _source(tmp_path: Path) -> tuple[Path, str]:
     (root / "value.py").write_text("VALUE = 'before'\n")
     patch = "diff --git a/value.py b/value.py\n--- a/value.py\n+++ b/value.py\n@@ -1 +1 @@\n-VALUE = 'before'\n+VALUE = 'after'\n"
     return root, patch
+
+
+def _git_source(tmp_path: Path) -> tuple[Path, str, str]:
+    root, patch = _source(tmp_path)
+    for args in (("init", "-q"), ("add", "value.py"), ("-c", "user.name=Test", "-c", "user.email=test@example.test", "commit", "-qm", "base")):
+        subprocess.run(("git", *args), cwd=root, check=True, capture_output=True, text=True)
+    base = subprocess.run(("git", "rev-parse", "HEAD"), cwd=root, check=True, capture_output=True, text=True).stdout.strip()
+    return root, patch, base
+
+
+def _podman_config(base: str, **changes) -> PodmanSandboxConfig:
+    values = {
+        "enabled": True, "executable": "/usr/bin/podman",
+        "image": "registry.example/leon@sha256:" + "a" * 64,
+        "base_commit": base, "allowed_podman_versions": ("5.0.0",),
+        "service_uid": os.getuid(), "service_gid": os.getgid(),
+    }
+    values.update(changes)
+    return PodmanSandboxConfig(**values)
 
 
 def test_two_step_exact_approval_is_review_only_and_one_use(tmp_path):
@@ -203,6 +225,146 @@ def test_patch_mismatch_rejected(tmp_path):
     store.update_approval(preview["approval_id"], "approved", "Reviewed")
     with pytest.raises(ValueError, match="digest"):
         run_self_improvement(store, {"approval_id": preview["approval_id"], "patch": patch + "\n"})
+
+
+def test_missing_and_disabled_deployment_config_stay_static_but_malformed_rejects(tmp_path, monkeypatch):
+    store = _store(tmp_path)
+    root, patch = _source(tmp_path)
+    config = tmp_path / "sandbox.json"
+    disabled = {
+        "enabled": False, "executable": "/usr/bin/podman", "image": "", "base_commit": "",
+        "allowed_podman_versions": [], "service_uid": 10001, "service_gid": 10001,
+    }
+    for content in (None, json.dumps(disabled)):
+        if content is None:
+            monkeypatch.delenv("LEON_SELF_IMPROVEMENT_SANDBOX_CONFIG", raising=False)
+        else:
+            config.write_text(content)
+            monkeypatch.setenv("LEON_SELF_IMPROVEMENT_SANDBOX_CONFIG", str(config))
+        preview = preview_self_improvement(store, {"patch": patch, "allowed_files": ["value.py"], "validation_profile": "python_syntax"}, repo_root=root)
+        assert preview["execution_mode"] == "static_review_only"
+        store.update_approval(preview["approval_id"], "approved", "Reviewed")
+        result = run_self_improvement(store, {"approval_id": preview["approval_id"], "patch": patch})
+        assert result["changed_code_executed"] is False
+    config.write_text("not json")
+    monkeypatch.setenv("LEON_SELF_IMPROVEMENT_SANDBOX_CONFIG", str(config))
+    with pytest.raises(ValueError, match="configuration is invalid"):
+        preview_self_improvement(store, {"patch": patch, "allowed_files": ["value.py"], "validation_profile": "python_syntax"}, repo_root=root)
+
+
+@pytest.mark.parametrize("outcome", ["passed", "failed", "timed_out"])
+def test_enabled_config_runs_patched_workspace_once_and_hides_sandbox_internals(tmp_path, outcome):
+    store = _store(tmp_path)
+    root, patch, base = _git_source(tmp_path)
+    cfg = _podman_config(base)
+    preview = preview_self_improvement(store, {"patch": patch, "allowed_files": ["value.py"], "validation_profile": "python_syntax"}, repo_root=root, sandbox_config=cfg)
+    assert preview["execution_mode"] == "podman_tests"
+    assert preview["image_base_commit"] == base and len(preview["sandbox_config_fingerprint"]) == 64
+    store.update_approval(preview["approval_id"], "approved", "Reviewed")
+    calls = []
+
+    def sandbox(config, request):
+        calls.append((config, request, (request.workspace_root / "value.py").read_text()))
+        return {"status": outcome, "execution_status": outcome, "container_name": "/secret/container", "argv": ["secret"], "stdout": {"text": "API_KEY=secret"}}
+
+    result = run_self_improvement(store, {"approval_id": preview["approval_id"], "patch": patch}, sandbox_config=cfg, sandbox_executor=sandbox)
+    assert len(calls) == 1 and calls[0][0] == cfg and calls[0][1].base_commit == base
+    assert calls[0][2] == "VALUE = 'after'\n"
+    assert result["sandbox"]["status"] == outcome
+    assert result["changed_code_executed"] is True
+    serialized = json.dumps(result)
+    assert "container_name" not in serialized and "API_KEY" not in serialized and "argv" not in serialized
+    state = json.dumps(store.get_state())
+    assert "API_KEY=secret" not in state and "/secret/container" not in state
+    assert "Isolated Podman self-improvement test evidence" in state
+
+
+def test_enabled_rejection_is_probe_only_and_config_tamper_cleans_temp(tmp_path):
+    store = _store(tmp_path)
+    root, patch, base = _git_source(tmp_path)
+    cfg = _podman_config(base)
+    preview = preview_self_improvement(store, {"patch": patch, "allowed_files": ["value.py"], "validation_profile": "python_syntax"}, repo_root=root, sandbox_config=cfg)
+    with store.connect() as conn:
+        repository_id = json.loads(conn.execute("SELECT expected_change FROM approvals WHERE id = ?", (preview["approval_id"],)).fetchone()["expected_change"])["repository_id"]
+    store.update_approval(preview["approval_id"], "approved", "Reviewed")
+    result = run_self_improvement(
+        store, {"approval_id": preview["approval_id"], "patch": patch}, sandbox_config=cfg,
+        sandbox_executor=lambda *_args: {"status": "sandbox_rejected"},
+    )
+    assert result["changed_code_executed"] is False and result["temporary_repository_deleted"] is True
+
+    preview = preview_self_improvement(store, {"patch": patch, "allowed_files": ["value.py"], "validation_profile": "python_syntax"}, repo_root=root, sandbox_config=cfg)
+    with store.connect() as conn:
+        repository_id = json.loads(conn.execute("SELECT expected_change FROM approvals WHERE id = ?", (preview["approval_id"],)).fetchone()["expected_change"])["repository_id"]
+    store.update_approval(preview["approval_id"], "approved", "Reviewed")
+    with pytest.raises(ValueError, match="configuration"):
+        run_self_improvement(store, {"approval_id": preview["approval_id"], "patch": patch}, sandbox_config=_podman_config(base, image="registry.example/leon@sha256:" + "b" * 64))
+    assert repository_id not in self_improvement_api._OWNED_TEMP_ROOTS
+    state = store.get_state()
+    approval = next(item for item in state["approvals"] if item["id"] == preview["approval_id"])
+    assert approval["status"] == "expired"
+
+
+def test_static_binding_tamper_is_rejected_and_invalidated(tmp_path):
+    store = _store(tmp_path)
+    root, patch = _source(tmp_path)
+    preview = preview_self_improvement(store, {"patch": patch, "allowed_files": ["value.py"], "validation_profile": "python_syntax"}, repo_root=root)
+    store.initialize()
+    with store.connect() as conn:
+        binding = json.loads(conn.execute("SELECT expected_change FROM approvals WHERE id = ?", (preview["approval_id"],)).fetchone()["expected_change"])
+        repository_id = binding["repository_id"]
+        binding["sandbox_config_fingerprint"] = "0" * 64
+        conn.execute("UPDATE approvals SET expected_change = ?, status = 'approved' WHERE id = ?", (json.dumps(binding, sort_keys=True), preview["approval_id"]))
+    with pytest.raises(ValueError, match="static execution binding"):
+        run_self_improvement(store, {"approval_id": preview["approval_id"], "patch": patch})
+    assert repository_id not in self_improvement_api._OWNED_TEMP_ROOTS
+
+
+def test_static_validation_failure_does_not_become_sandbox_not_started(tmp_path):
+    store = _store(tmp_path)
+    root, patch, base = _git_source(tmp_path)
+    bad_patch = patch.replace("VALUE = 'after'", "VALUE = (")
+    cfg = _podman_config(base)
+    preview = preview_self_improvement(store, {"patch": bad_patch, "allowed_files": ["value.py"], "validation_profile": "python_syntax"}, repo_root=root, sandbox_config=cfg)
+    store.update_approval(preview["approval_id"], "approved", "Reviewed")
+    calls = []
+    result = run_self_improvement(
+        store, {"approval_id": preview["approval_id"], "patch": bad_patch}, sandbox_config=cfg,
+        sandbox_executor=lambda *_args: calls.append(True),
+    )
+    assert result["status"] == "failed"
+    assert result["sandbox"]["status"] == "not_started"
+    assert calls == [] and result["changed_code_executed"] is False
+
+
+def test_enabled_concurrent_run_claims_approval_before_one_podman_execution(tmp_path):
+    store = _store(tmp_path)
+    root, patch, base = _git_source(tmp_path)
+    cfg = _podman_config(base)
+    preview = preview_self_improvement(store, {"patch": patch, "allowed_files": ["value.py"], "validation_profile": "python_syntax"}, repo_root=root, sandbox_config=cfg)
+    store.update_approval(preview["approval_id"], "approved", "Reviewed")
+    barrier = threading.Barrier(2)
+    executions = []
+    outcomes = []
+
+    def sandbox(*_args):
+        executions.append(True)
+        return {"status": "passed", "execution_status": "passed"}
+
+    def run():
+        barrier.wait()
+        try:
+            outcomes.append(run_self_improvement(store, {"approval_id": preview["approval_id"], "patch": patch}, sandbox_config=cfg, sandbox_executor=sandbox)["status"])
+        except ValueError:
+            outcomes.append("rejected")
+
+    threads = [threading.Thread(target=run) for _ in range(2)]
+    for thread in threads:
+        thread.start()
+    for thread in threads:
+        thread.join()
+    assert sorted(outcomes) == ["rejected", "review_required"]
+    assert executions == [True]
 
 
 def test_source_file_swap_after_validation_is_rejected(tmp_path, monkeypatch):

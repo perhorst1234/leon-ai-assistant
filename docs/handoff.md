@@ -11,10 +11,14 @@ Stand: **14 september 2026**. De gebruiker wil vooral coderen; houd deze overdra
   grenzen en non-root smoke-run. Alleen descriptor-veilig gelezen bestanden
   worden als private read-only snapshots gebonden; output wordt tijdens proces
   op 64 KiB begrensd en secret-geredigeerd; iedere containernaam krijgt bewezen
-  cleanup. Stand: 14 gerichte tests; volledige backend 359 tests + twee subtests.
-  Security-herreview zonder P1/P2; Python-bevindingen gerepareerd en groen.
-  Open: digest-gepinde Linux-image bouwen, config voor doelserviceaccount,
-  Ubuntu-probe/isolatiebewijs en exacte API/approval-binding. Zie
+  cleanup. Stand: 15 sandboxtests; volledige backend 368 tests + twee subtests,
+  46 webtests, typecheck/build/lint. Python-, security-, React- en TypeScript-
+  herreviews zonder resterende P1/P2.
+  API en Gaia binden inmiddels execution mode, policyhash en imagecommit vóór
+  approval; configwijziging invalideert uitvoering, resultaten bewaren alleen
+  sanitized hashes/status. Static blijft default. Open: digest-gepinde
+  Linux-image bouwen, config voor doelserviceaccount, Ubuntu-probe/isolatiebewijs
+  en browserbewijs met beide modi. Zie
   [OS-sandbox](os-sandbox.md).
 
 - 13 september: Gaia Werk-bediening voor review-only self-improvement gereed.

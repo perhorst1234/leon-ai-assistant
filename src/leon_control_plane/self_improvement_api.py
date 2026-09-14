@@ -4,6 +4,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import re
 import stat
 import subprocess
 import tempfile
@@ -23,6 +24,12 @@ from leon_control_plane.self_improvement_sandbox import (
     _validate_patch,
     execute_review_only,
 )
+from leon_control_plane.os_sandbox import (
+    PodmanSandboxConfig,
+    SandboxRunRequest,
+    load_podman_sandbox_config,
+    run_podman_sandbox,
+)
 
 _TEMP_PARENT = Path(tempfile.gettempdir()) / "leon-self-review-owned"
 _OWNER_MARKER = ".leon-self-review-owner"
@@ -32,6 +39,104 @@ _OWNERS_LOCK = threading.Lock()
 _REQUEST_KEYS = {"patch", "allowed_files", "validation_profile"}
 _APPROVE_KEYS = {"approval_id"}
 _RUN_KEYS = {"approval_id", "patch"}
+_SANDBOX_CONFIG_ENV = "LEON_SELF_IMPROVEMENT_SANDBOX_CONFIG"
+_STATIC_REVIEW_MODE = "static_review_only"
+_PODMAN_TEST_MODE = "podman_tests"
+
+
+def _canonical_sandbox_config(cfg: PodmanSandboxConfig | None) -> tuple[str, str, str]:
+    """Return server-selected mode, an exact configuration fingerprint and image base."""
+    if cfg is None:
+        payload: dict[str, Any] = {"execution_mode": _STATIC_REVIEW_MODE, "sandbox": "unavailable"}
+        return _STATIC_REVIEW_MODE, hashlib.sha256(
+            json.dumps(payload, sort_keys=True, separators=(",", ":")).encode()
+        ).hexdigest(), ""
+    payload = {
+        "enabled": cfg.enabled, "executable": cfg.executable, "image": cfg.image,
+        "base_commit": cfg.base_commit, "allowed_podman_versions": list(cfg.allowed_podman_versions),
+        "service_uid": cfg.service_uid, "service_gid": cfg.service_gid,
+    }
+    return _PODMAN_TEST_MODE, hashlib.sha256(
+        json.dumps(payload, sort_keys=True, separators=(",", ":")).encode()
+    ).hexdigest(), cfg.base_commit
+
+
+def _deployment_sandbox_config() -> PodmanSandboxConfig | None:
+    """Fail closed to review-only unless deployment supplied a valid enabled config."""
+    path = os.environ.get(_SANDBOX_CONFIG_ENV, "").strip()
+    if not path:
+        return None
+    try:
+        cfg = load_podman_sandbox_config(path)
+    except ValueError as exc:
+        raise ValueError("deployment Podman sandbox configuration is invalid") from exc
+    return cfg if cfg.enabled else None
+
+
+def _approval_binding_keys() -> set[str]:
+    return {
+        "repository_id", "base_commit", "patch_digest", "allowed_files", "validation_profile",
+        "execution_mode", "sandbox_config_fingerprint", "image_base_commit",
+    }
+
+
+def _discard_owned_repository(repository_id: str) -> None:
+    """Best-effort cleanup for an approval that can no longer safely execute."""
+    with _OWNERS_LOCK:
+        owned = _OWNED_TEMP_ROOTS.pop(repository_id, None)
+    if owned is not None:
+        _delete_owned_root(owned[0])
+
+
+def _invalidate_bound_execution(store: Any, approval_id: str, repository_id: str, reason: str) -> None:
+    """Make a changed execution binding permanently unusable before raising."""
+    _discard_owned_repository(repository_id)
+    try:
+        store.update_approval(
+            approval_id, "expired", reason,
+            actor_type="system", actor_id="self-improvement-api",
+        )
+    except ValueError:
+        pass
+
+
+def _sandbox_test_evidence(value: dict[str, Any], *, changed_code_executed: bool) -> dict[str, Any]:
+    """Keep durable test proof without container names, argv, paths or output text."""
+    allowed_statuses = {
+        "passed", "failed", "timed_out", "cleanup_failed",
+        "sandbox_unavailable", "sandbox_rejected", "not_started",
+    }
+    status_value = str(value.get("status") or "sandbox_rejected")
+
+    def stream(name: str) -> dict[str, Any]:
+        raw = value.get(name)
+        item = raw if isinstance(raw, dict) else {}
+        digest = str(item.get("sha256") or "")
+        byte_count = item.get("bytes")
+        if not isinstance(byte_count, int) or isinstance(byte_count, bool):
+            byte_count = 0
+        return {
+            "bytes": max(0, min(byte_count, 2**31 - 1)),
+            "sha256": digest if re.fullmatch(r"[0-9a-f]{64}", digest) else "",
+            "truncated": bool(item.get("truncated")),
+            "redacted": bool(item.get("redacted")),
+        }
+
+    cleanup = value.get("cleanup") if isinstance(value.get("cleanup"), dict) else {}
+    return {
+        "status": status_value if status_value in allowed_statuses else "sandbox_rejected",
+        "passed": status_value == "passed",
+        "ran_after_change": changed_code_executed,
+        "phase": "post_change" if changed_code_executed else "sandbox_preflight",
+        "changed_code_executed": changed_code_executed,
+        "stdout": stream("stdout"),
+        "stderr": stream("stderr"),
+        "cleanup": {
+            "attempted": bool(cleanup.get("attempted")),
+            "returncode": cleanup.get("returncode") if isinstance(cleanup.get("returncode"), int) else None,
+            "error": "cleanup_unavailable" if cleanup.get("error") else "",
+        },
+    }
 
 
 def _git(cwd: Path, args: Sequence[str], *, input_text: str | None = None) -> subprocess.CompletedProcess[str]:
@@ -321,8 +426,17 @@ def _create_clean_repo(
     return temp_root, workspace, head.stdout.strip()
 
 
-def preview_self_improvement(store: Any, body: dict[str, Any], *, repo_root: Path) -> dict[str, Any]:
+def preview_self_improvement(
+    store: Any, body: dict[str, Any], *, repo_root: Path,
+    sandbox_config: PodmanSandboxConfig | None = None,
+) -> dict[str, Any]:
     patch, allowed, profile, identities = _normalize_preview(body, repo_root)
+    cfg = sandbox_config if sandbox_config is not None else _deployment_sandbox_config()
+    mode, config_fingerprint, image_base_commit = _canonical_sandbox_config(cfg)
+    if cfg is not None:
+        source_head = _git(repo_root.resolve(), ["rev-parse", "HEAD"])
+        if source_head.returncode != 0 or source_head.stdout.strip() != cfg.base_commit:
+            raise ValueError("Podman sandbox image base does not match deployment repository HEAD")
     temp_root, workspace, base_commit = _create_clean_repo(repo_root, allowed, identities)
     digest = hashlib.sha256(patch.encode("utf-8")).hexdigest()
     repository_id = os.urandom(24).hex()
@@ -337,15 +451,26 @@ def preview_self_improvement(store: Any, body: dict[str, Any], *, repo_root: Pat
             task_id=None,
             action_type="apply_controlled_self_improvement",
             summary="Review bounded self-improvement patch",
-            reason="A static review of a proposed code patch requires explicit approval.",
+            reason=(
+                "An isolated Podman test run of a proposed code patch requires explicit approval."
+                if mode == _PODMAN_TEST_MODE else "A static review of a proposed code patch requires explicit approval."
+            ),
             affected_systems="temporary review repository",
-            permissions="read allowlisted source files; write temporary repository only",
-            external_effect="No production mutation and no changed-code execution.",
+            permissions=(
+                "read allowlisted source files; write temporary repository only"
+                + ("; run fixed tests in an isolated Podman container" if mode == _PODMAN_TEST_MODE else "")
+            ),
+            external_effect=(
+                "No production mutation; changed code executes only in an isolated Podman test container."
+                if mode == _PODMAN_TEST_MODE else "No production mutation and no changed-code execution."
+            ),
             risk_level="high",
             risk_class="R3",
             expected_change=json.dumps({
                 "repository_id": repository_id, "base_commit": base_commit, "patch_digest": digest,
                 "allowed_files": list(allowed), "validation_profile": profile,
+                "execution_mode": mode, "sandbox_config_fingerprint": config_fingerprint,
+                "image_base_commit": image_base_commit,
             }, sort_keys=True),
             rollback_plan="Discard the server-owned temporary repository.",
             failure_mode="Stop, preserve production files, and return bounded review evidence.",
@@ -364,6 +489,9 @@ def preview_self_improvement(store: Any, body: dict[str, Any], *, repo_root: Pat
         "patch_digest": digest,
         "allowed_files": list(allowed),
         "validation_profile": profile,
+        "execution_mode": mode,
+        "sandbox_config_fingerprint": config_fingerprint,
+        "image_base_commit": image_base_commit,
         "changed_code_executed": False,
         "restart_behavior": "temporary repository is discarded after the bounded TTL and cannot be resumed",
     }
@@ -390,9 +518,7 @@ def _approval_binding(store: Any, approval_id: str) -> dict[str, Any]:
         binding = json.loads(row["expected_change"])
     except (TypeError, json.JSONDecodeError):
         raise ValueError("approval lacks exact sandbox binding") from None
-    if not isinstance(binding, dict) or set(binding) != {
-        "repository_id", "base_commit", "patch_digest", "allowed_files", "validation_profile",
-    }:
+    if not isinstance(binding, dict) or set(binding) != _approval_binding_keys():
         raise ValueError("approval lacks exact sandbox binding")
     return binding
 
@@ -428,9 +554,7 @@ def approve_self_improvement(store: Any, body: dict[str, Any]) -> dict[str, Any]
         binding = json.loads(row["expected_change"])
     except (TypeError, json.JSONDecodeError):
         raise ValueError("approval lacks exact sandbox binding") from None
-    if not isinstance(binding, dict) or set(binding) != {
-        "repository_id", "base_commit", "patch_digest", "allowed_files", "validation_profile",
-    }:
+    if not isinstance(binding, dict) or set(binding) != _approval_binding_keys():
         raise ValueError("approval lacks exact sandbox binding")
     with _OWNERS_LOCK:
         repository_live = str(binding["repository_id"]) in _OWNED_TEMP_ROOTS
@@ -448,11 +572,17 @@ def approve_self_improvement(store: Any, body: dict[str, Any]) -> dict[str, Any]
         "patch_digest": str(binding["patch_digest"]),
         "allowed_files": list(binding["allowed_files"]),
         "validation_profile": str(binding["validation_profile"]),
+        "execution_mode": str(binding["execution_mode"]),
+        "sandbox_config_fingerprint": str(binding["sandbox_config_fingerprint"]),
+        "image_base_commit": str(binding["image_base_commit"]),
         "changed_code_executed": False,
     }
 
 
-def run_self_improvement(store: Any, body: dict[str, Any]) -> dict[str, Any]:
+def run_self_improvement(
+    store: Any, body: dict[str, Any], *, sandbox_config: PodmanSandboxConfig | None = None,
+    sandbox_executor: Any = run_podman_sandbox,
+) -> dict[str, Any]:
     if set(body) != _RUN_KEYS or not isinstance(body.get("approval_id"), str) or not isinstance(body.get("patch"), str):
         raise ValueError("run accepts only approval_id and patch")
     approval_id = body["approval_id"]
@@ -463,7 +593,38 @@ def run_self_improvement(store: Any, body: dict[str, Any]) -> dict[str, Any]:
     digest = hashlib.sha256(patch.encode("utf-8")).hexdigest()
     if digest != binding["patch_digest"]:
         raise ValueError("patch digest mismatch")
+    mode = str(binding["execution_mode"])
     repository_id = str(binding["repository_id"])
+    if mode not in {_STATIC_REVIEW_MODE, _PODMAN_TEST_MODE}:
+        _invalidate_bound_execution(store, approval_id, repository_id, "Approved execution mode became invalid.")
+        raise ValueError("approval execution mode is invalid")
+    cfg: PodmanSandboxConfig | None = None
+    if mode == _PODMAN_TEST_MODE:
+        try:
+            cfg = sandbox_config if sandbox_config is not None else _deployment_sandbox_config()
+        except ValueError:
+            _invalidate_bound_execution(store, approval_id, repository_id, "Deployment sandbox configuration became invalid.")
+            raise
+        current_mode, current_fingerprint, current_image_base = _canonical_sandbox_config(cfg)
+        if (
+            current_mode != mode
+            or current_fingerprint != binding["sandbox_config_fingerprint"]
+            or current_image_base != binding["image_base_commit"]
+        ):
+            _invalidate_bound_execution(store, approval_id, repository_id, "Deployment sandbox configuration changed after approval.")
+            raise ValueError("deployment sandbox configuration no longer matches approved execution binding")
+        assert cfg is not None
+    else:
+        static_mode, static_fingerprint, static_image_base = _canonical_sandbox_config(None)
+        if (
+            mode != static_mode
+            or binding["sandbox_config_fingerprint"] != static_fingerprint
+            or binding["image_base_commit"] != static_image_base
+        ):
+            _invalidate_bound_execution(store, approval_id, repository_id, "Static review binding became invalid.")
+            raise ValueError("approval static execution binding is invalid")
+        # Static approval remains static even if deployment config changes later.
+        cfg = None
     with _OWNERS_LOCK:
         owned = _OWNED_TEMP_ROOTS.pop(repository_id, None)
     if owned is None:
@@ -473,8 +634,34 @@ def run_self_improvement(store: Any, body: dict[str, Any]) -> dict[str, Any]:
         workspace, temp_root, str(binding["base_commit"]), patch, digest,
         tuple(binding["allowed_files"]), str(binding["validation_profile"]), approval_id, store, False, binding,
     )
+    podman: dict[str, Any] | None = None
+    changed_code_executed = False
     try:
         result = execute_review_only(request)
+        if mode == _PODMAN_TEST_MODE and result.get("status") == "review_required":
+            assert cfg is not None
+            podman = sandbox_executor(
+                cfg,
+                SandboxRunRequest(workspace, cfg.base_commit, tuple(binding["allowed_files"])),
+            )
+            # The runner's own evidence distinguishes a probe from a test run.  Never
+            # infer execution from a successful probe or a rejected snapshot.
+            changed_code_executed = bool(
+                podman.get("execution_status") in {"passed", "failed", "timed_out"}
+                and not podman.get("error")
+            )
+            store.record_code_change_rollback(
+                target_ref=f"approval:{approval_id}:podman-test",
+                patch_snapshot=json.dumps({
+                    "patch_digest": digest,
+                    "files": list(binding["allowed_files"]),
+                    "sandbox_config_fingerprint": binding["sandbox_config_fingerprint"],
+                }, sort_keys=True),
+                test_results=_sandbox_test_evidence(podman, changed_code_executed=changed_code_executed),
+                summary="Isolated Podman self-improvement test evidence",
+                action_ref_type="approval", action_ref_id=approval_id,
+                actor_id="self-improvement-podman",
+            )
     except Exception:
         try:
             store.update_approval(
@@ -506,8 +693,19 @@ def run_self_improvement(store: Any, body: dict[str, Any]) -> dict[str, Any]:
             "error": str(result.get("rollback_error") or "")[:4096],
         },
         "temporary_repository_deleted": deleted,
-        "changed_code_executed": False,
+        "changed_code_executed": changed_code_executed,
+        "execution_mode": mode,
     }
+    if mode == _PODMAN_TEST_MODE:
+        safe_status = str((podman or {}).get("status", "not_started"))
+        response["sandbox"] = {
+            "status": safe_status if safe_status in {
+                "passed", "failed", "timed_out", "cleanup_failed", "sandbox_unavailable", "sandbox_rejected", "not_started",
+            } else "sandbox_rejected",
+            "tests_passed": bool((podman or {}).get("status") == "passed"),
+        }
+        if result.get("status") == "review_required" and response["sandbox"]["status"] != "passed":
+            response["status"] = response["sandbox"]["status"]
     if result.get("phase"):
         response["validation"]["phase"] = str(result["phase"])
     return response
