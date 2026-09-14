@@ -41,10 +41,13 @@ Self-improvement heeft een geauthenticeerde tweestaps review-API: preview maakt
 een exact gebonden R3-approval; run verbruikt die één keer en controleert patch
 alleen statisch in een disposable tijdelijke Git-repository. Gewijzigde code
 wordt niet uitgevoerd. Zie
-[review-only patchvalidatie](docs/self-improvement-sandbox.md) en
+[review-only patchvalidatie](docs/self-improvement-sandbox.md),
+[Podman-isolatiecontract](docs/os-sandbox.md) en
 [Gaia-browserbewijs](docs/self-improvement-browser-evidence.md). Gaia Werk biedt
 hiervoor een ingeklapte geavanceerde preview/approval/review. Volledige tests
-vereisen later bewezen OS-procesisolatie op doelserver.
+hebben nu een fail-closed rootless Podman-kern, maar API-koppeling, gepinde
+Linux-image en doelserveracceptatie blijven open. Gewijzigde code draait daarom
+nog niet vanuit Gaia.
 
 Vandaag toont ook een geauthenticeerde, alleen-lezen serverstatus met begrensde
 OS-, uptime-, load-, geheugen-, schijf- en Leon-procesmetadata. Vaste

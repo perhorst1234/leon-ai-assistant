@@ -1,8 +1,21 @@
 # Overdracht — Leon / Gaia
 
-Stand: **13 september 2026**. De gebruiker wil vooral coderen; houd deze overdracht kort.
+Stand: **14 september 2026**. De gebruiker wil vooral coderen; houd deze overdracht kort.
 
 ## Lopende aanvulling
+
+- 14 september: fail-closed rootless Podman-uitvoerkern toegevoegd, bewust nog
+  niet gekoppeld aan API. Contract vereist immutable image/base commit,
+  root-owned stabiele Podman-binary, eigen niet-root serviceaccount, lokale
+  rootless cgroup-v2/seccomp-host, vaste netwerk/proxy/filesystem/process/resource-
+  grenzen en non-root smoke-run. Alleen descriptor-veilig gelezen bestanden
+  worden als private read-only snapshots gebonden; output wordt tijdens proces
+  op 64 KiB begrensd en secret-geredigeerd; iedere containernaam krijgt bewezen
+  cleanup. Stand: 14 gerichte tests; volledige backend 359 tests + twee subtests.
+  Security-herreview zonder P1/P2; Python-bevindingen gerepareerd en groen.
+  Open: digest-gepinde Linux-image bouwen, config voor doelserviceaccount,
+  Ubuntu-probe/isolatiebewijs en exacte API/approval-binding. Zie
+  [OS-sandbox](os-sandbox.md).
 
 - 13 september: Gaia Werk-bediening voor review-only self-improvement gereed.
   Ingeklapte operatorflow bewaart patch alleen in componentstate, maakt exacte

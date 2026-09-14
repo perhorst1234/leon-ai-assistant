@@ -1,5 +1,15 @@
 # Werken aan Leon / Gaia
 
+- 14 september, `codex/complete-leon`: fail-closed rootless Podman-contract voor
+  latere self-improvement-tests gereed, nog niet API-wired. Immutable image en
+  base commit, root-owned executable/inode, lokale rootless cgroup-v2/seccomp,
+  vaste resource-/netwerk-/proxy-/volumegrenzen, descriptor-veilige private
+  snapshots, geïsoleerde Python, begrensde geredigeerde output en verplichte
+  cleanup. 359 backendtests + twee subtests; security-review zonder P1/P2.
+  Python-reviewbevindingen zijn gerepareerd en regressiegetest. Zie
+  `docs/os-sandbox.md`. Volgende: API-binding en Ubuntu-doelhostbewijs met
+  gebouwde digest-gepinde image.
+
 - 13 september, `codex/complete-leon`: Gaia Werk heeft nu ingeklapte
   self-improvement preview/checkbox/run-bediening met scoped atomische approval.
   Edit wist preview en checkbox; patch blijft clientstate; geen retry bij
