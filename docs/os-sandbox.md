@@ -41,3 +41,39 @@ document makes no live Podman image or target-server acceptance claim.
 Target service account must be dedicated to Leon and must not run untrusted host
 processes. That account boundary protects private staging paths from same-UID
 replacement; untrusted code belongs only inside Podman isolation.
+
+## Image build and target-host acceptance
+
+Repository now contains a narrow offline build contract:
+
+```bash
+scripts/build-self-improvement-image \
+  --toolchain-image registry.example/leon-toolchain@sha256:<64-hex-digest> \
+  --pytest-version <exact-version> \
+  --manifest-out /private/path/build-manifest.json
+```
+
+Builder refuses dirty repositories, archives exact `HEAD`, disables pull and
+build network, checks rootless Podman, verifies resulting OCI revision/base
+labels and records local content-addressed image ID separately from published
+repository digest. Local image ID is never accepted as deployment image
+reference. Publish through controlled release process, then configure exact
+`repository@sha256:<digest>`.
+
+On intended Ubuntu service account run:
+
+```bash
+scripts/accept-self-improvement-sandbox \
+  --toolchain-image registry.example/leon-toolchain@sha256:<64-hex-digest> \
+  --pytest-version <exact-version> \
+  --config-out /private/path/podman-sandbox.disabled.json
+```
+
+Acceptance requires rootless Podman, cgroup v2 and seccomp, then proves non-root
+read-only execution, fixed artifact test success and deliberate failure
+propagation under deployment-equivalent limits. Output configuration exactly
+matches Leon schema but remains `enabled:false` with blank deployment image.
+Operator must replace blank image with published immutable reference, verify
+service UID/GID and explicitly enable it. macOS development host has no Podman,
+so current repository proves contract structure and synthetic runtime behavior;
+Ubuntu live evidence remains required.

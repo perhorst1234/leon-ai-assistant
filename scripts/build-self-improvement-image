@@ -1,0 +1,66 @@
+#!/usr/bin/env bash
+# Build an untagged, local-only validation image from a deliberately narrow context.
+set -euo pipefail
+IFS=$'\n\t'
+
+usage() {
+  printf '%s\n' 'Usage: scripts/build-self-improvement-image --toolchain-image REPOSITORY@sha256:DIGEST --pytest-version VERSION --manifest-out PATH [--base-commit COMMIT]'
+}
+
+toolchain_image=''
+pytest_version=''
+manifest_out=''
+requested_base=''
+while [ "$#" -gt 0 ]; do
+  case "$1" in
+    --toolchain-image) toolchain_image=${2:?missing value}; shift 2 ;;
+    --pytest-version) pytest_version=${2:?missing value}; shift 2 ;;
+    --manifest-out) manifest_out=${2:?missing value}; shift 2 ;;
+    --base-commit) requested_base=${2:?missing value}; shift 2 ;;
+    --help) usage; exit 0 ;;
+    *) usage >&2; exit 64 ;;
+  esac
+done
+
+[ -n "$toolchain_image" ] && [ -n "$pytest_version" ] && [ -n "$manifest_out" ] || { usage >&2; exit 64; }
+case "$pytest_version" in *[!0-9.]*) printf '%s\n' 'pytest version must contain digits and dots only' >&2; exit 64 ;; esac
+case "$toolchain_image" in
+  *@sha256:[0123456789abcdef][0123456789abcdef][0123456789abcdef][0123456789abcdef]*) ;;
+  *) printf '%s\n' 'toolchain image must be REPOSITORY@sha256:... (no tag)' >&2; exit 64 ;;
+esac
+digest_part=${toolchain_image##*@sha256:}
+[ "${#digest_part}" -eq 64 ] && case "$digest_part" in *[!0123456789abcdef]*) false ;; *) true ;; esac || { printf '%s\n' 'toolchain image digest must be 64 lowercase hexadecimal characters' >&2; exit 64; }
+
+repo_root=$(git rev-parse --show-toplevel)
+cd "$repo_root"
+[ -z "$(git status --porcelain --untracked-files=normal)" ] || { printf '%s\n' 'refusing build: repository must be clean' >&2; exit 65; }
+base_commit=$(git rev-parse HEAD)
+[ -z "$requested_base" ] || [ "$requested_base" = "$base_commit" ] || { printf '%s\n' 'BASE_COMMIT must equal the current HEAD exactly' >&2; exit 65; }
+[ "$(podman info --format '{{.Host.Security.Rootless}}')" = true ] || { printf '%s\n' 'refusing build: Podman must be rootless' >&2; exit 69; }
+
+manifest_parent=$(dirname "$manifest_out")
+[ -d "$manifest_parent" ] || { printf '%s\n' 'manifest parent directory does not exist' >&2; exit 64; }
+context_dir=$(mktemp -d "${TMPDIR:-/tmp}/leon-image-context.XXXXXX")
+iid_file=$(mktemp "${TMPDIR:-/tmp}/leon-image-iid.XXXXXX")
+cleanup() { rm -rf "$context_dir"; rm -f "$iid_file"; }
+trap cleanup EXIT HUP INT TERM
+
+git archive HEAD Containerfile pyproject.toml requirements.lock src tests | tar -x -C "$context_dir"
+podman build --pull=never --network=none --iidfile "$iid_file" \
+  --build-arg "TOOLCHAIN_IMAGE=$toolchain_image" \
+  --build-arg "BASE_COMMIT=$base_commit" \
+  --build-arg "PYTEST_VERSION=$pytest_version" \
+  --label "org.opencontainers.image.revision=$base_commit" \
+  --label "org.opencontainers.image.base.name=$toolchain_image" \
+  -f "$context_dir/Containerfile" "$context_dir" >/dev/null
+image_id=$(tr -d '[:space:]' <"$iid_file")
+case "$image_id" in sha256:*) ;; *) printf '%s\n' 'Podman did not return a local content-addressed image ID' >&2; exit 70 ;; esac
+[ "${#image_id}" -eq 71 ] || { printf '%s\n' 'Podman returned malformed local image ID' >&2; exit 70; }
+revision_label=$(podman image inspect --format '{{ index .Labels "org.opencontainers.image.revision" }}' "$image_id")
+base_label=$(podman image inspect --format '{{ index .Labels "org.opencontainers.image.base.name" }}' "$image_id")
+[ "$revision_label" = "$base_commit" ] || { printf '%s\n' 'built image revision label does not match HEAD' >&2; exit 70; }
+[ "$base_label" = "$toolchain_image" ] || { printf '%s\n' 'built image base label does not match toolchain image' >&2; exit 70; }
+
+printf '{"base_commit":"%s","toolchain_image":"%s","pytest_version":"%s","local_image_id":"%s","published_image_reference":null}\n' \
+  "$base_commit" "$toolchain_image" "$pytest_version" "$image_id" >"$manifest_out"
+printf '%s\n' "$image_id"
