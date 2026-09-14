@@ -6,6 +6,7 @@ literal KEY=value pairs and are passed directly to child processes.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -180,11 +181,45 @@ def setup(config: DeliveryConfig, *, install: bool = True) -> list[str]:
     py = shutil.which("python3") or sys.executable
     if sys.version_info < (3, 12):
         raise RuntimeError("Python 3.12 or newer is required")
-    if not shutil.which("node"):
-        raise RuntimeError("Node.js 22.13 or newer is required")
-    if install and not (config.repo / ".venv").exists():
-        subprocess.run([py, "-m", "venv", str(config.repo / ".venv")], cwd=config.repo, check=True)
-        messages.append("created .venv")
+    if install:
+        node = _version("node")
+        if node is None or node < (22, 13):
+            raise RuntimeError("Node.js 22.13 or newer is required")
+    venv = config.repo / ".venv"
+    venv_python = venv / ("Scripts/python.exe" if os.name == "nt" else "bin/python")
+    if install and not venv_python.is_file():
+        command = [py, "-m", "venv"]
+        if venv.exists():
+            command.append("--clear")
+        command.append(str(venv))
+        subprocess.run(command, cwd=config.repo, check=True)
+        messages.append("recreated .venv" if "--clear" in command else "created .venv")
+    if install:
+        lock = config.repo / "requirements.lock"
+        if not lock.is_file():
+            raise RuntimeError("requirements.lock is required for reproducible setup")
+        digest = hashlib.sha256()
+        for source in (config.repo / "pyproject.toml", lock):
+            digest.update(source.name.encode("utf-8") + b"\0" + source.read_bytes())
+        dependency_fingerprint = digest.hexdigest()
+        dependency_stamp = venv / ".leon-dependencies-sha256"
+        installed_fingerprint = dependency_stamp.read_text(encoding="ascii").strip() if dependency_stamp.exists() else ""
+        if installed_fingerprint != dependency_fingerprint:
+            subprocess.run([str(venv_python), "-m", "ensurepip", "--upgrade"], cwd=config.repo, check=True)
+            subprocess.run(
+                [str(venv_python), "-m", "pip", "install", "--disable-pip-version-check", "--no-input",
+                 "--require-hashes", "-r", "requirements.lock"],
+                cwd=config.repo,
+                check=True,
+            )
+            subprocess.run(
+                [str(venv_python), "-m", "pip", "install", "--disable-pip-version-check", "--no-input",
+                 "--no-deps", "--no-build-isolation", "-e", "."],
+                cwd=config.repo,
+                check=True,
+            )
+            dependency_stamp.write_text(dependency_fingerprint + "\n", encoding="ascii")
+            messages.append("installed Python dependencies")
     if install and not (config.repo / "apps" / "web" / "node_modules").exists():
         subprocess.run(["npm", "ci", "--ignore-scripts"], cwd=config.repo / "apps" / "web", check=True)
         messages.append("installed web dependencies")
@@ -207,9 +242,13 @@ def start(config: DeliveryConfig) -> list[int]:
     values["LEON_DB_PATH"] = str(config.db)
     values["LEON_BACKEND_URL"] = f"http://127.0.0.1:{config.port}"
     _private_dir(config.runtime / "logs")
+    venv_python = config.repo / ".venv" / ("Scripts/python.exe" if os.name == "nt" else "bin/python")
+    if not venv_python.is_file():
+        raise RuntimeError("Leon virtual environment is missing; run leon-setup first")
+    runtime_python = str(venv_python)
     commands = [
-        ("backend", [sys.executable, "-m", "leon_control_plane.server", "--host", "127.0.0.1", "--port", str(config.port), "--db", str(config.db), "--seed", str(config.repo / "state" / "control-plane.seed.json"), "--env-file", str(config.env_file)], config.port),
-        ("worker", [sys.executable, "-m", "leon_control_plane.local_worker", "--db", str(config.db), "--seed", str(config.repo / "state" / "control-plane.seed.json"), "--env-file", str(config.env_file)], None),
+        ("backend", [runtime_python, "-m", "leon_control_plane.server", "--host", "127.0.0.1", "--port", str(config.port), "--db", str(config.db), "--seed", str(config.repo / "state" / "control-plane.seed.json"), "--env-file", str(config.env_file)], config.port),
+        ("worker", [runtime_python, "-m", "leon_control_plane.local_worker", "--db", str(config.db), "--seed", str(config.repo / "state" / "control-plane.seed.json"), "--env-file", str(config.env_file)], None),
         ("web", ["npm", "run", "dev", "--", "--host", "127.0.0.1", "--port", str(config.web_port), "--strictPort"], config.web_port),
     ]
     records: list[dict] = []
@@ -290,6 +329,15 @@ def doctor(config: DeliveryConfig) -> tuple[bool, list[str]]:
     checks.append((bool(values.get("LEON_DASHBOARD_TOKEN")), "dashboard_token=" + ("configured" if values.get("LEON_DASHBOARD_TOKEN") else "missing")))
     checks.append((config.runtime.exists() and bool(os.stat(config.runtime).st_mode & stat.S_IRWXU), f"runtime={'present' if config.runtime.exists() else 'missing'}"))
     checks.append(((config.repo / "apps" / "web" / "node_modules").exists(), "web_dependencies=" + ("present" if (config.repo / "apps" / "web" / "node_modules").exists() else "missing")))
+    venv_python = config.repo / ".venv" / ("Scripts/python.exe" if os.name == "nt" else "bin/python")
+    agents_version = ""
+    if venv_python.is_file():
+        result = subprocess.run(
+            [str(venv_python), "-c", "import importlib.metadata as m; print(m.version('openai-agents'))"],
+            capture_output=True, text=True, timeout=10, check=False,
+        )
+        agents_version = result.stdout.strip() if result.returncode == 0 else ""
+    checks.append((agents_version == "0.22.2", f"openai_agents={agents_version or 'missing'}"))
     live = [item["name"] for item in _read_processes(config).get("processes", [])
             if _running(int(item["pid"])) and _owned_process(item)]
     checks.append((True, "services=" + (",".join(live) if live else "stopped")))

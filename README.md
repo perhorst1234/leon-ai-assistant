@@ -5,6 +5,8 @@ Persoonlijke AI-assistent met de bestaande Gaia-frontend en Python/SQLite-backen
 ## Begin hier
 
 - [Installeren, starten en private backups](docs/installation.md)
+- [Agents, skills en lokale read-only MCP](docs/agents-skills-mcp.md)
+- [Gaia agents en integratiekaart](docs/gaia-agent-integrations.md)
 - [Geteste installatie- en herstelketen](docs/delivery-evidence.md)
 - [Chatbrowsercontrole](docs/chat-browser-evidence.md) en [webtests/pakketscan](docs/web-validation.md)
 - [Veilige nachtvoorbereiding en ochtendbrief](docs/autonomy-browser-evidence.md)

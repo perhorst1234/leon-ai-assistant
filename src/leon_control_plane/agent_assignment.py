@@ -14,6 +14,25 @@ def infer_task_type(task: dict[str, Any], requested_task_type: str | None = None
         str(task.get(key) or "")
         for key in ("title", "goal", "owner", "acceptance_criteria", "acceptance")
     ).lower()
+    if any(item in haystack for item in (
+        "rabobank", "paypal", "transactie", "saldo", "uitgaven", "investering",
+        "investeren", "investment", "beleggen", "crypto", "marktanalyse",
+    )):
+        return "financial_analysis"
+    if any(item in haystack for item in (
+        "server manager", "container", "docker", "podman", "ssh", "server update",
+        "server error", "server log",
+    )):
+        return "server_operations"
+    if any(item in haystack for item in ("3d model", "3d reference", "image-to-3d", "foto naar 3d", "mesh")):
+        return "model_reference"
+    if any(item in haystack for item in ("3d printer", "fluidd", "moonraker", "klipper", "print camera", "g-code")):
+        return "printer_monitoring"
+    if any(item in haystack for item in (
+        "marktplaats", "vinted", "ticketswap", "shopper", "koop", "kopen",
+        "aanbieding", "deal", "prijsvergelijk", "product zoeken",
+    )):
+        return "shopping_research"
     if any(item in haystack for item in ("research", "onderzoek", "bronnen", "vergelijk")):
         return "routine_research"
     if any(item in haystack for item in ("debug", "fix", "test", "api", "tool", "script", "code", "bouw")):
@@ -58,6 +77,14 @@ def build_agent_assignment_proposal(
     if runner_kind != "local_mock":
         raise ValueError("Only local_mock runner is supported in this control-plane slice")
     selected_task_type = infer_task_type(task, task_type)
+    automatic_roles = {
+        "shopping_research": "Shopper",
+        "financial_analysis": "Manager",
+        "server_operations": "Server Manager",
+        "model_reference": "3D Model Reference Maker",
+        "printer_monitoring": "3D Printer Manager",
+    }
+    selected_agent_role = automatic_roles.get(selected_task_type, agent_role) if agent_role == "Mock Builder Agent" else agent_role
     selected_complexity = infer_complexity(task, selected_task_type, complexity)
     risk = str(task.get("risk_level") or task.get("risk") or "medium")
     selected_allowed = list(allowed_actions or DEFAULT_ALLOWED_ACTIONS)
@@ -88,7 +115,7 @@ def build_agent_assignment_proposal(
     )
     task_packet = build_task_packet(
         task=task,
-        agent_role=agent_role,
+        agent_role=selected_agent_role,
         task_type=selected_task_type,
         allowed_actions=selected_allowed,
         forbidden_actions=selected_forbidden,
@@ -110,7 +137,7 @@ def build_agent_assignment_proposal(
     return {
         "task_id": task["id"],
         "task_title": task["title"],
-        "agent_role": agent_role,
+        "agent_role": selected_agent_role,
         "runner_kind": runner_kind,
         "execution_mode": "local_mock_review_only",
         "execution_allowed": risk_policy["execution_allowed"],

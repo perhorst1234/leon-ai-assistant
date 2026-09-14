@@ -6,6 +6,11 @@ from typing import Any
 SUPPORTED_AGENT_RUN_ROLES = [
     "Planner",
     "Research",
+    "Manager",
+    "Shopper",
+    "Server Manager",
+    "3D Model Reference Maker",
+    "3D Printer Manager",
     "Memory",
     "Code/Improvement",
     "Review",
@@ -17,6 +22,18 @@ SUPPORTED_AGENT_RUN_ROLES = [
 ROLE_ALIASES = {
     "planner agent": "Planner",
     "research agent": "Research",
+    "manager": "Manager",
+    "money manager": "Manager",
+    "shopper": "Shopper",
+    "shopper agent": "Shopper",
+    "shopping agent": "Shopper",
+    "marketplace agent": "Shopper",
+    "server manager": "Server Manager",
+    "server manager agent": "Server Manager",
+    "3d model reference maker": "3D Model Reference Maker",
+    "3d reference maker": "3D Model Reference Maker",
+    "3d printer manager": "3D Printer Manager",
+    "printer manager": "3D Printer Manager",
     "memory agent": "Memory",
     "builder agent": "Code/Improvement",
     "backend agent": "Code/Improvement",
@@ -38,6 +55,12 @@ ROLE_ALIASES = {
     "safety/governance": "Safety/Governance",
 }
 
+EXACT_ONLY_ROLE_ALIASES = {
+    "manager", "money manager", "shopper", "shopper agent", "shopping agent", "marketplace agent",
+    "server manager", "server manager agent", "3d model reference maker", "3d reference maker",
+    "3d printer manager", "printer manager",
+}
+
 
 def normalize_agent_run_role(agent_role: str) -> str:
     role = str(agent_role or "").strip()
@@ -47,6 +70,8 @@ def normalize_agent_run_role(agent_role: str) -> str:
     if lowered in ROLE_ALIASES:
         return ROLE_ALIASES[lowered]
     for marker, supported in ROLE_ALIASES.items():
+        if marker in EXACT_ONLY_ROLE_ALIASES:
+            continue
         if marker in lowered:
             return supported
     return "Code/Improvement"

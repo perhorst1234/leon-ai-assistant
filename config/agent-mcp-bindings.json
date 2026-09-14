@@ -1,0 +1,41 @@
+{
+  "version": 1,
+  "bindings": [
+    {
+      "source": {
+        "registry": "pypi",
+        "package": "marktplaats-mcp",
+        "version": "0.1.1",
+        "commit": "8e650274c50c55829ce2917591631665ecd321a6",
+        "integrity": "sha256:429eb3393bad0e7b8200cb946548a00a7f5e6e77454e49683c219bb2b2d3d0a7"
+      },
+      "role": "Shopper",
+      "tool_id": "marktplaats-marketplace",
+      "mode": "candidate_disabled",
+      "allowed_tools": ["search_listings", "get_listing_details", "get_seller_profile", "list_categories", "check_new_listings"],
+      "read_scopes": ["public_listings", "public_listing_details", "public_seller_profiles", "public_categories"],
+      "forbidden_actions": ["purchase", "bid", "payment", "send_message", "read_raw_secret", "captcha_bypass", "anti_bot_evasion", "proxy_rotation"],
+      "network_domains": ["www.marktplaats.nl"],
+      "max_results": 100,
+      "timeout_seconds": 30
+    },
+    {
+      "source": {
+        "registry": "npm",
+        "package": "@andrijdavid/vinted-mcp",
+        "version": "0.1.2",
+        "commit": "460317f23a4d665bd352863f388c9d299550955a",
+        "integrity": "sha512-Wc4m2I2ci+SGlTzKEnT8Uu9Gzz9EpeUZxpclM5jbRyIGSwUD1UsUNh9sBRMln6OPZnVfJkQJg4BYIzfVIEtJMA=="
+      },
+      "role": "Shopper",
+      "tool_id": "vinted-marketplace",
+      "mode": "candidate_disabled",
+      "allowed_tools": ["search_items", "get_item", "get_seller", "compare_prices", "get_trending"],
+      "read_scopes": ["public_items", "public_item_details", "public_seller_profiles", "public_market_trends"],
+      "forbidden_actions": ["purchase", "bid", "payment", "send_message", "read_raw_secret", "captcha_bypass", "anti_bot_evasion", "proxy_rotation"],
+      "network_domains": ["www.vinted.nl", "vinted.nl"],
+      "max_results": 100,
+      "timeout_seconds": 30
+    }
+  ]
+}

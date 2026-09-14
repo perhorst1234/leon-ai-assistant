@@ -22,6 +22,31 @@ def test_setup_writes_private_literal_env_without_replacing_it(tmp_path):
     assert (item.env_file.stat().st_mode & 0o777) == 0o600
 
 
+def test_setup_installs_pinned_python_project_once_per_pyproject(tmp_path, monkeypatch):
+    item = config(tmp_path)
+    (tmp_path / "pyproject.toml").write_text("[project]\nname='demo'\nversion='1.0.0'\n")
+    (tmp_path / "requirements.lock").write_text("demo==1.0 --hash=sha256:" + "0" * 64 + "\n")
+    (tmp_path / "apps" / "web" / "node_modules").mkdir(parents=True)
+    python = tmp_path / ".venv" / "bin" / "python"
+    python.parent.mkdir(parents=True)
+    python.write_text("")
+    calls = []
+    monkeypatch.setattr(delivery.shutil, "which", lambda name: "/usr/bin/" + name)
+    monkeypatch.setattr(delivery, "_version", lambda name: (24, 0, 0))
+    monkeypatch.setattr(delivery.subprocess, "run", lambda command, **kwargs: calls.append(command))
+
+    messages = setup(item)
+    assert "installed Python dependencies" in messages
+    assert calls == [
+        [str(python), "-m", "ensurepip", "--upgrade"],
+        [str(python), "-m", "pip", "install", "--disable-pip-version-check", "--no-input", "--require-hashes", "-r", "requirements.lock"],
+        [str(python), "-m", "pip", "install", "--disable-pip-version-check", "--no-input", "--no-deps", "--no-build-isolation", "-e", "."],
+    ]
+    calls.clear()
+    setup(item)
+    assert calls == []
+
+
 def test_delivery_defaults_mutable_db_under_private_runtime(tmp_path, monkeypatch):
     monkeypatch.delenv("LEON_DB_PATH", raising=False)
     monkeypatch.setenv("LEON_RUNTIME_DIR", str(tmp_path / "private-runtime"))
@@ -32,6 +57,9 @@ def test_start_passes_one_database_to_backend_and_worker(tmp_path, monkeypatch):
     item = config(tmp_path)
     setup(item, install=False)
     token = _literal_env(item.env_file)[0]["LEON_DASHBOARD_TOKEN"]
+    python = tmp_path / ".venv" / "bin" / "python"
+    python.parent.mkdir(parents=True)
+    python.write_text("")
     item.env_file.write_text(item.env_file.read_text().replace(
         f"LEON_DASHBOARD_TOKEN={token}", f'LEON_DASHBOARD_TOKEN="{token}"'))
     calls = []
@@ -60,6 +88,25 @@ def test_start_passes_one_database_to_backend_and_worker(tmp_path, monkeypatch):
     assert backend[1]["env"]["LEON_DB_PATH"] == str(item.db)
     assert calls[2][1]["env"]["LEON_BACKEND_URL"] == f"http://127.0.0.1:{item.port}"
     assert calls[2][1]["env"]["LEON_DASHBOARD_TOKEN"] == token
+
+
+def test_setup_recreates_partial_virtualenv_and_checks_node_version(tmp_path, monkeypatch):
+    item = config(tmp_path)
+    (tmp_path / "pyproject.toml").write_text("[project]\nname='demo'\nversion='1.0.0'\n")
+    (tmp_path / "requirements.lock").write_text("demo==1.0 --hash=sha256:" + "0" * 64 + "\n")
+    (tmp_path / "apps" / "web" / "node_modules").mkdir(parents=True)
+    (tmp_path / ".venv").mkdir()
+    calls = []
+    monkeypatch.setattr(delivery.shutil, "which", lambda name: "/usr/bin/" + name)
+    monkeypatch.setattr(delivery, "_version", lambda name: (22, 12, 9))
+    monkeypatch.setattr(delivery.subprocess, "run", lambda command, **kwargs: calls.append(command))
+    with pytest.raises(RuntimeError, match="Node.js 22.13"):
+        setup(item)
+    assert calls == []
+
+    monkeypatch.setattr(delivery, "_version", lambda name: (22, 13, 0))
+    setup(item)
+    assert calls[0] == ["/usr/bin/python3", "-m", "venv", "--clear", str(tmp_path / ".venv")]
 
 
 def test_owned_python_process_allows_resolved_interpreter_path(monkeypatch):

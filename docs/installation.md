@@ -28,6 +28,12 @@ and process state. A stopped service is reported as stopped, never as healthy.
 It returns nonzero for missing requirements. No model is enabled by setup and
 no paid provider call is made.
 
+Setup installs Python dependencies from hash-locked `requirements.lock`, then
+installs Leon itself without resolving extra dependencies. It repeats that step
+only after `pyproject.toml` or lockfile changes and repairs a partial `.venv`.
+Current agent/MCP capability and local stdio setup are documented in
+[Agents, skills and MCP](agents-skills-mcp.md).
+
 Create a consistent private SQLite backup with an explicit destination:
 
 ```bash
