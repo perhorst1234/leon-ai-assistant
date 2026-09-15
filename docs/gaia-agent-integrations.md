@@ -44,7 +44,7 @@ Gaia should not install one of those clients as a silent workaround.
 
 | Capability | Candidate | State | Required next proof |
 | --- | --- | --- | --- |
-| Marktplaats search | `jasp-nerd/marktplaats-mcp` 0.1.1 | pinned, binding disabled | Sandbox protocol test and domain enforcement, then promote read-only manifest and binding. |
+| Marktplaats search | `jasp-nerd/marktplaats-mcp` 0.1.1 | artifact and disposable protocol/live search audit verified; hash-locked non-executing staging installer ready; binding disabled | Pass rootless Podman attestation and add OS-enforced `www.marktplaats.nl` egress boundary, then promote read-only manifest and binding. |
 | Marktplaats account/message/bid | narrow custom browser/API connector | not built | User-attended login; per-message and per-bid preview/approval. Read MCP has no account writes. |
 | Vinted search | `@andrijdavid/vinted-mcp` 0.1.2 | pinned, binding disabled | Anonymous HTTP-auth mode only; protocol test; exclude `like_item`, cookies, tokens, proxy, Playwright and network transport. |
 | Picture finder | Google Lens through SerpApi candidate | candidate | Consent before private image upload; strip metadata; query/cost caps. TinEye is fallback for matching rather than product pricing. |
