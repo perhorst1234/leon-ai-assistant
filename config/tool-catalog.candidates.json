@@ -1029,7 +1029,7 @@
     "rollback_notes": "Disable agent binding, revoke connector token when used, remove isolated runtime, preserve redacted audit evidence.",
     "maintenance_status": "candidate_audited_or_requested_2026-09-14",
     "sandbox_required": true,
-    "notes": "Pin @bank-mcp/server@0.2.1 and commit c6abad503b1ecec47e80108ef8d0c614da0f4de5. Rabobank support depends on supported aggregation provider; verify institution before connection."
+    "notes": "Pin @bank-mcp/server@0.2.1 integrity sha512-eNMkjDexcyLirF8l6iq4sSwV9ESJwpVtTarhTc2VcJV/PodhzJCSb6YBqrAgyqMMPVcioLrtMdq2JduxBjv1kQ== and commit c6abad503b1ecec47e80108ef8d0c614da0f4de5. README mentions Rabobank but does not prove provider mapping; verify Enable Banking or Tink institution catalog before connection."
   },
   {
     "tool_id": "market-data-mcp-candidate",
@@ -1138,7 +1138,7 @@
     "rollback_notes": "Disable agent binding, revoke connector token when used, remove isolated runtime, preserve redacted audit evidence.",
     "maintenance_status": "candidate_audited_or_requested_2026-09-14",
     "sandbox_required": true,
-    "notes": "Official server. Pin @paypal/mcp@1.8.1 and commit 6b1ced271959d5ea53857502dc6e5ddef0cbc126; sandbox first; explicit tool list only, never --tools=all."
+    "notes": "Official server. Pin @paypal/mcp@1.8.1 integrity sha512-5r0TGkIhg66TSErwoLxatZbPHWjPnLQBHxoRG9vpobPRyzLF0tt2F8ca3Ca18SdfR8I32Usps7pzd/RuAF1Lsg== and commit 6b1ced271959d5ea53857502dc6e5ddef0cbc126; source LICENSE is Apache-2.0 but npm metadata omits license. Sandbox first; explicit read tool list only, never --tools=all or access token in CLI args."
   },
   {
     "tool_id": "dish-roster-connector-candidate",

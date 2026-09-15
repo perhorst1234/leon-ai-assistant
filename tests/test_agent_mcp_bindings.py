@@ -12,7 +12,9 @@ CONFIG = ROOT / "config" / "agent-mcp-bindings.json"
 
 def test_committed_shopper_bindings_are_pinned_read_only_candidates():
     bindings = load_agent_mcp_bindings(CONFIG)
-    assert {binding["tool_id"] for binding in bindings} == {"marktplaats-marketplace", "vinted-marketplace"}
+    assert {binding["tool_id"] for binding in bindings} == {
+        "marktplaats-marketplace", "vinted-marketplace", "paypal-sandbox-readonly"
+    }
     for binding in bindings:
         assert binding["role"] == "Shopper"
         assert binding["mode"] == "candidate_disabled"
@@ -32,11 +34,11 @@ def test_committed_shopper_bindings_are_pinned_read_only_candidates():
         "integrity": "sha256:429eb3393bad0e7b8200cb946548a00a7f5e6e77454e49683c219bb2b2d3d0a7",
     }
     assert vinted["source"] == {
-        "registry": "npm",
-        "package": "@andrijdavid/vinted-mcp",
-        "version": "0.1.2",
+        "registry": "local",
+        "package": "vinted-safe-stdio",
+        "version": "1.0.0",
         "commit": "460317f23a4d665bd352863f388c9d299550955a",
-        "integrity": "sha512-Wc4m2I2ci+SGlTzKEnT8Uu9Gzz9EpeUZxpclM5jbRyIGSwUD1UsUNh9sBRMln6OPZnVfJkQJg4BYIzfVIEtJMA==",
+        "integrity": "sha256:24c7988491f69f745f21ba8adb69b16a683d72e27aa3ac052db6d2e58910c0aa",
     }
     assert "like_item" not in vinted["allowed_tools"]
 
@@ -44,6 +46,11 @@ def test_committed_shopper_bindings_are_pinned_read_only_candidates():
 def test_resolver_denies_by_default_and_returns_only_exact_approved_allowlist():
     bindings = load_agent_mcp_bindings(CONFIG)
     assert resolve_agent_mcp_binding(bindings, role="Shopper", tool_id="marktplaats-marketplace")["decision"] == "denied"
+    paypal = next(binding for binding in bindings if binding["tool_id"] == "paypal-sandbox-readonly")
+    assert paypal["source"]["integrity"] == "sha512-5r0TGkIhg66TSErwoLxatZbPHWjPnLQBHxoRG9vpobPRyzLF0tt2F8ca3Ca18SdfR8I32Usps7pzd/RuAF1Lsg=="
+    assert "orders.capture" not in paypal["allowed_tools"]
+    assert "payments.createRefund" not in paypal["allowed_tools"]
+    assert resolve_agent_mcp_binding(bindings, role="Shopper", tool_id="paypal-sandbox-readonly")["decision"] == "denied"
     assert resolve_agent_mcp_binding(
         bindings,
         role="Shopper",
@@ -103,4 +110,15 @@ def test_loader_rejects_commands_secrets_and_missing_hard_denials(tmp_path):
     document["bindings"][0]["forbidden_actions"].remove("purchase")
     path.write_text(json.dumps(document))
     with pytest.raises(ValueError, match="required forbidden"):
+        load_agent_mcp_bindings(path)
+
+
+def test_loader_accepts_exact_external_tool_names_but_rejects_shell_syntax(tmp_path):
+    document = json.loads(CONFIG.read_text())
+    paypal = next(item for item in document["bindings"] if item["tool_id"] == "paypal-sandbox-readonly")
+    assert "subscriptionPlans.show" in paypal["allowed_tools"]
+    paypal["allowed_tools"][0] = "orders.get;rm"
+    path = tmp_path / "bindings.json"
+    path.write_text(json.dumps(document))
+    with pytest.raises(ValueError, match="allowed_tools"):
         load_agent_mcp_bindings(path)

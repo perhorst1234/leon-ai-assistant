@@ -11,7 +11,7 @@ from leon_control_plane.agent_run_model import SUPPORTED_AGENT_RUN_ROLES
 MAX_BINDING_CONFIG_BYTES = 128 * 1024
 MAX_BINDINGS = 32
 MODES = {"candidate_disabled", "readonly"}
-REGISTRIES = {"npm", "pypi"}
+REGISTRIES = {"local", "npm", "pypi"}
 REQUIRED_FORBIDDEN_ACTIONS = frozenset({
     "purchase",
     "bid",
@@ -38,6 +38,7 @@ BINDING_FIELDS = {
 }
 SOURCE_FIELDS = {"registry", "package", "version", "commit", "integrity"}
 SAFE_ID = re.compile(r"^[a-z][a-z0-9_-]{0,63}$")
+SAFE_TOOL_NAME = re.compile(r"^[A-Za-z][A-Za-z0-9_.-]{0,95}$")
 SAFE_PACKAGE = re.compile(r"^(?:@[a-z0-9._-]+/)?[a-z0-9][a-z0-9._-]{0,127}$")
 EXACT_VERSION = re.compile(r"^\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?$")
 COMMIT_SHA = re.compile(r"^[0-9a-f]{40}$")
@@ -46,12 +47,18 @@ PYPI_INTEGRITY = re.compile(r"^sha256:[0-9a-f]{64}$")
 NPM_INTEGRITY = re.compile(r"^sha512-[A-Za-z0-9+/]{86}==$")
 
 
-def _string_list(value: Any, *, maximum: int, field: str) -> tuple[str, ...]:
+def _string_list(
+    value: Any,
+    *,
+    maximum: int,
+    field: str,
+    pattern: re.Pattern[str] = SAFE_ID,
+) -> tuple[str, ...]:
     if (
         not isinstance(value, list)
         or not value
         or len(value) > maximum
-        or not all(isinstance(item, str) and SAFE_ID.fullmatch(item) for item in value)
+        or not all(isinstance(item, str) and pattern.fullmatch(item) for item in value)
         or len(set(value)) != len(value)
     ):
         raise ValueError(f"Agent MCP binding {field} is invalid")
@@ -83,7 +90,7 @@ def load_agent_mcp_bindings(path: Path) -> tuple[dict[str, Any], ...]:
         version = source["version"]
         commit = source["commit"]
         integrity = source["integrity"]
-        expected_integrity = PYPI_INTEGRITY if registry == "pypi" else NPM_INTEGRITY
+        expected_integrity = NPM_INTEGRITY if registry == "npm" else PYPI_INTEGRITY
         if (
             registry not in REGISTRIES
             or not isinstance(package, str)
@@ -111,7 +118,9 @@ def load_agent_mcp_bindings(path: Path) -> tuple[dict[str, Any], ...]:
         if identity in seen:
             raise ValueError("Agent MCP binding identity is duplicated")
 
-        allowed_tools = _string_list(item["allowed_tools"], maximum=32, field="allowed_tools")
+        allowed_tools = _string_list(
+            item["allowed_tools"], maximum=32, field="allowed_tools", pattern=SAFE_TOOL_NAME
+        )
         read_scopes = _string_list(item["read_scopes"], maximum=32, field="read_scopes")
         forbidden_actions = _string_list(item["forbidden_actions"], maximum=32, field="forbidden_actions")
         domains = item["network_domains"]

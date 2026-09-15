@@ -23,9 +23,10 @@ Marketplace descriptions and other remote text are treated as untrusted data.
 | Market analysis | `fintools-ai/mcp-market-data-server` | held candidate | Resolve missing license; lock dependencies; verify Twelve Data plan and crypto coverage. No trading tools. |
 | PayPal insight/payment | official `paypal/paypal-mcp-server` 1.8.1 | audited candidate | Sandbox first. Explicit read tool list. Create/capture/refund/subscription changes remain approval-gated. |
 
-Bank MCP is read-only and does not directly implement Rabobank. Rabobank access
-depends on Enable Banking, Tink, Plaid, Teller or another supported provider.
-Gaia must verify institution support before asking for a connection.
+Bank MCP is read-only and does not directly implement Rabobank. Its README names
+Rabobank, but no provider-to-bank mapping proves support. Access depends on
+Enable Banking, Tink, Plaid, Teller or another supported provider. Gaia must
+verify current institution support before asking for a connection.
 
 ## Planner
 
@@ -46,10 +47,11 @@ Gaia should not install one of those clients as a silent workaround.
 | --- | --- | --- | --- |
 | Marktplaats search | `jasp-nerd/marktplaats-mcp` 0.1.1 | artifact and disposable protocol/live search audit verified; hash-locked non-executing staging installer ready; binding disabled | Pass rootless Podman attestation and add OS-enforced `www.marktplaats.nl` egress boundary, then promote read-only manifest and binding. |
 | Marktplaats account/message/bid | narrow custom browser/API connector | not built | User-attended login; per-message and per-bid preview/approval. Read MCP has no account writes. |
-| Vinted search | `@andrijdavid/vinted-mcp` 0.1.2 | pinned, binding disabled | Anonymous HTTP-auth mode only; protocol test; exclude `like_item`, cookies, tokens, proxy, Playwright and network transport. |
+| Vinted search | local `vinted-safe-stdio` 1.0.0 derived from supplied 0.1.2 source | sanitized source and manifest ready; binding disabled | Build with locked dependencies; rootless Podman protocol and egress attestation; then promote read-only manifest and binding. |
+| AliExpress search | read-only subset from supplied Fetchaller 3.5.4 source | audited candidate, disabled | Extract four allowed tools into narrow fork; remove generic fetch, account/browser and cart paths; sandbox and bound egress/output. |
 | Picture finder | Google Lens through SerpApi candidate | candidate | Consent before private image upload; strip metadata; query/cost caps. TinEye is fallback for matching rather than product pricing. |
 | TicketSwap | custom connector research | no suitable MCP found | Confirm permitted interface. User stays present for login and final purchase. |
-| PayPal | official PayPal MCP | candidate | Final payment only after exact amount/payee preview and consumed approval. |
+| PayPal | official `@paypal/mcp` 1.8.1 | exact sandbox read binding added, disabled | Stage with pinned transitive lock; never use `--tools=all` or CLI token. Final payment only after exact amount/payee preview and consumed approval. |
 
 `bobmatnyc/mcp-ticketer` manages Linear/GitHub/Jira/Asana work tickets. It does
 not search TicketSwap or event tickets and is not a Shopper integration.

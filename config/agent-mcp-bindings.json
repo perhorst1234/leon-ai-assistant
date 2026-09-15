@@ -21,11 +21,11 @@
     },
     {
       "source": {
-        "registry": "npm",
-        "package": "@andrijdavid/vinted-mcp",
-        "version": "0.1.2",
+        "registry": "local",
+        "package": "vinted-safe-stdio",
+        "version": "1.0.0",
         "commit": "460317f23a4d665bd352863f388c9d299550955a",
-        "integrity": "sha512-Wc4m2I2ci+SGlTzKEnT8Uu9Gzz9EpeUZxpclM5jbRyIGSwUD1UsUNh9sBRMln6OPZnVfJkQJg4BYIzfVIEtJMA=="
+        "integrity": "sha256:24c7988491f69f745f21ba8adb69b16a683d72e27aa3ac052db6d2e58910c0aa"
       },
       "role": "Shopper",
       "tool_id": "vinted-marketplace",
@@ -33,8 +33,58 @@
       "allowed_tools": ["search_items", "get_item", "get_seller", "compare_prices", "get_trending"],
       "read_scopes": ["public_items", "public_item_details", "public_seller_profiles", "public_market_trends"],
       "forbidden_actions": ["purchase", "bid", "payment", "send_message", "read_raw_secret", "captcha_bypass", "anti_bot_evasion", "proxy_rotation"],
-      "network_domains": ["www.vinted.nl", "vinted.nl"],
-      "max_results": 100,
+      "network_domains": ["www.vinted.nl"],
+      "max_results": 20,
+      "timeout_seconds": 10
+    },
+    {
+      "source": {
+        "registry": "npm",
+        "package": "@paypal/mcp",
+        "version": "1.8.1",
+        "commit": "6b1ced271959d5ea53857502dc6e5ddef0cbc126",
+        "integrity": "sha512-5r0TGkIhg66TSErwoLxatZbPHWjPnLQBHxoRG9vpobPRyzLF0tt2F8ca3Ca18SdfR8I32Usps7pzd/RuAF1Lsg=="
+      },
+      "role": "Shopper",
+      "tool_id": "paypal-sandbox-readonly",
+      "mode": "candidate_disabled",
+      "allowed_tools": [
+        "invoices.list",
+        "invoices.get",
+        "orders.get",
+        "disputes.list",
+        "disputes.get",
+        "shipment.get",
+        "products.list",
+        "products.show",
+        "subscriptionPlans.list",
+        "subscriptionPlans.show",
+        "subscriptions.show",
+        "transactions.list",
+        "payments.getRefunds"
+      ],
+      "read_scopes": ["sandbox_invoices", "sandbox_orders", "sandbox_disputes", "sandbox_shipments", "sandbox_products", "sandbox_subscriptions", "sandbox_transactions", "sandbox_refunds"],
+      "forbidden_actions": [
+        "purchase",
+        "bid",
+        "payment",
+        "send_message",
+        "read_raw_secret",
+        "captcha_bypass",
+        "anti_bot_evasion",
+        "proxy_rotation",
+        "orders_capture",
+        "payments_create_refund",
+        "invoice_write",
+        "dispute_write",
+        "shipment_write",
+        "product_write",
+        "subscription_write",
+        "tools_all",
+        "production_environment"
+      ],
+      "network_domains": ["api-m.sandbox.paypal.com"],
+      "max_results": 50,
       "timeout_seconds": 30
     }
   ]
