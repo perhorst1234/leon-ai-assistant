@@ -920,7 +920,7 @@
     "rollback_notes": "Disable Shopper binding and remove isolated MCP environment; no marketplace account is connected.",
     "maintenance_status": "audited_2026-09-14_pypi_0.1.1_commit_8e650274c50c55829ce2917591631665ecd321a6",
     "sandbox_required": true,
-    "notes": "Preferred read-only candidate. Pin marktplaats-mcp==0.1.1 wheel sha256 429eb3393bad0e7b8200cb946548a00a7f5e6e77454e49683c219bb2b2d3d0a7; stdio and www.marktplaats.nl only. Account messaging and bidding require a separate write-gated connector."
+    "notes": "Preferred read-only candidate. Pin marktplaats-mcp==0.1.1 wheel sha256 429eb3393bad0e7b8200cb946548a00a7f5e6e77454e49683c219bb2b2d3d0a7; stdio and www.marktplaats.nl only. Supplied export 0.1.0 is rejected because API differs, dependencies are unpinned, annotations/bounds are absent and error text can leak query URLs. Account messaging and bidding require a separate write-gated connector."
   },
   {
     "tool_id": "vinted-mcp-candidate",
@@ -979,7 +979,7 @@
     "rollback_notes": "Disable Shopper binding and remove isolated MCP environment; no Vinted account tokens or cookies may be stored.",
     "maintenance_status": "audited_2026-09-14_npm_0.1.2_commit_460317f23a4d665bd352863f388c9d299550955a",
     "sandbox_required": true,
-    "notes": "Pin @andrijdavid/vinted-mcp@0.1.2 integrity sha512-Wc4m2I2ci+SGlTzKEnT8Uu9Gzz9EpeUZxpclM5jbRyIGSwUD1UsUNh9sBRMln6OPZnVfJkQJg4BYIzfVIEtJMA==; stdio, authMode=http, NL domains only. Exclude like_item, cookies, tokens, proxy, Playwright and HTTP transport."
+    "notes": "Pin @andrijdavid/vinted-mcp@0.1.2 integrity sha512-Wc4m2I2ci+SGlTzKEnT8Uu9Gzz9EpeUZxpclM5jbRyIGSwUD1UsUNh9sBRMln6OPZnVfJkQJg4BYIzfVIEtJMA==; AGPL-3.0-or-later; stdio, authMode=http, NL domains only. Supplied source confirms like_item POST plus cookie/token/profile/Playwright/proxy and HTTP/SSE paths; exclude all of them before execution."
   },
   {
     "tool_id": "bank-mcp-candidate",
@@ -1727,5 +1727,63 @@
     "maintenance_status": "research_model_candidate",
     "sandbox_required": true,
     "notes": "MIT research fallback; output quality and dimensions need review. Prefer existing model search before generation."
+  },
+  {
+    "tool_id": "aliexpress-fetchaller-candidate",
+    "name": "Fetchaller AliExpress MCP subset",
+    "source_type": "mcp_server",
+    "source_url": "https://github.com/Averyy/fetchaller-mcp",
+    "purpose": "Gaia Shopper zoekt en vergelijkt AliExpress-producten en bouwt alleen een lokale bundel-shortlist.",
+    "owner": "Shopper",
+    "status": "candidate",
+    "risk_level": "high",
+    "read_scopes": [
+      "marketplace:aliexpress:search",
+      "marketplace:aliexpress:product",
+      "marketplace:aliexpress:bundle_analysis"
+    ],
+    "write_scopes": [
+      "browser:account_profile",
+      "marketplace:aliexpress:cart"
+    ],
+    "required_env_keys": [],
+    "cost_profile": "No direct API cost; unofficial endpoints, bot controls and rate limits apply",
+    "resource_profile": "medium",
+    "external_effects": [
+      "aliexpress_public_http_get",
+      "optional_browser_profile_write",
+      "optional_cart_write",
+      "untrusted_listing_content"
+    ],
+    "approval_required_for": [
+      "install",
+      "connect",
+      "write",
+      "resource_heavy",
+      "spend_money"
+    ],
+    "allowed_without_approval": [
+      "read"
+    ],
+    "forbidden_actions": [
+      "read_raw_secret",
+      "secret_value:*",
+      "generic_fetch",
+      "http_post",
+      "connect_aliexpress_account",
+      "create_aliexpress_bundle_cart",
+      "purchase",
+      "payment",
+      "account_login",
+      "cookie_import",
+      "browser_profile",
+      "captcha_bypass",
+      "anti_bot_evasion",
+      "follow_listing_instructions"
+    ],
+    "rollback_notes": "Disable Shopper binding and remove isolated Fetchaller runtime/cache; no account profile or cart is connected.",
+    "maintenance_status": "source_export_audited_2026-09-15_archive_sha256_3ba53ffeb29f5af4477ad749c14cb627291c7ad64e9c294157dd5dea2b9abfcd",
+    "sandbox_required": true,
+    "notes": "MIT source export 3.5.4. Allow only search_aliexpress, get_aliexpress_product, search_aliexpress_bundle_deals and build_aliexpress_bundle. Full server remains disabled because generic fetch supports arbitrary GET/POST and account/cart paths use unsandboxed persistent browser state."
   }
 ]

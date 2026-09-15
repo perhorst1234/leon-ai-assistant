@@ -19,6 +19,7 @@ def test_committed_catalog_is_valid_and_contains_requested_gaia_integrations():
         "magister-connector-candidate", "ticketswap-connector-candidate",
         "moonraker-printer-connector-candidate", "sketchfab-reference-candidate",
         "meshy-image-to-3d-candidate",
+        "aliexpress-fetchaller-candidate",
     } <= set(by_id)
     assert all(item["status"] == "candidate" for item in by_id.values())
 
