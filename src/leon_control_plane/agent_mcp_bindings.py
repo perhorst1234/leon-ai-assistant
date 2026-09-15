@@ -126,12 +126,13 @@ def load_agent_mcp_bindings(path: Path) -> tuple[dict[str, Any], ...]:
         domains = item["network_domains"]
         if (
             not isinstance(domains, list)
-            or not domains
             or len(domains) > 16
             or not all(isinstance(domain, str) and DOMAIN.fullmatch(domain) for domain in domains)
             or len(set(domains)) != len(domains)
         ):
             raise ValueError("Agent MCP binding network_domains is invalid")
+        if mode == "readonly" and not domains:
+            raise ValueError("Enabled read-only Agent MCP binding requires network_domains")
         if not REQUIRED_FORBIDDEN_ACTIONS.issubset(forbidden_actions):
             raise ValueError("Agent MCP binding misses required forbidden actions")
         if set(allowed_tools) & set(forbidden_actions):

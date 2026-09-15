@@ -13,10 +13,10 @@ CONFIG = ROOT / "config" / "agent-mcp-bindings.json"
 def test_committed_shopper_bindings_are_pinned_read_only_candidates():
     bindings = load_agent_mcp_bindings(CONFIG)
     assert {binding["tool_id"] for binding in bindings} == {
-        "marktplaats-marketplace", "vinted-marketplace", "paypal-sandbox-readonly"
+        "marktplaats-marketplace", "vinted-marketplace", "paypal-sandbox-readonly",
+        "bank-analysis-readonly",
     }
     for binding in bindings:
-        assert binding["role"] == "Shopper"
         assert binding["mode"] == "candidate_disabled"
         assert binding["source"]["commit"]
         assert binding["source"]["integrity"]
@@ -41,6 +41,10 @@ def test_committed_shopper_bindings_are_pinned_read_only_candidates():
         "integrity": "sha256:24c7988491f69f745f21ba8adb69b16a683d72e27aa3ac052db6d2e58910c0aa",
     }
     assert "like_item" not in vinted["allowed_tools"]
+    bank = next(binding for binding in bindings if binding["tool_id"] == "bank-analysis-readonly")
+    assert bank["role"] == "Manager"
+    assert bank["network_domains"] == ()
+    assert bank["source"]["integrity"] == "sha512-eNMkjDexcyLirF8l6iq4sSwV9ESJwpVtTarhTc2VcJV/PodhzJCSb6YBqrAgyqMMPVcioLrtMdq2JduxBjv1kQ=="
 
 
 def test_resolver_denies_by_default_and_returns_only_exact_approved_allowlist():
@@ -121,4 +125,15 @@ def test_loader_accepts_exact_external_tool_names_but_rejects_shell_syntax(tmp_p
     path = tmp_path / "bindings.json"
     path.write_text(json.dumps(document))
     with pytest.raises(ValueError, match="allowed_tools"):
+        load_agent_mcp_bindings(path)
+
+
+def test_loader_allows_unresolved_domains_only_while_binding_is_disabled(tmp_path):
+    document = json.loads(CONFIG.read_text())
+    bank = next(item for item in document["bindings"] if item["tool_id"] == "bank-analysis-readonly")
+    assert bank["network_domains"] == []
+    bank["mode"] = "readonly"
+    path = tmp_path / "bindings.json"
+    path.write_text(json.dumps(document))
+    with pytest.raises(ValueError, match="requires network_domains"):
         load_agent_mcp_bindings(path)

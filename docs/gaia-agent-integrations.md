@@ -19,7 +19,7 @@ Marketplace descriptions and other remote text are treated as untrusted data.
 
 | Capability | Candidate | State | Required next proof |
 | --- | --- | --- | --- |
-| Bank analysis | `elcukro/bank-mcp` 0.2.1 | audited candidate | Verify chosen aggregation provider supports this Rabobank account; connect read-only OAuth; test five read tools with redacted fixtures. |
+| Bank analysis | `@bank-mcp/server` 0.2.1 | exact five-tool binding added; disabled with empty egress allowlist | Verify chosen aggregation provider supports this Rabobank account; add exact provider domains; connect read-only OAuth; test with redacted fixtures. |
 | Market analysis | `fintools-ai/mcp-market-data-server` | held candidate | Resolve missing license; lock dependencies; verify Twelve Data plan and crypto coverage. No trading tools. |
 | PayPal insight/payment | official `paypal/paypal-mcp-server` 1.8.1 | audited candidate | Sandbox first. Explicit read tool list. Create/capture/refund/subscription changes remain approval-gated. |
 

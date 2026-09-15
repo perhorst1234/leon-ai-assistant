@@ -86,6 +86,39 @@
       "network_domains": ["api-m.sandbox.paypal.com"],
       "max_results": 50,
       "timeout_seconds": 30
+    },
+    {
+      "source": {
+        "registry": "npm",
+        "package": "@bank-mcp/server",
+        "version": "0.2.1",
+        "commit": "c6abad503b1ecec47e80108ef8d0c614da0f4de5",
+        "integrity": "sha512-eNMkjDexcyLirF8l6iq4sSwV9ESJwpVtTarhTc2VcJV/PodhzJCSb6YBqrAgyqMMPVcioLrtMdq2JduxBjv1kQ=="
+      },
+      "role": "Manager",
+      "tool_id": "bank-analysis-readonly",
+      "mode": "candidate_disabled",
+      "allowed_tools": ["list_accounts", "list_transactions", "search_transactions", "get_balance", "spending_summary"],
+      "read_scopes": ["account_metadata", "transaction_history", "account_balances", "spending_analysis"],
+      "forbidden_actions": [
+        "purchase",
+        "bid",
+        "payment",
+        "send_message",
+        "read_raw_secret",
+        "captcha_bypass",
+        "anti_bot_evasion",
+        "proxy_rotation",
+        "money_transfer",
+        "trade",
+        "bank_config_write",
+        "key_file_write",
+        "init",
+        "connect_without_approval"
+      ],
+      "network_domains": [],
+      "max_results": 100,
+      "timeout_seconds": 30
     }
   ]
 }
