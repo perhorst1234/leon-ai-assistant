@@ -1,0 +1,1 @@
+{"name":"aliexpress-safe-stdio","version":"1.0.0","private":true,"type":"module","license":"MIT","engines":{"node":">=22"},"scripts":{"audit":"node audit.mjs"},"dependencies":{"@modelcontextprotocol/sdk":"1.30.0"}}
