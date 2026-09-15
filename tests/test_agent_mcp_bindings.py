@@ -14,7 +14,7 @@ def test_committed_shopper_bindings_are_pinned_read_only_candidates():
     bindings = load_agent_mcp_bindings(CONFIG)
     assert {binding["tool_id"] for binding in bindings} == {
         "marktplaats-marketplace", "vinted-marketplace", "paypal-sandbox-readonly",
-        "bank-analysis-readonly",
+        "bank-analysis-readonly", "aliexpress-marketplace",
     }
     for binding in bindings:
         assert binding["mode"] == "candidate_disabled"
@@ -41,6 +41,18 @@ def test_committed_shopper_bindings_are_pinned_read_only_candidates():
         "integrity": "sha256:60fdca132fc6f6ac6dcfaf8d93507fef781f0dcd21912a1be5dc31656fb94c73",
     }
     assert "like_item" not in vinted["allowed_tools"]
+    aliexpress = next(binding for binding in bindings if binding["tool_id"] == "aliexpress-marketplace")
+    assert aliexpress["source"] == {
+        "registry": "local",
+        "package": "aliexpress-safe-stdio",
+        "version": "1.0.0",
+        "commit": "d8ee5b2dfbc133c5b58b0528b675ac495cbcbef9",
+        "integrity": "sha256:9c6ed985e94a0c6bb9885ec3aae964a4d4404d103f8832f24293301940667b96",
+    }
+    assert set(aliexpress["allowed_tools"]) == {
+        "search_aliexpress", "get_aliexpress_product",
+        "search_aliexpress_bundle_deals", "build_aliexpress_bundle",
+    }
     bank = next(binding for binding in bindings if binding["tool_id"] == "bank-analysis-readonly")
     assert bank["role"] == "Manager"
     assert bank["network_domains"] == ()

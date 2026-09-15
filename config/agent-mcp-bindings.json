@@ -39,6 +39,24 @@
     },
     {
       "source": {
+        "registry": "local",
+        "package": "aliexpress-safe-stdio",
+        "version": "1.0.0",
+        "commit": "d8ee5b2dfbc133c5b58b0528b675ac495cbcbef9",
+        "integrity": "sha256:9c6ed985e94a0c6bb9885ec3aae964a4d4404d103f8832f24293301940667b96"
+      },
+      "role": "Shopper",
+      "tool_id": "aliexpress-marketplace",
+      "mode": "candidate_disabled",
+      "allowed_tools": ["search_aliexpress", "get_aliexpress_product", "search_aliexpress_bundle_deals", "build_aliexpress_bundle"],
+      "read_scopes": ["public_listings", "public_product_details", "public_bundle_deals"],
+      "forbidden_actions": ["purchase", "bid", "payment", "send_message", "read_raw_secret", "captcha_bypass", "anti_bot_evasion", "proxy_rotation"],
+      "network_domains": ["www.aliexpress.com"],
+      "max_results": 12,
+      "timeout_seconds": 15
+    },
+    {
+      "source": {
         "registry": "npm",
         "package": "@paypal/mcp",
         "version": "1.8.1",

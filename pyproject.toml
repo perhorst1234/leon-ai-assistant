@@ -15,6 +15,7 @@ leon-mcp-readonly = "leon_control_plane.mcp_server:main"
 leon-sync-tool-catalog = "leon_control_plane.tool_catalog:main"
 leon-install-marktplaats-mcp = "leon_control_plane.marktplaats_mcp:main"
 leon-install-vinted-mcp = "leon_control_plane.vinted_mcp:main"
+leon-install-aliexpress-mcp = "leon_control_plane.aliexpress_mcp:main"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

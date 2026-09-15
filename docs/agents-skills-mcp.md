@@ -13,9 +13,9 @@ and Tool/Connector. Each profile declares task types, allowed actions and output
 kind. These profiles do not grant tools, approval, provider calls or file writes.
 
 Shopper has separate validated MCP bindings in
-`config/agent-mcp-bindings.json`. Marktplaats and Vinted sources, versions,
+`config/agent-mcp-bindings.json`. Marktplaats, Vinted and AliExpress sources, versions,
 commits, artifact hashes, domains, tool allowlists, timeouts and result limits
-are fixed there. Both bindings stay `candidate_disabled` while runtime still
+are fixed there. All three bindings stay `candidate_disabled` while runtime still
 uses `local_mock`. Even after a binding changes to `readonly`, resolver grants
 it only when matching global manifest is `approved_readonly`. Purchase, bid,
 payment, messaging, secret reads and anti-bot actions remain hard denied.
