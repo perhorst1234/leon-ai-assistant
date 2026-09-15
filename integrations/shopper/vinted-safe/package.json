@@ -5,6 +5,7 @@
   "engines": {"node": ">=22.0.0"},
   "private": true,
   "type": "module",
+  "main": "dist/index.js",
   "scripts": {"audit": "node audit.mjs"},
   "dependencies": {"@modelcontextprotocol/sdk": "1.30.0"}
 }

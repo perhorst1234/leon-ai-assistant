@@ -3,6 +3,7 @@ import { join } from "node:path";
 const root = new URL(".", import.meta.url).pathname;
 const files = readdirSync(join(root,"src"),{recursive:true}).filter(x=>x.endsWith(".ts")).map(x=>join(root,"src",x));
 const text = files.map(f=>readFileSync(f,"utf8")).join("\n");
+const runtime = readFileSync(join(root,"dist","index.js"),"utf8");
 const forbidden = ["like_item","cookie","token","oauth","proxy","playwright","puppeteer","stealth","sse","tcp","http://","vinted.fr","vinted.de","vinted.com","process.env"];
 const block = text.match(/const tools = \[(.*?)\n\];/s)?.[1] ?? "";
 const tools = [...block.matchAll(/\{name:\"([^\"]+)\"/g)].map(m=>m[1]);
@@ -10,6 +11,9 @@ const expected = ["search_items","get_item","get_seller","compare_prices","get_t
 if (tools.length !== expected.length || new Set(tools).size !== expected.length || tools.some(x=>!expected.includes(x))) throw new Error("tool policy");
 for (const word of forbidden) if (text.toLowerCase().includes(word.toLowerCase())) throw new Error(`forbidden: ${word}`);
 for (const method of ["POST","PUT","PATCH","DELETE"]) if (new RegExp(`\\b${method}\\b`).test(text)) throw new Error(`forbidden: ${method}`);
+for (const word of forbidden) if (runtime.toLowerCase().includes(word.toLowerCase())) throw new Error(`runtime forbidden: ${word}`);
+for (const method of ["POST","PUT","PATCH","DELETE"]) if (new RegExp(`\\b${method}\\b`).test(runtime)) throw new Error(`runtime forbidden: ${method}`);
 if (!text.includes('const HOST = "https://www.vinted.nl"')) throw new Error("host policy");
-for (const invariant of ["redirect:\"error\"","content-type","content-length","MAX_BODY = 256 * 1024","MAX_OUTPUT = 100000","trust:\"untrusted_marketplace\"","source:\"vinted.nl\"","readOnlyHint:true","destructiveHint:false","idempotentHint:true","openWorldHint:true","getReader()","reader.cancel()","maximum: number","function prices","function items","description,2000","raw?.item ?? raw","raw?.user ?? raw","currency_code","function itemId","https://www.vinted.nl/items/${iid}","const sellerId=itemId(x?.id)","https://www.vinted.nl/member/${sellerId}","favorite_count_within_sample","favourite_count","order:\"relevance\""]) if (!text.includes(invariant)) throw new Error(`missing invariant: ${invariant}`);
+for (const invariant of ["redirect:\"error\"","content-type","content-length","MAX_BODY = 256 * 1024","MAX_OUTPUT = 100000","trust:\"untrusted_marketplace\"","source:\"vinted.nl\"","readOnlyHint:true","destructiveHint:false","idempotentHint:true","openWorldHint:true","getReader()","reader.cancel()","maximum: number","function prices","function items","description,2000","raw.item ?? raw","raw.user ?? raw","currency_code","function itemId","https://www.vinted.nl/items/${iid}","const sellerId=itemId(x.id)","https://www.vinted.nl/member/${sellerId}","favorite_count_within_sample","favourite_count","order:\"relevance\""]) if (!text.includes(invariant)) throw new Error(`missing invariant: ${invariant}`);
+for (const invariant of ["redirect: \"error\"","MAX_BODY = 256 * 1024","trust: \"untrusted_marketplace\"","readOnlyHint: true","destructiveHint: false","favorite_count_within_sample"]) if (!runtime.includes(invariant)) throw new Error(`runtime missing invariant: ${invariant}`);
 console.log(`audit ok: ${files.length} source files`);

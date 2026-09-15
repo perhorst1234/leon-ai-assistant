@@ -13,6 +13,8 @@ node_modules/
 .vinext/
 .wrangler/
 dist/
+!integrations/shopper/vinted-safe/dist/
+!integrations/shopper/vinted-safe/dist/index.js
 coverage/
 __pycache__/
 .pytest_cache/

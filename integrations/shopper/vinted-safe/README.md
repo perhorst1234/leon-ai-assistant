@@ -5,3 +5,8 @@ This is a statically reviewed, read-only fork derived from the archived source a
 Status: disabled by default; sandbox-required. The implementation is intentionally limited to exact `https://www.vinted.nl` requests, with bounded inputs and outputs. No credentials, browser session, proxy, or write operation is supported. No third-party code is executed by the audit.
 
 The included `audit.mjs` performs static forbidden-string and policy checks. Dependencies are not installed as part of this fork.
+
+`scripts/leon-install-vinted-mcp` stages compiled runtime plus exact locked npm
+dependencies with lifecycle scripts disabled. It records SHA-256 for every
+runtime file and never starts server. Result remains `sandbox_attested=false`
+and `enabled=false` until rootless Podman acceptance passes.

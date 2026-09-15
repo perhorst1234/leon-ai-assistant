@@ -25,7 +25,7 @@
         "package": "vinted-safe-stdio",
         "version": "1.0.0",
         "commit": "460317f23a4d665bd352863f388c9d299550955a",
-        "integrity": "sha256:24c7988491f69f745f21ba8adb69b16a683d72e27aa3ac052db6d2e58910c0aa"
+        "integrity": "sha256:60fdca132fc6f6ac6dcfaf8d93507fef781f0dcd21912a1be5dc31656fb94c73"
       },
       "role": "Shopper",
       "tool_id": "vinted-marketplace",
