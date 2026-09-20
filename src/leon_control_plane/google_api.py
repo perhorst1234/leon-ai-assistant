@@ -2,6 +2,7 @@
 from datetime import datetime
 from typing import Any
 import json
+from pathlib import Path
 
 from leon_control_plane.connector_registry import classify_connector_action
 from leon_control_plane.google_readonly import (
@@ -12,11 +13,14 @@ from leon_control_plane.google_readonly import (
     GoogleReadonlyConfig,
     GoogleReadonlyError,
 )
+from leon_control_plane.google_credentials import GoogleCredentialFileProvider
 
 CLIENT_FACTORY = GoogleReadonlyClient
 _GOOGLE_CREDENTIAL_KEYS = {
     "GOOGLE_ACCESS_TOKEN", "GOOGLE_REFRESH_TOKEN", "GOOGLE_CLIENT_ID", "GOOGLE_CLIENT_SECRET", "GOOGLE_GRANTED_SCOPES"
 }
+_GOOGLE_FILE_KEY = "GOOGLE_CREDENTIALS_FILE"
+_REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
 
 class _Provider:
     def __init__(self, credentials): self._credentials = credentials
@@ -25,28 +29,48 @@ class _Provider:
 
 
 def _client(values: dict[str, str], *, enabled: bool):
+    provider, credentials = _provider_and_credentials(values)
     keys = {key for key, value in values.items() if value and key in _GOOGLE_CREDENTIAL_KEYS}
-    credential_set = bool(values.get("GOOGLE_ACCESS_TOKEN")) or all(
-        values.get(key) for key in ("GOOGLE_REFRESH_TOKEN", "GOOGLE_CLIENT_ID", "GOOGLE_CLIENT_SECRET")
-    )
+    credential_set = bool(credentials and (credentials.access_token or all((credentials.refresh_token, credentials.client_id, credentials.client_secret))))
     # The default manifests use these markers as their required credential gate.
     # They are derived only from a complete usable Google credential set; callers
     # cannot self-declare a connector as configured through arbitrary env keys.
     if credential_set:
         keys.add("CALENDAR_CONNECTOR_TOKEN")
         keys.add("MAIL_CONNECTOR_TOKEN")
-    creds = GoogleOAuthCredentials(
-        access_token=values.get("GOOGLE_ACCESS_TOKEN", ""), refresh_token=values.get("GOOGLE_REFRESH_TOKEN", ""),
-        client_id=values.get("GOOGLE_CLIENT_ID", ""), client_secret=values.get("GOOGLE_CLIENT_SECRET", ""),
-        granted_scopes=frozenset(filter(None, values.get("GOOGLE_GRANTED_SCOPES", "").split()))
-    )
-    return CLIENT_FACTORY(config=GoogleReadonlyConfig(enabled=enabled, configured_keys=frozenset(keys)), credential_provider=_Provider(creds))
+    return CLIENT_FACTORY(config=GoogleReadonlyConfig(enabled=enabled, configured_keys=frozenset(keys)), credential_provider=provider)
+
+
+def _provider_and_credentials(values: dict[str, str]):
+    path = values.get(_GOOGLE_FILE_KEY, "").strip()
+    if path:
+        provider = GoogleCredentialFileProvider(path, repository_root=_REPOSITORY_ROOT)
+    else:
+        credentials = GoogleOAuthCredentials(
+            access_token=values.get("GOOGLE_ACCESS_TOKEN", ""), refresh_token=values.get("GOOGLE_REFRESH_TOKEN", ""),
+            client_id=values.get("GOOGLE_CLIENT_ID", ""), client_secret=values.get("GOOGLE_CLIENT_SECRET", ""),
+            granted_scopes=frozenset(filter(None, values.get("GOOGLE_GRANTED_SCOPES", "").split()))
+        )
+        return _Provider(credentials), credentials
+    try:
+        credentials = provider.get_credentials()
+        return _Provider(credentials), credentials
+    except Exception:
+        return provider, None
+
+
+def _granted_scopes(values: dict[str, str]) -> set[str]:
+    provider, credentials = _provider_and_credentials(values)
+    if credentials is not None:
+        return set(credentials.granted_scopes)
+    return set()
 
 
 def status(store, values: dict[str, str]) -> dict[str, Any]:
     enabled = values.get("GOOGLE_READONLY_ENABLED", "").lower() in {"1", "true", "yes"}
-    configured = bool(values.get("GOOGLE_ACCESS_TOKEN")) or all(values.get(key) for key in ("GOOGLE_REFRESH_TOKEN", "GOOGLE_CLIENT_ID", "GOOGLE_CLIENT_SECRET"))
-    granted = set(values.get("GOOGLE_GRANTED_SCOPES", "").split())
+    _, credentials = _provider_and_credentials(values)
+    configured = bool(credentials and (credentials.access_token or all((credentials.refresh_token, credentials.client_id, credentials.client_secret))))
+    granted = set(credentials.granted_scopes) if credentials else set()
     return {"ok": True, "enabled": enabled, "configured": configured, "scopes": {"calendar": "https://www.googleapis.com/auth/calendar.events.readonly" in granted, "mail": "https://www.googleapis.com/auth/gmail.metadata" in granted}}
 
 
@@ -62,9 +86,8 @@ def _permission_check(store, manifest: dict[str, Any], scope: str, values: dict[
 
 def _client_configured_keys(values: dict[str, str]) -> set[str]:
     keys = {key for key, value in values.items() if value and key in _GOOGLE_CREDENTIAL_KEYS}
-    credential_set = bool(values.get("GOOGLE_ACCESS_TOKEN")) or all(
-        values.get(key) for key in ("GOOGLE_REFRESH_TOKEN", "GOOGLE_CLIENT_ID", "GOOGLE_CLIENT_SECRET")
-    )
+    _, credentials = _provider_and_credentials(values)
+    credential_set = bool(credentials and (credentials.access_token or all((credentials.refresh_token, credentials.client_id, credentials.client_secret))))
     if credential_set:
         keys.update({"CALENDAR_CONNECTOR_TOKEN", "MAIL_CONNECTOR_TOKEN"})
     return keys
@@ -84,7 +107,7 @@ def preview(store, values: dict[str, str], kind: str, data: dict[str, Any]) -> d
         check["allowed"] = False
         check["execution_allowed"] = False
         check["reason"] = "Google read-only connector is disabled."
-    elif oauth_scope not in set(values.get("GOOGLE_GRANTED_SCOPES", "").split()):
+    elif oauth_scope not in _granted_scopes(values):
         check["decision"] = "denied"
         check["allowed"] = False
         check["execution_allowed"] = False

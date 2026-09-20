@@ -18,8 +18,15 @@ gereed. Accountverbinding en live Google-acceptatie zijn nog niet uitgevoerd.
   toestaat. Detailverzoeken vragen alleen `From`, `Subject` en `Date`; inhoud,
   bijlagen en overige headers komen niet in resultaat.
 - Optionele refresh-tokenwisseling gebruikt vaste Google OAuth-host, één poging
-  en geen redirects. Credentials worden niet uit omgeving gelezen, opgeslagen
-  of in resultaat/fouttekst geplaatst.
+  en geen redirects. Naast de bestaande proceslokale configuratie kan de
+  backend `GOOGLE_CREDENTIALS_FILE` gebruiken voor één door de gebruiker
+  geselecteerd JSON-bestand buiten de repository. Het bestand moet een exact
+  access-tokenpaar bevatten (`access_token`, `granted_scopes`) of een exact
+  refresh-tokenpaar (`refresh_token`, `client_id`, `client_secret`,
+  `granted_scopes`), waarbij scopes een niet-lege lijst zijn. Het bestand moet
+  een regulier bestand zijn met alleen eigenaarstoegang (`0600`); symlinks,
+  repositorypaden, extra velden en te grote bestanden worden geweigerd.
+  Credentials worden niet opgeslagen of in resultaat/fouttekst geplaatst.
 - Fouten zijn stabiele codes. Client doet geen automatische retries.
 - `GET /api/google/status` toont alleen aan/uit, configuratiestatus en toegekende
   scope-status. Previewroutes voor agenda en mail vereisen expliciete bearer-
@@ -43,7 +50,9 @@ gereed. Accountverbinding en live Google-acceptatie zijn nog niet uitgevoerd.
 ## Nog nodig voor echte koppeling
 
 1. Google Cloud OAuth-client en alleen-lezen toestemming door gebruiker.
-2. Private credential-provider met veilige opslag en rotatie buiten repository.
+2. Een private JSON-provider kan nu worden geconfigureerd via
+   `GOOGLE_CREDENTIALS_FILE=/absolute/path/google-readonly.json`; maak dit
+   bestand handmatig buiten de repository aan en houd het proces lokaal.
 3. Aparte bewuste importactie als gebruiker geselecteerde resultaten in Leon
    wil bewaren; preview zelf blijft zonder opslag.
 4. Kleine live acceptatie tegen gekozen Google-account; geen mail- of

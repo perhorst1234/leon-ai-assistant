@@ -3618,7 +3618,7 @@ class Handler(BaseHTTPRequestHandler):
             self._send_json(overview_response)
             return
         try:
-            google_response = google_request(STORE, method="GET", path=self.path, values=parse_selected_env_values({"GOOGLE_READONLY_ENABLED", "GOOGLE_ACCESS_TOKEN", "GOOGLE_REFRESH_TOKEN", "GOOGLE_CLIENT_ID", "GOOGLE_CLIENT_SECRET", "GOOGLE_GRANTED_SCOPES"}))
+            google_response = google_request(STORE, method="GET", path=self.path, values=parse_selected_env_values({"GOOGLE_READONLY_ENABLED", "GOOGLE_ACCESS_TOKEN", "GOOGLE_REFRESH_TOKEN", "GOOGLE_CLIENT_ID", "GOOGLE_CLIENT_SECRET", "GOOGLE_GRANTED_SCOPES", "GOOGLE_CREDENTIALS_FILE"}))
         except (ValueError, GoogleReadonlyError) as exc:
             self._send_json({"error": str(exc)}, HTTPStatus.BAD_REQUEST)
             return
@@ -3790,7 +3790,7 @@ class Handler(BaseHTTPRequestHandler):
             if self.path in {"/api/google/calendar/preview", "/api/google/mail/preview"}:
                 data = self._read_body()
                 try:
-                    result = google_request(STORE, method="POST", path=self.path, values=parse_selected_env_values({"GOOGLE_READONLY_ENABLED", "GOOGLE_ACCESS_TOKEN", "GOOGLE_REFRESH_TOKEN", "GOOGLE_CLIENT_ID", "GOOGLE_CLIENT_SECRET", "GOOGLE_GRANTED_SCOPES"}), data=data)
+                    result = google_request(STORE, method="POST", path=self.path, values=parse_selected_env_values({"GOOGLE_READONLY_ENABLED", "GOOGLE_ACCESS_TOKEN", "GOOGLE_REFRESH_TOKEN", "GOOGLE_CLIENT_ID", "GOOGLE_CLIENT_SECRET", "GOOGLE_GRANTED_SCOPES", "GOOGLE_CREDENTIALS_FILE"}), data=data)
                 except GoogleReadonlyError as exc:
                     code = str(exc)
                     status = HTTPStatus.BAD_GATEWAY if code.startswith(("google_transport_failed", "google_http_status:", "google_transport_response")) else HTTPStatus.BAD_REQUEST
