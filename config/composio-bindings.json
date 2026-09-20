@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "provider": "composio",
+  "mode": "candidate_disabled",
+  "role": "Planner",
+  "toolkits": [
+    {"name": "gmail", "version": "20260903_00", "allowed_tools": ["GMAIL_FETCH_EMAILS", "GMAIL_FETCH_MESSAGE_BY_MESSAGE_ID", "GMAIL_FETCH_MESSAGE_BY_THREAD_ID"], "read_scopes": ["gmail.readonly"]},
+    {"name": "googlecalendar", "version": "20260902_00", "allowed_tools": ["GOOGLECALENDAR_EVENTS_GET", "GOOGLECALENDAR_EVENTS_LIST", "GOOGLECALENDAR_FIND_EVENT", "GOOGLECALENDAR_FIND_FREE_SLOTS"], "read_scopes": ["calendar.readonly"]}
+  ],
+  "preset": "direct_tools",
+  "meta_tools": false,
+  "sandbox": false,
+  "workbench": false,
+  "remote_bash": false,
+  "max_results": 50,
+  "timeout_seconds": 20,
+  "forbidden_tools": ["GMAIL_SEND_EMAIL", "GMAIL_CREATE_EMAIL_DRAFT", "GMAIL_DELETE_MESSAGE", "GMAIL_FORWARD_MESSAGE", "GMAIL_REPLY_TO_THREAD", "GMAIL_UPDATE_DRAFT", "GOOGLECALENDAR_CREATE_EVENT", "GOOGLECALENDAR_DELETE_EVENT", "GOOGLECALENDAR_PATCH_EVENT", "GOOGLECALENDAR_UPDATE_EVENT", "GOOGLECALENDAR_QUICK_ADD"],
+  "forbidden_actions": ["send_email", "create_draft", "delete_message", "modify_labels", "forward_message", "reply_to_thread", "create_event", "update_event", "delete_event", "move_event", "manage_connections", "remote_workbench", "remote_bash", "sandbox_execution"]
+}
