@@ -1,5 +1,83 @@
 # Werken aan Leon / Gaia
 
+- 14 september, `codex/complete-leon`: fail-closed rootless Podman-contract voor
+  latere self-improvement-tests gereed, nog niet API-wired. Immutable image en
+  base commit, root-owned executable/inode, lokale rootless cgroup-v2/seccomp,
+  vaste resource-/netwerk-/proxy-/volumegrenzen, descriptor-veilige private
+  snapshots, geïsoleerde Python, begrensde geredigeerde output en verplichte
+  cleanup. API/Gaia bindt vooraf modus, policyhash en imagecommit. 368
+  backendtests + twee subtests, 46 webtests, typecheck/build/lint; Python-,
+  security-, React- en TypeScript-review zonder resterende P1/P2. Zie
+  `docs/os-sandbox.md`. Static blijft default. Volgende: Ubuntu-doelhostbewijs met
+  gebouwde digest-gepinde image en browserbewijs voor beide modi.
+
+- 13 september, `codex/complete-leon`: Gaia Werk heeft nu ingeklapte
+  self-improvement preview/checkbox/run-bediening met scoped atomische approval.
+  Edit wist preview en checkbox; patch blijft clientstate; geen retry bij
+  onbekende run. Browser bewees statische review, bronbehoud en tempcleanup.
+  345 backendtests + twee subtests, 46 webtests, TypeScript/build/lint;
+  Python/security/React-review zonder P1/P2. Zie
+  `docs/self-improvement-browser-evidence.md`. Volgende: OS-sandbox voor echte
+  tests en gecontroleerde nachtqueuekoppeling.
+
+- 13 september, `codex/complete-leon`: geauthenticeerde self-improvement
+  preview/run-API met exacte eenmalige R3-approval gereed. Server-owned temp
+  repo, een uur expiry/cleanup, CAS-consume, concurrency en fd-gepinde
+  symlink-/renamebescherming; geen code-uitvoering of raw patch/paden in
+  publieke state. 343 backendtests + twee subtests; Python/security-review
+  zonder P1/P2. Zie `docs/self-improvement-sandbox.md`. Volgende: Gaia-bediening
+  en bewezen OS-sandbox voor echte tests.
+
+- 13 september, `codex/complete-leon`: geaccepteerde agentrun-review beweegt
+  oudertaak atomisch via canonieke transities naar `review`, met begrensde
+  runprovenance. Rejected/changes-requested laat taak staan; dubbele review is
+  schrijfloos; `review → done` blijft expliciet. Evidenceprojectie max acht
+  korte items; JSON boven 65.536 tekens wordt niet geparseerd. 332 backendtests
+  plus twee subtests en Python-review zonder P1/P2. Zie
+  `docs/agent-runtime-adapter-implementation.md`.
+
+- 13 september, `codex/complete-leon`: geauthenticeerde read-only servermonitor
+  en Gaia-kaart toegevoegd. Begrensde OS/uptime/load/memory/disk/procesmetadata,
+  vaste schijflabels, connectoraudit en uit-schakelaar; geen commando's, logs,
+  secrets of caller-paden. 328 backendtests + twee subtests, 42 webtests,
+  TypeScript/build/lint en lokale browserproef geslaagd. Zie
+  `docs/server-monitor.md` en `docs/server-monitor-browser-evidence.md`. Volgende:
+  Ubuntu/M40-doelserveracceptatie of OS-sandbox voor echte patchtests.
+
+- 13 september, `codex/complete-leon`: review-only self-improvement validator
+  toegevoegd voor disposable Git-repositories. Exacte approvalbinding, eenmalig
+  verbruik, pad-/secret-/Git-configblokkades en statische syntaxcontrole; gewijzigde
+  code wordt nooit uitgevoerd. Zeven gerichte tests plus onafhankelijke review
+  geslaagd. Zie `docs/self-improvement-sandbox.md`. Volgende stap: OS-sandbox en
+  echte tests, of read-only servermonitor.
+
+- 12 september, `codex/complete-leon`: Firecrawl v2 search-only Research-flow
+  toegevoegd, standaard uit. Backend gebruikt vaste host, expliciete domeinen,
+  caps, duurzame preview-ID/fingerprint, 15 minuten geldigheid en audit-outcomes;
+  Gaia vereist preview vóór start. 314 backendtests + twee subtests, 39 webtests,
+  TypeScript/build en browser-disabled-state geslaagd. Zie
+  `docs/research-executor.md` en `docs/research-browser-evidence.md`. Volgende:
+  kleine live provideracceptatie na key/budget, of doelserveracceptatie.
+
+- 12 september, `codex/complete-leon`: Gaia toont begrensde autonomiestatus en
+  ochtendbrief. Handmatige knop en optionele systemd-timer voeren uitsluitend
+  veilige lokale bronindex uit; geen provider/netwerk of stille memory/task/cache-
+  mutaties. Run blijft na herladen zichtbaar. 305 backendtests + twee subtests,
+  35 webtests, TypeScript/build en browseracceptatie geslaagd. Zie
+  `docs/autonomy-browser-evidence.md`. Volgende werk: echte read-only research-
+  executor, daarna doelserveracceptatie.
+
+- 10 september, `codex/complete-leon`: Vandaag en Memory gebruiken echte lokale
+  gegevens; browserketen voor verbinden, bewaren, herladen, zoeken, corrigeren
+  en verwijderen geslaagd. Google Agenda/Gmail alleen-lezen client is standaard
+  uit; client, serverroutes en Gaia-preview zijn offline/browser-getest.
+  Account-/live-integratie blijft open. 299 backendtests + twee subtests, 30
+  webtests, TypeScript/build geslaagd. Zie `docs/memory-today-browser-evidence.md`,
+  `docs/google-readonly.md` en `docs/google-browser-evidence.md`. Volgende werk:
+  private Google OAuth credential-provider en kleine live read-only acceptatie.
+
+- 9 september, `codex/complete-leon`: duurzame Chat + Gaia, goedkeuring bindt exacte context en beide kostengrenzen; replay/concurrency hersteld. Chatbrowserketen met nepmodel geslaagd. 269 backendtests + twee subtests, 19 webtests, typecheck/build geslaagd; npm audit nul kwetsbaarheden na gerichte updates. Installatie/backup/restore en configureerbare private DB toegevoegd; zie `docs/installation.md`, `docs/chat-browser-evidence.md`, `docs/web-validation.md` en nieuwste handoff. Volgende werk: echte Vandaag/Memory, read-only connector en Ubuntu/hardwareacceptatie. Gebruik lichte agents met smalle opdrachten; bewaak gedeeld limiet en reserveer ruimte voor verificatie/overdracht.
+
 - Kostenherstel (8 september): gevalideerd verbruik wordt vóór antwoordparsing opgeslagen; Gaia kan een onzekere job met dat bewijs na expliciete approval kosten-only reconciliëren. Geen bewijs = geen vrijgave; geen betaalde retry of fictief antwoord. 253 backendtests + twee subtests, 16 webtests, build en desktopbrowserketen geslaagd. Zie docs/model-work.md. Volgende code: echte chat en detailherstel buiten de 100 nieuwste jobs. Geen live kosten of doelhardware getest.
 
 - Nieuwste modelwerk (8 september): Gaia-invoer met lokale kostenpreview, expliciete tekstapproval, aanvraag-id-herstel en leesbaar antwoord aangesloten. Browserketen met tijdelijke SQLite/nepmodel getest, inclusief gewijzigde tekst en herladen; geen betaalde calls. Zie `docs/model-work.md`. Volgende code: gecontroleerde reconciliatie en echte chat. `.env.example` is op verzoek lokaal van een sleutelachtige waarde ontdaan; overige gebruikerswijzigingen daarin blijven buiten de commit. `.env.local` privé laten. Nieuwe providercode niet testen met de echte sleutel zonder expliciete budgetkeuze.

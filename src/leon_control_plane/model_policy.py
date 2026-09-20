@@ -26,6 +26,11 @@ BALANCED_TASK_TYPES = {
     "coding",
     "documentation",
     "routine_research",
+    "shopping_research",
+    "financial_analysis",
+    "server_operations",
+    "model_reference",
+    "printer_monitoring",
 }
 
 PREMIUM_TASK_TYPES = {

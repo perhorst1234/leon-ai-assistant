@@ -1,0 +1,66 @@
+#!/usr/bin/env bash
+# Exercise a locally-built sandbox image without enabling it in application config.
+set -euo pipefail
+IFS=$'\n\t'
+
+usage() {
+  printf '%s\n' 'Usage: scripts/accept-self-improvement-sandbox --toolchain-image REPOSITORY@sha256:DIGEST --pytest-version VERSION --config-out PATH'
+}
+
+toolchain_image=''
+pytest_version=''
+config_out=''
+while [ "$#" -gt 0 ]; do
+  case "$1" in
+    --toolchain-image) toolchain_image=${2:?missing value}; shift 2 ;;
+    --pytest-version) pytest_version=${2:?missing value}; shift 2 ;;
+    --config-out) config_out=${2:?missing value}; shift 2 ;;
+    --help) usage; exit 0 ;;
+    *) usage >&2; exit 64 ;;
+  esac
+done
+[ -n "$toolchain_image" ] && [ -n "$pytest_version" ] && [ -n "$config_out" ] || { usage >&2; exit 64; }
+
+repo_root=$(git rev-parse --show-toplevel)
+cd "$repo_root"
+[ "$(podman info --format '{{.Host.Security.Rootless}}')" = true ] || { printf '%s\n' 'Podman must be rootless' >&2; exit 69; }
+[ "$(podman info --format '{{.Host.CgroupVersion}}')" = v2 ] || { printf '%s\n' 'cgroup v2 is required' >&2; exit 69; }
+[ "$(podman info --format '{{.Host.Security.SeccompEnabled}}')" = true ] || { printf '%s\n' 'Podman seccomp support is required' >&2; exit 69; }
+
+manifest=$(mktemp "${TMPDIR:-/tmp}/leon-image-manifest.XXXXXX")
+cleanup() { rm -f "$manifest"; }
+trap cleanup EXIT HUP INT TERM
+image_id=$(scripts/build-self-improvement-image --toolchain-image "$toolchain_image" --pytest-version "$pytest_version" --manifest-out "$manifest")
+case "$image_id" in sha256:*) ;; *) printf '%s\n' 'missing local image ID' >&2; exit 70 ;; esac
+service_uid=$(id -u)
+service_gid=$(id -g)
+[ "$service_uid" -gt 0 ] && [ "$service_gid" -gt 0 ] || { printf '%s\n' 'acceptance requires a non-root service account' >&2; exit 69; }
+
+# Keep every runtime probe under deployment-equivalent isolation limits.
+run_sandbox() {
+  podman run --rm --pull=never --network=none --http-proxy=false --read-only \
+    --read-only-tmpfs=false --image-volume=ignore --log-driver=none \
+    --cap-drop=ALL --security-opt=no-new-privileges --pids-limit=64 \
+    --memory=512m --memory-swap=512m --cpus=1 --ulimit=nofile=64:64 \
+    --ipc=private --pid=private --userns=keep-id --user="$service_uid:$service_gid" \
+    --workdir=/app --env=HOME=/tmp --env=PYTHONDONTWRITEBYTECODE=1 \
+    --env=PYTHONHASHSEED=0 \
+    --tmpfs /tmp:rw,noexec,nosuid,nodev,size=64m "$image_id" "$@"
+}
+run_sandbox sh -ceu '[ "$(id -u)" -ne 0 ] && [ ! -w /app/src ]'
+run_sandbox python3 -I -m pytest -q tests/test_sandbox_image_artifacts.py
+if run_sandbox python3 -I -c 'raise SystemExit(23)'; then
+  printf '%s\n' 'deliberate failure unexpectedly passed' >&2
+  exit 70
+fi
+
+config_parent=$(dirname "$config_out")
+[ -d "$config_parent" ] || { printf '%s\n' 'config parent directory does not exist' >&2; exit 64; }
+base_commit=$(git rev-parse HEAD)
+podman_path=$(command -v podman)
+case "$podman_path" in /*) ;; *) printf '%s\n' 'Podman executable path must be absolute' >&2; exit 69 ;; esac
+podman_version=$(podman --version | awk '{print $3}')
+case "$podman_version" in *[!0-9.]*) printf '%s\n' 'cannot parse Podman version' >&2; exit 69 ;; esac
+printf '{"enabled":false,"executable":"%s","image":"","base_commit":"%s","allowed_podman_versions":["%s"],"service_uid":%s,"service_gid":%s}\n' \
+  "$podman_path" "$base_commit" "$podman_version" "$service_uid" "$service_gid" >"$config_out"
+printf '%s\n' "acceptance passed; disabled configuration evidence: $config_out"

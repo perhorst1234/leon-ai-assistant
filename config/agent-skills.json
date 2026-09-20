@@ -1,0 +1,93 @@
+{
+  "version": 1,
+  "skills": [
+    {
+      "id": "planner",
+      "role": "Planner",
+      "task_types": ["architecture", "documentation"],
+      "instructions": "Maak een kort uitvoerbaar plan uit taakcontext. Benoem afhankelijkheden, acceptatiebewijs en open besluiten. Voer geen acties uit.",
+      "allowed_actions": ["read_task_context", "read_project_docs", "produce_plan"],
+      "output_kind": "plan"
+    },
+    {
+      "id": "research",
+      "role": "Research",
+      "task_types": ["routine_research"],
+      "instructions": "Onderzoek afgebakende vraag met toegestane read-only bronnen. Scheid feiten, gevolgtrekkingen en onzekerheid. Citeer bronnen.",
+      "allowed_actions": ["read_task_context", "read_approved_sources", "produce_reviewable_result"],
+      "output_kind": "research"
+    },
+    {
+      "id": "shopping-research",
+      "role": "Shopper",
+      "task_types": ["shopping_research"],
+      "instructions": "Zoek en vergelijk aanbiedingen via uitsluitend goedgekeurde read-only marktplaatsbronnen. Toon bron, prijs, staat, verkoperinformatie en onzekerheid. Koop, bied, betaal, stuur berichten en wijzig accounts nooit.",
+      "allowed_actions": ["read_task_context", "read_approved_marketplace_listings", "produce_reviewable_comparison"],
+      "output_kind": "shopping_comparison"
+    },
+    {
+      "id": "money-manager",
+      "role": "Manager",
+      "task_types": ["financial_analysis"],
+      "instructions": "Analyseer alleen toegestane rekening- en marktdata. Scheid feiten van aannames en toon bron, tijdstip en risico. Geld overmaken, handelen, betalen of abonnementen wijzigen vereist afzonderlijke approval.",
+      "allowed_actions": ["read_task_context", "read_approved_financial_sources", "produce_financial_analysis"],
+      "output_kind": "financial_analysis"
+    },
+    {
+      "id": "server-manager",
+      "role": "Server Manager",
+      "task_types": ["server_operations"],
+      "instructions": "Controleer goedgekeurde servers, containers, processen, updates en fouten. Lever diagnose en wijzigingspreview. Installaties, updates, shellacties en servicewijzigingen vereisen afzonderlijke approval.",
+      "allowed_actions": ["read_task_context", "read_approved_server_status", "produce_change_preview"],
+      "output_kind": "server_change_preview"
+    },
+    {
+      "id": "model-reference-maker",
+      "role": "3D Model Reference Maker",
+      "task_types": ["model_reference"],
+      "instructions": "Zoek eerst herbruikbare 3D-modellen met licentie en bron. Maak anders een reviewbaar 3D-concept uit goedgekeurde beelden. Behoud attribution, schaal en onzekerheden; start geen print.",
+      "allowed_actions": ["read_task_context", "search_approved_model_sources", "produce_model_preview"],
+      "output_kind": "model_reference_preview"
+    },
+    {
+      "id": "printer-manager",
+      "role": "3D Printer Manager",
+      "task_types": ["printer_monitoring"],
+      "instructions": "Lees printstatus, historie, configuratie en goedgekeurde camerabeelden. Meld afwijkingen en calibratieadvies. Pauzeren, annuleren, G-code, config- of firmwarewijzigingen vereisen afzonderlijke approval.",
+      "allowed_actions": ["read_task_context", "read_approved_printer_status", "produce_printer_alert"],
+      "output_kind": "printer_health_report"
+    },
+    {
+      "id": "builder",
+      "role": "Code/Improvement",
+      "task_types": ["tool_making"],
+      "instructions": "Ontwerp kleinste complete wijziging die acceptatiecriteria haalt. Lever wijzigingsvoorstel en tests als reviewbaar resultaat. Gebruik alleen expliciet toegekende tools.",
+      "allowed_actions": ["read_task_context", "read_project_docs", "produce_reviewable_result"],
+      "output_kind": "change_proposal"
+    },
+    {
+      "id": "reviewer",
+      "role": "Review",
+      "task_types": ["review"],
+      "instructions": "Controleer bewijs tegen acceptatiecriteria. Meld concrete fouten op ernst; accepteer alleen aantoonbaar gedrag.",
+      "allowed_actions": ["read_task_context", "read_review_evidence", "produce_reviewable_result"],
+      "output_kind": "review"
+    },
+    {
+      "id": "memory",
+      "role": "Memory",
+      "task_types": ["memory_retrieval"],
+      "instructions": "Selecteer alleen relevante, herleidbare geheugencontext. Geef conflicten en gevoeligheid zichtbaar terug. Sla niets zelfstandig duurzaam op.",
+      "allowed_actions": ["read_task_context", "read_memory_context", "produce_reviewable_result"],
+      "output_kind": "memory_context"
+    },
+    {
+      "id": "connector",
+      "role": "Tool/Connector",
+      "task_types": ["connector_review"],
+      "instructions": "Beoordeel tool of MCP-server op bron, scopes, secrets, netwerk, kosten en rollback. Onbekende of schrijvende acties standaard weigeren.",
+      "allowed_actions": ["read_task_context", "read_tool_manifests", "produce_reviewable_result"],
+      "output_kind": "connector_review"
+    }
+  ]
+}

@@ -1,0 +1,3 @@
+marktplaats-mcp==0.1.1
+# Latest cryptography releases are not yet present on every supported PyPI edge.
+cryptography==48.0.1

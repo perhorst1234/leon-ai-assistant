@@ -1,0 +1,17 @@
+[Unit]
+Description=Leon local control plane
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=%h/leon-ai-assistant
+EnvironmentFile=%h/leon-ai-assistant/.env.local
+Environment=LEON_DB_PATH=%h/leon-ai-assistant/.runtime/control-plane.sqlite
+ExecStart=%h/leon-ai-assistant/.venv/bin/python -m leon_control_plane.server --host 127.0.0.1 --port 8765
+Restart=on-failure
+RestartSec=3
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=default.target

@@ -3,11 +3,20 @@ name = "leon-ai-assistant"
 version = "0.1.0"
 description = "Local-first control plane for the Leon/Gaia personal AI assistant."
 requires-python = ">=3.12"
-dependencies = []
+dependencies = [
+  "mcp==2.2.0",
+  "openai-agents==0.22.2",
+]
 
 [project.scripts]
 leon-dashboard = "leon_control_plane.server:main"
+leon-source-scan-once = "leon_control_plane.autonomy_cli:main"
+leon-mcp-readonly = "leon_control_plane.mcp_server:main"
+leon-sync-tool-catalog = "leon_control_plane.tool_catalog:main"
+leon-install-marktplaats-mcp = "leon_control_plane.marktplaats_mcp:main"
+leon-install-vinted-mcp = "leon_control_plane.vinted_mcp:main"
+leon-install-aliexpress-mcp = "leon_control_plane.aliexpress_mcp:main"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-
+pythonpath = ["src"]

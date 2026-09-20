@@ -3197,6 +3197,78 @@ class ControlPlaneStore:
                     timestamp=timestamp,
                 )
 
+    def approve_pending_approval(
+        self,
+        approval_id: str,
+        note: str,
+        *,
+        expected_action_type: str,
+        expected_requested_by: str,
+        actor_type: str = "user",
+        actor_id: str = "dashboard",
+    ) -> None:
+        """Atomically approve one still-live pending approval of expected origin."""
+        _reject_secret_like_text("approval decision_note", note)
+        self.initialize()
+        timestamp = now_iso()
+        with self.connect() as conn:
+            row = conn.execute(
+                """
+                SELECT id, status, consumed_at, expires_at, task_id, risk_level,
+                       risk_class, expected_change, rollback_plan, failure_mode,
+                       plan_fingerprint, action_type, requested_by
+                FROM approvals WHERE id = ?
+                """,
+                (approval_id,),
+            ).fetchone()
+            if row is None or row["action_type"] != expected_action_type or row["requested_by"] != expected_requested_by:
+                raise ValueError("Approval does not match expected action origin")
+            live = not row["consumed_at"] and (
+                not row["expires_at"]
+                or datetime.fromisoformat(str(row["expires_at"]).replace("Z", "+00:00")).astimezone(UTC) > datetime.now(UTC)
+            )
+            if row["status"] == "approved" and live:
+                return
+            cursor = conn.execute(
+                """
+                UPDATE approvals
+                SET status = 'approved', decided_at = ?, decision_note = ?, updated_at = ?
+                WHERE id = ? AND action_type = ? AND requested_by = ?
+                  AND status = 'pending' AND consumed_at IS NULL
+                  AND (expires_at IS NULL OR datetime(expires_at) > datetime(?))
+                """,
+                (
+                    timestamp, note, timestamp, approval_id, expected_action_type,
+                    expected_requested_by, timestamp,
+                ),
+            )
+            if cursor.rowcount != 1:
+                raise ValueError("Approval is no longer pending and available")
+            self.append_audit_event(
+                conn,
+                actor_type=actor_type,
+                actor_id=actor_id,
+                event_type="approval_decided",
+                summary=f"Approval {approval_id} changed from pending to approved.",
+                approval_id=approval_id,
+                task_id=row["task_id"],
+                risk_level=row["risk_level"] or "medium",
+                evidence="scoped atomic approval API",
+                redacted_payload={
+                    "old_status": "pending",
+                    "new_status": "approved",
+                    "note_present": bool(note),
+                    "risk_class": row["risk_class"],
+                    "approval_state": "approved",
+                    "expected_change": row["expected_change"],
+                    "rollback_plan": row["rollback_plan"],
+                    "failure_mode": row["failure_mode"],
+                    "plan_fingerprint": row["plan_fingerprint"],
+                    "retry_allowed_without_changed_plan": True,
+                },
+                timestamp=timestamp,
+            )
+
     def create_approval(
         self,
         *,
@@ -3213,6 +3285,7 @@ class ControlPlaneStore:
         expected_change: str = "",
         rollback_plan: str = "",
         failure_mode: str = "",
+        expires_at: str | None = None,
         requested_by: str = "orchestrator",
         actor_type: str = "system",
         actor_id: str = "orchestrator",
@@ -3230,6 +3303,14 @@ class ControlPlaneStore:
         expected_change = expected_change.strip() or summary
         rollback_plan = rollback_plan.strip()
         failure_mode = failure_mode.strip() or "If this fails or is rejected, no action runs until a changed plan is reviewed."
+        expires_at = str(expires_at or "").strip() or None
+        if expires_at:
+            try:
+                expiry = datetime.fromisoformat(expires_at.replace("Z", "+00:00"))
+            except ValueError:
+                raise ValueError("Approval expires_at must be an ISO timestamp") from None
+            if expiry.tzinfo is None or expiry.astimezone(UTC) <= datetime.now(UTC):
+                raise ValueError("Approval expires_at must be a future timezone-aware timestamp")
         if risk_class in {"R3", "R4", "R5"} and not rollback_plan:
             raise ValueError("Risky approvals require rollback_plan before approval")
         for label, value in {
@@ -3243,6 +3324,7 @@ class ControlPlaneStore:
             "approval expected_change": expected_change,
             "approval rollback_plan": rollback_plan,
             "approval failure_mode": failure_mode,
+            "approval expires_at": expires_at or "",
             "approval requested_by": requested_by,
         }.items():
             _reject_secret_like_text(label, value)
@@ -3290,9 +3372,9 @@ class ControlPlaneStore:
                   id, task_id, action_type, summary, reason, affected_systems,
                   permissions, external_effect, cost_estimate, risk_level,
                   risk_class, expected_change, rollback_plan, failure_mode,
-                  plan_fingerprint, status, requested_by, created_at, updated_at
+                  plan_fingerprint, status, requested_by, expires_at, created_at, updated_at
                 )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?, ?, ?)
                 """,
                 (
                     approval_id,
@@ -3311,6 +3393,7 @@ class ControlPlaneStore:
                     failure_mode,
                     plan_fingerprint,
                     requested_by,
+                    expires_at,
                     timestamp,
                     timestamp,
                 ),
@@ -3335,6 +3418,7 @@ class ControlPlaneStore:
                     "rollback_plan": rollback_plan,
                     "failure_mode": failure_mode,
                     "approval_state": "pending",
+                    "expires_at": expires_at,
                     "plan_fingerprint": plan_fingerprint,
                 },
                 timestamp=timestamp,
@@ -3358,12 +3442,14 @@ class ControlPlaneStore:
             row = conn.execute("SELECT id, status, task_id FROM approvals WHERE id = ?", (approval_id,)).fetchone()
             if row is None:
                 raise ValueError("Unknown approval id")
-            if row["status"] != "approved":
-                raise ValueError("Only approved approvals can be consumed")
-            conn.execute(
-                "UPDATE approvals SET status = 'consumed', consumed_at = ?, updated_at = ? WHERE id = ?",
-                (timestamp, timestamp, approval_id),
+            updated = conn.execute(
+                "UPDATE approvals SET status = 'consumed', consumed_at = ?, updated_at = ? "
+                "WHERE id = ? AND status = 'approved' AND consumed_at IS NULL "
+                "AND (expires_at IS NULL OR datetime(expires_at) > datetime(?))",
+                (timestamp, timestamp, approval_id, timestamp),
             )
+            if updated.rowcount != 1:
+                raise ValueError("Only approved, unconsumed approvals can be consumed")
             self.append_audit_event(
                 conn,
                 actor_type=actor_type,
@@ -5186,7 +5272,14 @@ class ControlPlaneStore:
         self.initialize()
         timestamp = now_iso()
         with self.connect() as conn:
-            row = conn.execute("SELECT id, task_id, risk, status FROM agent_runs WHERE id = ?", (run_id,)).fetchone()
+            row = conn.execute(
+                """
+                SELECT id, task_id, risk, status, result_summary, length(evidence_json) AS evidence_size
+                FROM agent_runs
+                WHERE id = ?
+                """,
+                (run_id,),
+            ).fetchone()
             if row is None:
                 raise ValueError("Unknown agent run id")
             if row["status"] not in {"waiting_for_review", "failed"}:
@@ -5227,6 +5320,79 @@ class ControlPlaneStore:
                 },
                 timestamp=timestamp,
             )
+            if review_status == "accepted":
+                task = conn.execute("SELECT id, status FROM tasks WHERE id = ?", (row["task_id"],)).fetchone()
+                if task is not None and task["status"] in {"new", "planned", "active"}:
+                    evidence_oversized = int(row["evidence_size"] or 0) > 65_536
+                    raw_evidence = []
+                    if not evidence_oversized:
+                        evidence_row = conn.execute(
+                            "SELECT evidence_json FROM agent_runs WHERE id = ?",
+                            (run_id,),
+                        ).fetchone()
+                        raw_evidence = _json_loads(evidence_row["evidence_json"], [])
+                    if not isinstance(raw_evidence, list):
+                        raw_evidence = []
+                    evidence = []
+                    for item in raw_evidence[:8]:
+                        if isinstance(item, dict):
+                            evidence.append({
+                                "type": _compact_summary(item.get("type"), "evidence"),
+                                "summary": _compact_summary(item.get("summary"), "Evidence recorded by agent run."),
+                            })
+                    evidence_projection = {
+                        "items": evidence,
+                        "total_count": None if evidence_oversized else len(raw_evidence),
+                        "truncated": evidence_oversized or len(raw_evidence) > len(evidence),
+                    }
+                    result_summary = _compact_summary(row["result_summary"], f"Accepted agent run {run_id}.")
+                    verification = {
+                        "agent_run_id": run_id,
+                        "evidence": evidence_projection,
+                    }
+                    paths = {
+                        "new": ("planned", "active", "review"),
+                        "planned": ("active", "review"),
+                        "active": ("review",),
+                    }
+                    old_status = task["status"]
+                    for new_status in paths[old_status]:
+                        self._validate_task_transition(
+                            conn, task_id=row["task_id"], old_status=old_status, new_status=new_status,
+                            blocked_reason="", result="", verification_note="", review_note="",
+                            approval_id=None, secret_key=None, reopen=False,
+                        )
+                        review_transition = new_status == "review"
+                        conn.execute(
+                            """
+                            UPDATE tasks
+                            SET status = ?,
+                                result = CASE WHEN ? THEN ? ELSE result END,
+                                verification_note = CASE WHEN ? THEN ? ELSE verification_note END,
+                                updated_at = ?
+                            WHERE id = ?
+                            """,
+                            (new_status, review_transition, result_summary, review_transition, _json_dumps(verification), timestamp, row["task_id"]),
+                        )
+                        self.append_audit_event(
+                            conn,
+                            actor_type=actor_type,
+                            actor_id=actor_id,
+                            event_type="task_status_changed",
+                            task_id=row["task_id"],
+                            risk_level="low",
+                            summary=f"Task {row['task_id']} changed from {old_status} to {new_status}.",
+                            evidence="accepted agent run review",
+                            redacted_payload={
+                                "old_status": old_status,
+                                "new_status": new_status,
+                                "agent_run_id": run_id,
+                                "result_summary": result_summary if review_transition else "",
+                                "evidence": evidence_projection if review_transition else {},
+                            },
+                            timestamp=timestamp,
+                        )
+                        old_status = new_status
 
     def upsert_tool_manifest(
         self,
@@ -7957,6 +8123,9 @@ class ControlPlaneStore:
                     "connector_executed": executed,
                     "write_performed": performed_write,
                     "raw_secret_values_stored": False,
+                    "research_outcome": str(check.get("research_outcome") or "")[:80],
+                    "accepted_result_count": max(0, int(check.get("accepted_result_count") or 0)),
+                    "rejected_result_count": max(0, int(check.get("rejected_result_count") or 0)),
                 },
                 timestamp=timestamp,
             )

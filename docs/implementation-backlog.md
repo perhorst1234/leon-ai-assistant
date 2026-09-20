@@ -1,5 +1,80 @@
 # Leon / Gaia — uitvoeringsbacklog
 
+**14 september, OS-sandboxkern:** fail-closed rootless Podman-contract toegevoegd,
+nog niet API-wired. Immutable image en exact base commit, service-identiteit,
+root-owned executable/inode, lokale rootless cgroup-v2/seccomp-probe, vaste
+network/proxy/image-volume/filesystem/process/resourcegrenzen en non-root smoke
+zijn verplicht. Workspacepaden worden niet gemount: toegestane bytes gaan via
+descriptor-veilige reads naar private read-only snapshots. Output is tijdens
+uitvoering begrensd en geredigeerd; cleanup is verplicht voor succes. 15 gerichte
+sandboxtests en volledige backend 368 tests + twee subtests, 46 webtests,
+typecheck/build/lint geslaagd. Reviews zonder resterende P1/P2. API/approval en Gaia binden nu exact execution
+mode, policyhash en imagecommit, met durable sanitized testbewijs; static blijft
+default. Open: doelimage bouwen/pinnen, Ubuntu-hostacceptatie en browserbewijs
+voor static/Podman-modi. Zie [OS-sandbox](os-sandbox.md).
+
+**13 september, agenttaaklevenscyclus:** geaccepteerde lokale agentruns brengen
+hun oudertaak atomisch via geldige statusovergangen naar `review`, met begrensde
+runprovenance. Afwijzingen blijven actiegericht, review is eenmalig en `done`
+vereist nog expliciet resultaat plus verificatienotitie. Oversized bewijs wordt
+niet geparseerd. 332 backendtests plus twee subtests en onafhankelijke Python-
+review geslaagd. Echte provideruitvoering en capability-isolatie blijven open.
+
+**13 september, servermonitor:** read-only `GET /api/server/status`, connector-
+audit en Gaia-kaart toegevoegd. Endpoint accepteert geen caller-paden of
+commando's en toont alleen begrensde OS-, uptime-, load-, geheugen-, vaste
+schijflabel- en processtatus. Uitgeschakeld betekent geen probe. 328 backendtests
+plus twee subtests, 42 webtests, TypeScript/build/lint en lokale browserproef
+geslaagd. Doelservermeting en muterende beheeracties blijven open. Zie
+[servermonitor](server-monitor.md) en [browserbewijs](server-monitor-browser-evidence.md).
+
+**13 september, self-improvement kern:** geauthenticeerde preview/run-API rond
+review-only patchvalidator toegevoegd. Exacte R3-approval bindt opaque tijdelijke
+repository, base commit, patchhash, filelijst en statische validatie en wordt
+atomisch één keer verbruikt. Een uur expiry/cleanup, concurrentie en
+descriptor-relatieve symlink-/renamebescherming zijn getest. Geen gewijzigde
+code wordt uitgevoerd; publieke state bevat geen raw patch of paden. Gaia Werk
+heeft nu ingeklapte exacte preview/checkbox/run-bediening; browserproef
+bevestigt invalidatie na edit, reviewbewijs, bronbehoud en cleanup. Volledige
+stand: 345 backendtests plus twee subtests en 46 webtests; Python-, security- en
+React-review zonder P1/P2. Volledige self-improvement blijft open tot OS-sandbox,
+echte tests en gecontroleerde nachtqueue-integratie aantoonbaar werken. Zie
+[sandboxgrens](self-improvement-sandbox.md) en
+[browserbewijs](self-improvement-browser-evidence.md).
+
+**12 september, research:** Firecrawl v2 search-only executor, vaste host,
+HTTPS/domein/IP-filter, caps, server-side preview-ID/fingerprint met 15 minuten
+geldigheid, provider-outcomeaudit en Gaia tweestapsflow toegevoegd. Standaard
+uit; geen live call of sleutel gebruikt. 314 backendtests plus twee subtests,
+39 webtests, TypeScript/build en browser-disabled-state geslaagd. Live provider-
+acceptatie blijft open. Zie [research](research-executor.md) en
+[browserbewijs](research-browser-evidence.md).
+
+**12 september, autonomie:** bestaande nachtqueue/value engine/ochtendbrief hergebruikt.
+Gaia toont begrensde status en ochtendbrief; vaste veilige bronscan werkt
+handmatig en via optionele systemd-timer om 22:00. Scan doet geen provider- of
+netwerkverzoek en maakt geen memory/task/cache-records. 305 backendtests plus
+twee subtests, 35 webtests, TypeScript/build en browserherstel geslaagd. Live
+externe researchacceptatie, muterende nachtacties en self-improvement blijven open. Zie
+[autonomiebewijs](autonomy-browser-evidence.md).
+
+**10 september:** Vandaag en Memory gebruiken echte lokale gegevens. Memory
+ondersteunt zoeken, bronweergave, toevoegen, corrigeren en verwijderen met reden;
+late zoekresultaten kunnen nieuwe verbinding niet overschrijven. 299 backendtests
+plus twee subtests, 30 webtests, TypeScript/build en browseracceptatie zijn
+geslaagd. Google Agenda/Gmail is gekozen als eerste alleen-lezen connector;
+begrensde client, serverroutes en Gaia-UI zijn lokaal gereed; accountverbinding
+en live acceptatie blijven open. Zie [acceptatiebewijs](memory-today-browser-evidence.md),
+[Google alleen-lezen client](google-readonly.md) en
+[Google-browseracceptatie](google-browser-evidence.md).
+
+**9 september:** duurzame Chat, exacte context-/kostenapproval en Gaia-koppeling
+zijn toegevoegd; oudere Werk-jobs zijn direct opvraagbaar. Zie [chat.md](chat.md)
+en de actuele [handoff](handoff.md) voor verificatie. Installatie, echte Vandaag/
+Memory-data, connectors, autonomie en doelhardware blijven afzonderlijke open
+acceptatiestappen. Historische meetmomenten hieronder zijn geen actuele
+volledigheidsclaim.
+
 **Kostenherstel 8 september:** gevalideerde usage wordt vóór antwoordparsing duurzaam opgeslagen. Gaia-preview plus expliciete approval kan uitsluitend bewezen verbruik reconciliëren; geen antwoord-/taaksucces, geen herhaling en geen bewijsloze budgetvrijgave. 253 backendtests + twee subtests, 16 webtests/build en desktopbrowserproef geslaagd. Echte chat, oudere-jobdetailherstel en alle overige productcriteria blijven open.
 
 **Nieuwste code 8 september:** Gaia-modelinvoer aangesloten: lokale tekst-/kostenpreview, afzonderlijke approval, invalidatie bij edits en herstel van onzekere verzending met dezelfde aanvraag-id. Leesbaar antwoord blijft na herladen beschikbaar. 238 backendtests + twee subtests, 14 webtests en desktopbrowserketen met nepmodel geslaagd. Geen live API-/hardwarebewijs; reconciliatie, echte chat en de oorspronkelijke volledige agentvisie blijven open. Zie [model-work.md](model-work.md).

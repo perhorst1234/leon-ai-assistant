@@ -1,0 +1,8 @@
+*
+!Containerfile
+!pyproject.toml
+!requirements.lock
+!src/
+!src/**
+!tests/
+!tests/**

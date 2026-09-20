@@ -1,0 +1,142 @@
+{
+  "version": 1,
+  "bindings": [
+    {
+      "source": {
+        "registry": "pypi",
+        "package": "marktplaats-mcp",
+        "version": "0.1.1",
+        "commit": "8e650274c50c55829ce2917591631665ecd321a6",
+        "integrity": "sha256:429eb3393bad0e7b8200cb946548a00a7f5e6e77454e49683c219bb2b2d3d0a7"
+      },
+      "role": "Shopper",
+      "tool_id": "marktplaats-marketplace",
+      "mode": "candidate_disabled",
+      "allowed_tools": ["search_listings", "get_listing_details", "get_seller_profile", "list_categories", "check_new_listings"],
+      "read_scopes": ["public_listings", "public_listing_details", "public_seller_profiles", "public_categories"],
+      "forbidden_actions": ["purchase", "bid", "payment", "send_message", "read_raw_secret", "captcha_bypass", "anti_bot_evasion", "proxy_rotation"],
+      "network_domains": ["www.marktplaats.nl"],
+      "max_results": 100,
+      "timeout_seconds": 30
+    },
+    {
+      "source": {
+        "registry": "local",
+        "package": "vinted-safe-stdio",
+        "version": "1.0.0",
+        "commit": "460317f23a4d665bd352863f388c9d299550955a",
+        "integrity": "sha256:60fdca132fc6f6ac6dcfaf8d93507fef781f0dcd21912a1be5dc31656fb94c73"
+      },
+      "role": "Shopper",
+      "tool_id": "vinted-marketplace",
+      "mode": "candidate_disabled",
+      "allowed_tools": ["search_items", "get_item", "get_seller", "compare_prices", "get_trending"],
+      "read_scopes": ["public_items", "public_item_details", "public_seller_profiles", "public_market_trends"],
+      "forbidden_actions": ["purchase", "bid", "payment", "send_message", "read_raw_secret", "captcha_bypass", "anti_bot_evasion", "proxy_rotation"],
+      "network_domains": ["www.vinted.nl"],
+      "max_results": 20,
+      "timeout_seconds": 10
+    },
+    {
+      "source": {
+        "registry": "local",
+        "package": "aliexpress-safe-stdio",
+        "version": "1.0.0",
+        "commit": "d8ee5b2dfbc133c5b58b0528b675ac495cbcbef9",
+        "integrity": "sha256:9c6ed985e94a0c6bb9885ec3aae964a4d4404d103f8832f24293301940667b96"
+      },
+      "role": "Shopper",
+      "tool_id": "aliexpress-marketplace",
+      "mode": "candidate_disabled",
+      "allowed_tools": ["search_aliexpress", "get_aliexpress_product", "search_aliexpress_bundle_deals", "build_aliexpress_bundle"],
+      "read_scopes": ["public_listings", "public_product_details", "public_bundle_deals"],
+      "forbidden_actions": ["purchase", "bid", "payment", "send_message", "read_raw_secret", "captcha_bypass", "anti_bot_evasion", "proxy_rotation"],
+      "network_domains": ["www.aliexpress.com"],
+      "max_results": 12,
+      "timeout_seconds": 15
+    },
+    {
+      "source": {
+        "registry": "npm",
+        "package": "@paypal/mcp",
+        "version": "1.8.1",
+        "commit": "6b1ced271959d5ea53857502dc6e5ddef0cbc126",
+        "integrity": "sha512-5r0TGkIhg66TSErwoLxatZbPHWjPnLQBHxoRG9vpobPRyzLF0tt2F8ca3Ca18SdfR8I32Usps7pzd/RuAF1Lsg=="
+      },
+      "role": "Shopper",
+      "tool_id": "paypal-sandbox-readonly",
+      "mode": "candidate_disabled",
+      "allowed_tools": [
+        "invoices.list",
+        "invoices.get",
+        "orders.get",
+        "disputes.list",
+        "disputes.get",
+        "shipment.get",
+        "products.list",
+        "products.show",
+        "subscriptionPlans.list",
+        "subscriptionPlans.show",
+        "subscriptions.show",
+        "transactions.list",
+        "payments.getRefunds"
+      ],
+      "read_scopes": ["sandbox_invoices", "sandbox_orders", "sandbox_disputes", "sandbox_shipments", "sandbox_products", "sandbox_subscriptions", "sandbox_transactions", "sandbox_refunds"],
+      "forbidden_actions": [
+        "purchase",
+        "bid",
+        "payment",
+        "send_message",
+        "read_raw_secret",
+        "captcha_bypass",
+        "anti_bot_evasion",
+        "proxy_rotation",
+        "orders_capture",
+        "payments_create_refund",
+        "invoice_write",
+        "dispute_write",
+        "shipment_write",
+        "product_write",
+        "subscription_write",
+        "tools_all",
+        "production_environment"
+      ],
+      "network_domains": ["api-m.sandbox.paypal.com"],
+      "max_results": 50,
+      "timeout_seconds": 30
+    },
+    {
+      "source": {
+        "registry": "npm",
+        "package": "@bank-mcp/server",
+        "version": "0.2.1",
+        "commit": "c6abad503b1ecec47e80108ef8d0c614da0f4de5",
+        "integrity": "sha512-eNMkjDexcyLirF8l6iq4sSwV9ESJwpVtTarhTc2VcJV/PodhzJCSb6YBqrAgyqMMPVcioLrtMdq2JduxBjv1kQ=="
+      },
+      "role": "Manager",
+      "tool_id": "bank-analysis-readonly",
+      "mode": "candidate_disabled",
+      "allowed_tools": ["list_accounts", "list_transactions", "search_transactions", "get_balance", "spending_summary"],
+      "read_scopes": ["account_metadata", "transaction_history", "account_balances", "spending_analysis"],
+      "forbidden_actions": [
+        "purchase",
+        "bid",
+        "payment",
+        "send_message",
+        "read_raw_secret",
+        "captcha_bypass",
+        "anti_bot_evasion",
+        "proxy_rotation",
+        "money_transfer",
+        "trade",
+        "bank_config_write",
+        "key_file_write",
+        "init",
+        "connect_without_approval"
+      ],
+      "network_domains": [],
+      "max_results": 100,
+      "timeout_seconds": 30
+    }
+  ]
+}

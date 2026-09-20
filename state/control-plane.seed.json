@@ -140,6 +140,15 @@
       "status": "review",
       "risk": "low",
       "acceptance": "Lokale Codex/Leon runner jobs wachten en hervatten bij waarschijnlijke OpenAI 429/quota/rate-limit fouten."
+    },
+    {
+      "id": "task-readonly-server-monitor",
+      "priority": "P1",
+      "title": "Read-only servermonitor",
+      "owner": "Codex",
+      "status": "review",
+      "risk": "low",
+      "acceptance": "Authenticated GET /api/server/status exposes bounded OS, disk, memory, uptime and Leon health metadata without credentials, commands, logs or secrets."
     }
   ],
   "approvals": [
@@ -206,6 +215,18 @@
     {
       "key": "LEON_DASHBOARD_AUTH_MODE",
       "purpose": "Controls dashboard auth mode: tailnet, required, or off."
+    },
+    {
+      "key": "RESEARCH_EXECUTOR_ENABLED",
+      "purpose": "Explicit local feature gate for bounded read-only research."
+    },
+    {
+      "key": "FIRECRAWL_API_KEY",
+      "purpose": "Firecrawl search-only credential; never shown or logged."
+    },
+    {
+      "key": "RESEARCH_ALLOWED_DOMAINS",
+      "purpose": "Explicit domain allowlist for bounded research results."
     }
   ],
   "engineering_rules": [

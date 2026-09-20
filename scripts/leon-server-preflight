@@ -1,0 +1,201 @@
+#!/usr/bin/env python3
+"""Read-only target-host preflight for moving Leon to a server.
+
+This script deliberately gathers facts without installing packages, mounting
+disks, changing services, or writing outside stdout.
+"""
+from __future__ import annotations
+
+import argparse
+import json
+import math
+import os
+import pathlib
+import platform
+import re
+import selectors
+import shutil
+import subprocess
+import sys
+import time
+from typing import Any
+
+
+DEFAULT_TIMEOUT = 2.0
+MAX_TIMEOUT = 30.0
+MAX_COMMAND_OUTPUT = 128 * 1024
+REDACTED = "<redacted>"
+
+
+def _redact(value: Any) -> Any:
+    if isinstance(value, dict):
+        return {key: _redact(item) for key, item in value.items()}
+    if isinstance(value, list):
+        return [_redact(item) for item in value]
+    if not isinstance(value, str):
+        return value
+    value = re.sub(r"(?i)(serial|machine-id|uuid|token|password|secret)\s*[:=]\s*[^\s,]+", r"\1=" + REDACTED, value)
+    value = re.sub(r"(?i)(/Users|/home|/root)/[^/\s]+", r"\1/" + REDACTED, value)
+    value = re.sub(r"(?i)(?:hostname|host)\s*[:=]\s*[^\s,]+", r"hostname=" + REDACTED, value)
+    return value
+
+
+def _run(command: list[str], timeout: float) -> dict[str, Any]:
+    try:
+        process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    except OSError as exc:
+        return {"ok": False, "error": type(exc).__name__, "stdout": "", "stderr": ""}
+    selector = selectors.DefaultSelector()
+    buffers = {"stdout": bytearray(), "stderr": bytearray()}
+    total = 0
+    error: str | None = None
+    assert process.stdout is not None and process.stderr is not None
+    selector.register(process.stdout, selectors.EVENT_READ, "stdout")
+    selector.register(process.stderr, selectors.EVENT_READ, "stderr")
+    deadline = time.monotonic() + timeout
+    try:
+        while selector.get_map():
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                error = "TimeoutExpired"
+                break
+            events = selector.select(remaining)
+            if not events:
+                error = "TimeoutExpired"
+                break
+            for key, _ in events:
+                chunk = os.read(key.fileobj.fileno(), min(65536, MAX_COMMAND_OUTPUT - total + 1))
+                if not chunk:
+                    selector.unregister(key.fileobj)
+                    continue
+                room = MAX_COMMAND_OUTPUT - total
+                buffers[key.data].extend(chunk[:room])
+                total += min(len(chunk), room)
+                if len(chunk) > room or total >= MAX_COMMAND_OUTPUT:
+                    error = "OutputLimitExceeded"
+                    break
+            if error:
+                break
+        if error:
+            process.kill()
+        returncode = process.wait(timeout=max(0.1, deadline - time.monotonic()) if not error else 1.0)
+    except subprocess.TimeoutExpired:
+        error = "TimeoutExpired"
+        process.kill()
+        returncode = process.wait(timeout=1.0)
+    finally:
+        selector.close()
+        process.stdout.close()
+        process.stderr.close()
+    stdout = bytes(buffers["stdout"]).decode("utf-8", errors="replace").strip()
+    stderr = bytes(buffers["stderr"]).decode("utf-8", errors="replace").strip()
+    return {"ok": returncode == 0 and error is None, "returncode": returncode, "error": error, "stdout": stdout, "stderr": stderr}
+
+
+def _timeout(value: str) -> float:
+    try:
+        parsed = float(value)
+    except ValueError:
+        raise argparse.ArgumentTypeError("timeout must be a number") from None
+    if not math.isfinite(parsed) or not 0.1 <= parsed <= MAX_TIMEOUT:
+        raise argparse.ArgumentTypeError(f"timeout must be between 0.1 and {MAX_TIMEOUT:g} seconds")
+    return parsed
+
+
+def _command_info(name: str) -> dict[str, Any]:
+    path = shutil.which(name)
+    return {"available": path is not None, "path": REDACTED if path and name in {"python", "python3"} else path}
+
+
+def _memory() -> dict[str, Any]:
+    result: dict[str, Any] = {}
+    meminfo = pathlib.Path("/proc/meminfo")
+    if meminfo.exists():
+        for line in meminfo.read_text(errors="replace").splitlines():
+            if line.startswith(("MemTotal:", "MemAvailable:")):
+                key, value = line.split(":", 1)
+                result[key] = value.strip()
+    if not result:
+        result["total_bytes"] = _sysctl_bytes("hw.memsize")
+    return result
+
+
+def _sysctl_bytes(key: str) -> int | None:
+    output = _run(["sysctl", "-n", key], DEFAULT_TIMEOUT)
+    if not output["ok"]:
+        return None
+    try:
+        return int(output["stdout"])
+    except ValueError:
+        return None
+
+
+def _disks(timeout: float) -> dict[str, Any]:
+    result = _run(["df", "-Pk"], timeout)
+    rows: list[dict[str, Any]] = []
+    if result["ok"]:
+        for line in result["stdout"].splitlines()[1:]:
+            match = re.match(r"^(.+?)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+%)\s+(.+)$", line)
+            if match:
+                filesystem, blocks, used, available, percent, mountpoint = match.groups()
+                rows.append({"filesystem": filesystem, "blocks_kib": blocks, "used_kib": used, "available_kib": available, "used_percent": percent, "mountpoint": mountpoint})
+    devices: list[dict[str, str]] = []
+    block = _run(["lsblk", "-P", "-o", "NAME,SIZE,TYPE,FSTYPE,MOUNTPOINT,MODEL"], timeout)
+    if block["ok"]:
+        for line in block["stdout"].splitlines():
+            fields = dict(re.findall(r'(\w+)="([^"]*)"', line))
+            if fields:
+                devices.append({key.lower(): value for key, value in fields.items()})
+    return {"filesystems": rows, "block_devices": devices, "command_ok": result["ok"], "error": result.get("error")}
+
+
+def _gpu(timeout: float) -> dict[str, Any]:
+    result = _run(["nvidia-smi", "--query-gpu=name,driver_version,memory.total", "--format=csv,noheader,nounits"], timeout)
+    gpus = []
+    if result["ok"]:
+        for line in result["stdout"].splitlines():
+            fields = [field.strip() for field in line.split(",")]
+            if len(fields) >= 3:
+                gpus.append({"name": fields[0], "driver": fields[1], "memory_mib": fields[2]})
+    return {"nvidia_smi": result["ok"], "gpus": gpus, "error": result.get("error")}
+
+
+def collect(repo: pathlib.Path, timeout: float = DEFAULT_TIMEOUT) -> dict[str, Any]:
+    uname = platform.uname()
+    commands = {name: _command_info(name) for name in ("git", "python3", "podman", "docker", "systemctl", "df", "lsblk", "nvidia-smi")}
+    git = {"branch": None, "head": None, "dirty": None}
+    if (repo / ".git").exists():
+        branch = _run(["git", "-C", str(repo), "branch", "--show-current"], timeout)
+        head = _run(["git", "-C", str(repo), "rev-parse", "HEAD"], timeout)
+        dirty = _run(["git", "-C", str(repo), "status", "--porcelain=v1"], timeout)
+        git.update({"branch": branch.get("stdout") if branch["ok"] else None, "head": head.get("stdout") if head["ok"] else None, "dirty": bool(dirty.get("stdout")) if dirty["ok"] else None})
+    systemd = {"user_available": False, "active": False}
+    if commands["systemctl"]["available"]:
+        show = _run(["systemctl", "--user", "is-system-running"], timeout)
+        systemd = {"user_available": show["ok"] or show.get("stdout") in {"running", "degraded", "starting", "initializing"}, "active": show.get("stdout") == "running", "state": show.get("stdout") or None}
+    return {"schema_version": 1, "read_only": True, "host": {"os": platform.system(), "release": uname.release, "machine": uname.machine, "kernel": uname.version, "cpu": os.cpu_count(), "memory": _memory()}, "disks": _disks(timeout), "gpu": _gpu(timeout), "commands": commands, "repo": {"path": str(repo), **git}, "systemd": systemd}
+
+
+def _human(data: dict[str, Any]) -> str:
+    host = data["host"]
+    repo = data["repo"]
+    lines = ["Leon server preflight (read-only)", f"OS: {host['os']} {host['release']} ({host['machine']})", f"CPU cores: {host['cpu']}", f"Repo: {repo['branch'] or 'unknown'} @ {repo['head'] or 'unknown'}; dirty={repo['dirty']}", f"Systemd user: {data['systemd'].get('user_available')} ({data['systemd'].get('state') or 'unavailable'})", f"NVIDIA: {len(data['gpu']['gpus'])} detected"]
+    lines.append("Commands: " + ", ".join(f"{name}={'yes' if info['available'] else 'no'}" for name, info in data["commands"].items()))
+    lines.append(f"Filesystems: {len(data['disks']['filesystems'])} reported")
+    lines.append("No installs, mounts, service changes, or writes performed.")
+    return "\n".join(lines)
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description="Read-only Leon target-server preflight")
+    parser.add_argument("--repo", type=pathlib.Path, default=pathlib.Path.cwd())
+    parser.add_argument("--json", action="store_true", help="emit stable JSON")
+    parser.add_argument("--timeout", type=_timeout, default=DEFAULT_TIMEOUT)
+    args = parser.parse_args(argv)
+    data = _redact(collect(args.repo.resolve(), args.timeout))
+    print(json.dumps(data, sort_keys=True, separators=(",", ":")) if args.json else _human(data))
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

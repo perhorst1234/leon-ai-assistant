@@ -1,9 +1,15 @@
 # Leon AI Assistant / Gaia
 
-Persoonlijke AI-assistent met de bestaande Gaia-frontend en herstelde Python/SQLite-backend. **Echte lokale taakuitvoering is nu aan de Werk-pagina gekoppeld:** broncontrole, checkpoints, pauze, hervatten en annuleren. 185 backendtests en zeven webbridge-tests slagen. Nog geen live AI-chat, provideruitvoering of M40-releaseclaim. Zie [startinstructies en bewijs](docs/local-work.md).
+Persoonlijke AI-assistent met de bestaande Gaia-frontend en Python/SQLite-backend. Werk voert lokale broncontroles uit met checkpoints, pauze, hervatten en annuleren. Chat bewaart gesprekken en gebruikt dezelfde begrensde modelqueue, met vooraf goedgekeurde tekst, gesprekscontext en kostengrenzen. Zie [chat en verificatie](docs/chat.md) en [lokale uitvoering](docs/local-work.md). Live providers en M40-doelhardware zijn nog niet gevalideerd.
 
 ## Begin hier
 
+- [Installeren, starten en private backups](docs/installation.md)
+- [Agents, skills en lokale read-only MCP](docs/agents-skills-mcp.md)
+- [Gaia agents en integratiekaart](docs/gaia-agent-integrations.md)
+- [Geteste installatie- en herstelketen](docs/delivery-evidence.md)
+- [Chatbrowsercontrole](docs/chat-browser-evidence.md) en [webtests/pakketscan](docs/web-validation.md)
+- [Veilige nachtvoorbereiding en ochtendbrief](docs/autonomy-browser-evidence.md)
 - [Actuele status en hervatinstructies](docs/handoff.md)
 - [Servercode: wat bestaat, wat getest is en wat ontbreekt](docs/server-recovery-audit.md)
 - [Uitvoerbare backlog met acceptatiecriteria](docs/implementation-backlog.md)
@@ -12,6 +18,44 @@ Persoonlijke AI-assistent met de bestaande Gaia-frontend en herstelde Python/SQL
 - [Bestaande websitebroncode](apps/web)
 - [Frontend starten en herkomst](apps/web/README.md)
 
-Werk heeft een echte lokale uitvoeringsmodus en een afzonderlijk ontwerpvoorbeeld. Vandaag, Chat, Memory en specialistische agents blijven demo; de voorbeelden bewijzen geen echte integraties.
+Werk, Chat, Vandaag en Memory hebben een backendverbinding en een afzonderlijk
+ontwerpvoorbeeld. Vandaag toont duurzame werk-/geheugenaantallen. Memory kan
+opgeslagen context met bron zoeken, toevoegen, corrigeren en met reden
+verwijderen. Zie [lokaal acceptatiebewijs](docs/memory-today-browser-evidence.md).
+Specialistische agents blijven ontwerpvoorbeeld; voorbeelden bewijzen geen
+externe integraties.
+
+Google Agenda/Gmail is gekozen als eerste alleen-lezen koppeling. Begrensde
+client, geauthenticeerde serverroutes en Gaia-preview zijn lokaal getest. Zie
+[Google alleen-lezen](docs/google-readonly.md) en
+[browseracceptatie](docs/google-browser-evidence.md). OAuth-accountverbinding en
+live gegevens blijven bewust nog niet geclaimd.
+
+Gaia toont opgeslagen nachtvoorbereiding en ochtendbrief. Veilige lokale
+bronscan kan handmatig of via optionele Ubuntu-timer om 22:00 draaien, zonder
+provider- of netwerkverzoek. Gaia heeft ook een begrensde Firecrawl search-only
+Research-flow met duurzame previewbinding en bronallowlist, standaard uit. Zie
+[researchconfiguratie](docs/research-executor.md) en
+[browserbewijs](docs/research-browser-evidence.md). Live provideracceptatie en
+self-improvement blijven open.
+
+Self-improvement heeft een geauthenticeerde tweestaps review-API: preview maakt
+exact gebonden R3-approval; run verbruikt die één keer en controleert patch
+eerst statisch in disposable tijdelijke Git-repository. Standaard wordt
+gewijzigde code niet uitgevoerd. Met vooraf geconfigureerde Podman-policy bindt
+preview ook execution mode, policyhash en imagecommit; pas na die specifieke
+approval draaien vaste tests geïsoleerd. Zie
+[review-only patchvalidatie](docs/self-improvement-sandbox.md),
+[Podman-isolatiecontract](docs/os-sandbox.md) en
+[Gaia-browserbewijs](docs/self-improvement-browser-evidence.md). Gaia Werk biedt
+hiervoor ingeklapte geavanceerde preview/approval/review en toont vooraf welke
+modus geldt. Gepinde Linux-image en doelserveracceptatie blijven open, dus live
+Podman-uitvoering is nog niet geclaimd.
+
+Vandaag toont ook een geauthenticeerde, alleen-lezen serverstatus met begrensde
+OS-, uptime-, load-, geheugen-, schijf- en Leon-procesmetadata. Vaste
+schijflabels vervangen lokale paden; elke probe wordt als connectorcontrole
+gelogd. Zie [servermonitor](docs/server-monitor.md) en
+[browserbewijs](docs/server-monitor-browser-evidence.md).
 
 GitHub bewaart code, besluiten, voortgang en hervatstappen. De repository is openbaar: credentials, persoonlijke gesprekken, databases, betaalgegevens en serverback-ups horen in een aparte private back-up. Een Git-push is geen back-up van de volledige server of van lopende agentprocessen.

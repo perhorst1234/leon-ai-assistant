@@ -79,3 +79,98 @@ test('model preview/submission and UUID recovery use only explicit local routes'
   }
   assert.equal((await forwardLeon(request('model', { method: 'POST', body: '{}', headers: { origin: 'https://elsewhere.invalid' } }), config, forbiddenFetch)).status, 403);
 });
+
+test('chat routes keep conversation ids in the fixed local path and forward pagination', async () => {
+  const cases = [
+    ['chat-conversations&limit=25&before=chat-old', 'GET', '/api/chat/conversations?limit=25&before=chat-old'],
+    ['chat-conversation&id=chat-one', 'GET', '/api/chat/conversations/chat-one'],
+    ['chat-preview', 'POST', '/api/chat/preview'],
+    ['chat-messages&id=chat-one', 'POST', '/api/chat/conversations/chat-one/messages'],
+  ];
+  for (const [resource, method, path] of cases) {
+    const response = await forwardLeon(request(resource, { method, ...(method === 'POST' ? { body: '{}' } : {}) }), config, async url => {
+      assert.equal(String(url), `http://127.0.0.1:8765${path}`);
+      return Response.json({ ok: true });
+    });
+    assert.equal(response.status, 200);
+  }
+  for (const resource of ['chat-conversation', 'chat-messages&id=one&id=two', 'chat-conversations&before=x&before=y', 'chat-preview&id=x']) {
+    assert.equal((await forwardLeon(request(resource), config, forbiddenFetch)).status, 404);
+  }
+});
+
+test('Today and Memory routes stay on the fixed local API boundary', async () => {
+  const cases = [
+    ['overview', 'GET', '/api/overview'],
+    ['autonomy-run', 'POST', '/api/night-queue/run'],
+    ['memory', 'GET', '/api/memory'],
+    ['memory-create', 'POST', '/api/memory'],
+    ['memory-search', 'POST', '/api/memory/search'],
+    ['memory-update', 'POST', '/api/memory/update'],
+    ['memory-delete', 'POST', '/api/memory/delete'],
+  ];
+  for (const [resource, method, path] of cases) {
+    const response = await forwardLeon(request(resource, { method, ...(method === 'POST' ? { body: '{}' } : {}) }), config, async url => {
+      assert.equal(String(url), `http://127.0.0.1:8765${path}`);
+      return Response.json({ ok: true });
+    });
+    assert.equal(response.status, 200);
+  }
+  for (const resource of ['overview&id=x', 'memory&before=x', 'memory-create&id=x', 'memory-search&id=x']) {
+    assert.equal((await forwardLeon(request(resource), config, forbiddenFetch)).status, 404);
+  }
+});
+
+test('Google read-only routes use only their exact methods and local paths', async () => {
+  const cases = [
+    ['google-status', 'GET', '/api/google/status'],
+    ['google-calendar-preview', 'POST', '/api/google/calendar/preview'],
+    ['google-mail-preview', 'POST', '/api/google/mail/preview'],
+  ];
+  for (const [resource, method, path] of cases) {
+    const response = await forwardLeon(request(resource, { method, ...(method === 'POST' ? { body: '{}' } : {}) }), config, async url => {
+      assert.equal(String(url), `http://127.0.0.1:8765${path}`);
+      return Response.json({ ok: true });
+    });
+    assert.equal(response.status, 200);
+  }
+  assert.equal((await forwardLeon(request('google-status', { method: 'POST', body: '{}' }), config, forbiddenFetch)).status, 404);
+  assert.equal((await forwardLeon(request('google-calendar-preview'), config, forbiddenFetch)).status, 404);
+  assert.equal((await forwardLeon(request('google-mail-preview&id=x', { method: 'POST', body: '{}' }), config, forbiddenFetch)).status, 404);
+});
+
+test('Research preview and run use only fixed local POST routes', async () => {
+  for (const [resource, path] of [
+    ['research-preview', '/api/research/preview'],
+    ['research-run', '/api/research/run'],
+  ]) {
+    const response = await forwardLeon(request(resource, { method: 'POST', body: '{}' }), config, async url => {
+      assert.equal(String(url), `http://127.0.0.1:8765${path}`);
+      return Response.json({ ok: true });
+    });
+    assert.equal(response.status, 200);
+    assert.equal((await forwardLeon(request(resource), config, forbiddenFetch)).status, 404);
+  }
+  assert.equal((await forwardLeon(request('research-run&id=x', { method: 'POST', body: '{}' }), config, forbiddenFetch)).status, 404);
+});
+
+test('Server status uses only fixed local read route', async () => {
+  const response = await forwardLeon(request('server-status'), config, async url => {
+    assert.equal(String(url), 'http://127.0.0.1:8765/api/server/status');
+    return Response.json({ status: 'healthy' });
+  });
+  assert.equal(response.status, 200);
+  assert.equal((await forwardLeon(request('server-status', { method: 'POST', body: '{}' }), config, forbiddenFetch)).status, 404);
+  assert.equal((await forwardLeon(request('server-status&id=x'), config, forbiddenFetch)).status, 404);
+});
+
+test('self-improvement routes use exact local POST paths and reject query parameters', async () => {
+  for (const [resource, path] of [['self-improvement-preview', '/api/self-improvement/preview'], ['self-improvement-approve', '/api/self-improvement/approve'], ['self-improvement-run', '/api/self-improvement/run']]) {
+    const response = await forwardLeon(request(resource, { method: 'POST', body: '{}' }), config, async url => {
+      assert.equal(String(url), `http://127.0.0.1:8765${path}`);
+      return Response.json({ status: 'approved', changed_code_executed: false });
+    });
+    assert.equal(response.status, 200);
+    assert.equal((await forwardLeon(request(`${resource}&id=unexpected`), config, forbiddenFetch)).status, 404);
+  }
+});

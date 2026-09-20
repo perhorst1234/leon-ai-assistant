@@ -1,0 +1,130 @@
+#!/usr/bin/env python3
+"""Exercise the real local delivery lifecycle in an isolated private runtime."""
+from __future__ import annotations
+
+import argparse
+import json
+import os
+from pathlib import Path
+import sqlite3
+import sys
+import tempfile
+import time
+import urllib.request
+
+REPO = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(REPO / "src"))
+
+from leon_control_plane.delivery import (  # noqa: E402
+    DeliveryConfig,
+    _literal_env,
+    _read_processes,
+    backup,
+    doctor,
+    restore,
+    setup,
+    start,
+    stop,
+)
+
+
+def _request_json(url: str, token: str) -> int:
+    request = urllib.request.Request(url, headers={"Authorization": f"Bearer {token}"})
+    with urllib.request.urlopen(request, timeout=10) as response:
+        json.loads(response.read().decode("utf-8"))
+        return response.status
+
+
+def _group_running(pgid: int) -> bool:
+    try:
+        os.killpg(pgid, 0)
+    except ProcessLookupError:
+        return False
+    except PermissionError:
+        return False
+    return True
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--backend-port", type=int, default=18875)
+    parser.add_argument("--web-port", type=int, default=13011)
+    parser.add_argument("--evidence", type=Path)
+    args = parser.parse_args()
+    lines: list[str] = []
+
+    with tempfile.TemporaryDirectory(prefix="leon-delivery-smoke-") as temporary:
+        private = Path(temporary)
+        config = DeliveryConfig(REPO, private / "runtime", private / "private.env",
+                                private / "runtime" / "control-plane.sqlite",
+                                args.backend_port, args.web_port)
+        pids: list[int] = []
+        try:
+            setup(config, install=False)
+            values, errors = _literal_env(config.env_file)
+            assert not errors
+            token = values["LEON_DASHBOARD_TOKEN"]
+            # Exercise the quoted dotenv form that a shell-style parser can get wrong.
+            env_text = config.env_file.read_text(encoding="utf-8")
+            config.env_file.write_text(
+                env_text.replace(f"LEON_DASHBOARD_TOKEN={token}",
+                                 f'LEON_DASHBOARD_TOKEN="{token}"'),
+                encoding="utf-8",
+            )
+            os.chmod(config.env_file, 0o600)
+            token = _literal_env(config.env_file)[0]["LEON_DASHBOARD_TOKEN"]
+            pids = start(config)
+            records = _read_processes(config)["processes"]
+            assert {item["name"] for item in records} == {"backend", "worker", "web"}
+            backend_status = _request_json(
+                f"http://127.0.0.1:{config.port}/api/work/jobs", token)
+            proxy_status = _request_json(
+                f"http://127.0.0.1:{config.web_port}/api/leon?resource=jobs", token)
+            ok, checks = doctor(config)
+            assert ok and "services=backend,worker,web" in checks
+
+            marker = "online-backup-marker"
+            with sqlite3.connect(config.db) as connection:
+                connection.execute("CREATE TABLE delivery_smoke (value TEXT NOT NULL)")
+                connection.execute("INSERT INTO delivery_smoke VALUES (?)", (marker,))
+            backup_path = backup(config, config.runtime / "backups" / "online.sqlite")
+            stopped = stop(config)
+            assert stopped == 3
+            end = time.monotonic() + 8
+            while time.monotonic() < end and any(_group_running(pid) for pid in pids):
+                time.sleep(0.1)
+            assert not any(_group_running(pid) for pid in pids)
+
+            with sqlite3.connect(config.db) as connection:
+                connection.execute("DELETE FROM delivery_smoke")
+            restore(config, backup_path, force=True)
+            with sqlite3.connect(config.db) as connection:
+                restored = connection.execute(
+                    "SELECT value FROM delivery_smoke"
+                ).fetchone()
+                integrity = connection.execute("PRAGMA integrity_check").fetchone()
+            assert restored == (marker,) and integrity == ("ok",)
+            lines.extend([
+                "setup=ok private_env=quoted",
+                f"start=ok services=backend,worker,web pids={len(pids)}",
+                f"backend_auth={backend_status}",
+                f"web_proxy_auth={proxy_status}",
+                "doctor=ok services=backend,worker,web",
+                "backup=ok mode=online integrity=ok",
+                "stop=ok owned_groups_exited=3",
+                "restore=ok marker=preserved integrity=ok",
+            ])
+        finally:
+            if pids:
+                stop(config)
+
+    output = "\n".join(lines) + "\n"
+    if args.evidence:
+        args.evidence.parent.mkdir(parents=True, exist_ok=True)
+        args.evidence.write_text(output, encoding="utf-8")
+    print(output, end="")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

@@ -1600,9 +1600,11 @@ def test_default_connector_manifests_declare_separate_read_and_write_scopes() ->
     assert {"browser-research", "mail", "calendar", "files", "tasks", "memory-sources"}.issubset(by_id)
     assert by_id["mail"]["status"] == "approved_readonly"
     assert by_id["calendar"]["status"] == "approved_readonly"
+    assert by_id["server-monitor"]["write_scopes"] == []
     for manifest in manifests:
         assert manifest["read_scopes"]
-        assert manifest["write_scopes"]
+        if manifest["connector_id"] != "server-monitor":
+            assert manifest["write_scopes"]
         assert set(manifest["read_scopes"]).isdisjoint(set(manifest["write_scopes"]))
         assert manifest["secret_handling"]["raw_secret_values_visible"] is False
         assert manifest["secret_handling"]["secret_values_allowed_in_ui"] is False
@@ -3389,6 +3391,97 @@ def test_mock_agent_runner_creates_reviewable_agent_run(tmp_path: Path) -> None:
     state = store.get_state()
     reviewed = next(item for item in state["agent_runs"] if item["id"] == result["id"])
     assert reviewed["review_status"] == "accepted"
+
+
+def test_accepted_agent_run_advances_eligible_task_to_review_with_evidence(tmp_path: Path) -> None:
+    store = make_store(tmp_path)
+    for initial_status in ("new", "planned", "active"):
+        task_id = store.create_task(
+            title=f"Review accepted {initial_status} run",
+            goal="Keep accepted run evidence on the task.",
+            status="new",
+        )
+        if initial_status in {"planned", "active"}:
+            store.update_task_status(task_id, "planned")
+        if initial_status == "active":
+            store.update_task_status(task_id, "active")
+        run = MockAgentRunner(store).run(task_id=task_id, task_type="documentation", risk="low")
+
+        store.review_agent_run(run["id"], review_status="accepted", review_note="Output and evidence are reviewable.")
+
+        task = store.get_task(task_id)
+        verification = json.loads(task["verification_note"])
+        assert task["status"] == "review"
+        assert task["result"]
+        assert verification["agent_run_id"] == run["id"]
+        assert verification["evidence"]["items"]
+        try:
+            store.update_task_status(task_id, "done")
+        except ValueError as exc:
+            assert "result and verification_note" in str(exc)
+        else:
+            raise AssertionError("accepted agent run must not bypass the explicit task done gate")
+        assert store.validate_audit_hash_chain()
+
+
+def test_nonaccepted_and_repeated_agent_run_reviews_do_not_advance_task(tmp_path: Path) -> None:
+    store = make_store(tmp_path)
+    task_id = store.create_task(title="Keep task active", goal="Advance only accepted agent runs.")
+    store.update_task_status(task_id, "planned")
+    store.update_task_status(task_id, "active")
+
+    for review_status in ("changes_requested", "rejected"):
+        run = MockAgentRunner(store).run(task_id=task_id, task_type="documentation", risk="low")
+        store.review_agent_run(run["id"], review_status=review_status, review_note=f"Run was {review_status}.")
+        assert store.get_task(task_id)["status"] == "active"
+
+    accepted = MockAgentRunner(store).run(task_id=task_id, task_type="documentation", risk="low")
+    store.review_agent_run(accepted["id"], review_status="accepted", review_note="Accepted once.")
+    audit_count = len(store.get_state()["audit_events"])
+    try:
+        store.review_agent_run(accepted["id"], review_status="accepted", review_note="Accepted twice.")
+    except ValueError as exc:
+        assert "Only completed agent runs" in str(exc)
+    else:
+        raise AssertionError("reviewed agent runs must not be reviewed twice")
+    assert store.get_task(task_id)["status"] == "review"
+    assert len(store.get_state()["audit_events"]) == audit_count
+
+
+def test_accepted_agent_run_bounds_task_evidence_projection(tmp_path: Path) -> None:
+    store = make_store(tmp_path)
+    task_id = store.create_task(title="Bound evidence", goal="Keep task projection small.")
+    run = MockAgentRunner(store).run(task_id=task_id, task_type="documentation", risk="low")
+    oversized = [{"type": f"proof-{index}", "summary": "x" * 1000, "private": "ignored"} for index in range(20)]
+    with store.connect() as conn:
+        conn.execute(
+            "UPDATE agent_runs SET result_summary = ?, evidence_json = ? WHERE id = ?",
+            ("r" * 1000, json.dumps(oversized), run["id"]),
+        )
+
+    store.review_agent_run(run["id"], review_status="accepted", review_note="Bounded evidence is sufficient.")
+
+    task = store.get_task(task_id)
+    verification = json.loads(task["verification_note"])
+    projection = verification["evidence"]
+    assert len(task["result"]) <= 280
+    assert projection["total_count"] == 20
+    assert projection["truncated"] is True
+    assert len(projection["items"]) == 8
+    assert all(set(item) == {"type", "summary"} and len(item["summary"]) <= 280 for item in projection["items"])
+
+
+def test_accepted_agent_run_does_not_parse_oversized_evidence(tmp_path: Path) -> None:
+    store = make_store(tmp_path)
+    task_id = store.create_task(title="Reject huge evidence", goal="Keep review parsing bounded.")
+    run = MockAgentRunner(store).run(task_id=task_id, task_type="documentation", risk="low")
+    with store.connect() as conn:
+        conn.execute("UPDATE agent_runs SET evidence_json = ? WHERE id = ?", (json.dumps([{"summary": "x" * 70_000}]), run["id"]))
+
+    store.review_agent_run(run["id"], review_status="accepted", review_note="Oversized evidence is omitted.")
+
+    projection = json.loads(store.get_task(task_id)["verification_note"])["evidence"]
+    assert projection == {"items": [], "total_count": None, "truncated": True}
 
 
 def test_agent_run_execution_model_is_structured_and_exposed(tmp_path: Path) -> None:

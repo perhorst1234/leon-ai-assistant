@@ -1,0 +1,5 @@
+#!/usr/bin/env python3
+import pathlib, sys
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1] / "src"))
+from leon_control_plane.delivery import main
+raise SystemExit(main(["restore", *__import__("sys").argv[1:]]))

@@ -315,53 +315,67 @@ class NightQueueScheduler:
         elif proposals:
             final_status = "completed_with_attention"
         try:
-            memory_context = self.store.retrieve_memory(
-                _brief_memory_query(
-                    action_results=action_results,
-                    failures=failures,
-                    sources=sources,
-                    changes=changes,
-                    proposals=proposals,
-                ),
-                scope="context",
-                limit=5,
-                actor_type="system",
-                actor_id="night-queue-brief-memory-context",
+            try:
+                memory_context = self.store.retrieve_memory(
+                    _brief_memory_query(action_results=action_results, failures=failures, sources=sources,
+                                        changes=changes, proposals=proposals),
+                    scope="context", limit=5, actor_type="system",
+                    actor_id="night-queue-brief-memory-context",
+                )
+            except Exception as exc:  # pragma: no cover - defensive brief enrichment
+                memory_context = {
+                    "answer_status": "unavailable", "confidence": 0, "source_refs": [],
+                    "related_graph_entries": [], "conflicts": [],
+                    "metrics": {"match_count": 0, "relevance_score": 0},
+                    "reason": str(exc)[:500],
+                }
+            morning_brief = build_morning_brief(
+                run_id=run_id, status=final_status, action_results=action_results,
+                failures=failures, sources=sources, changes=changes, proposals=proposals,
+                selected_models=selected_models, cost_estimate=_estimate_queue_cost(actions),
+                rollback_status=rollback_status, memory_context=memory_context,
+                generated_by="night_queue",
             )
-        except Exception as exc:  # pragma: no cover - defensive brief enrichment
-            memory_context = {
-                "answer_status": "unavailable",
-                "confidence": 0,
-                "source_refs": [],
-                "related_graph_entries": [],
-                "conflicts": [],
-                "metrics": {"match_count": 0, "relevance_score": 0},
-                "reason": str(exc),
+            self.store.complete_night_queue_run(
+                run_id, status=final_status, action_results=action_results, failures=failures,
+                sources=sources, changes=changes, rollback_status=rollback_status,
+                morning_brief=morning_brief,
+            )
+        except Exception as exc:
+            # Brief generation is post-action bookkeeping. Close the durable run even
+            # when it fails, with no invented brief/results. Persistence errors remain
+            # visible to the caller after this best-effort attempt.
+            bounded_reason = str(exc)[:500] or exc.__class__.__name__
+            final_failure = {
+                "action_id": "night_queue_finalization",
+                "status": "failed",
+                "reason": bounded_reason,
+                "recovery_suggestions": [{"action": "review_night_queue_run",
+                                           "summary": "Inspect the stored run and retry brief generation."}],
             }
-        morning_brief = build_morning_brief(
-            run_id=run_id,
-            status=final_status,
-            action_results=action_results,
-            failures=failures,
-            sources=sources,
-            changes=changes,
-            proposals=proposals,
-            selected_models=selected_models,
-            cost_estimate=_estimate_queue_cost(actions),
-            rollback_status=rollback_status,
-            memory_context=memory_context,
-            generated_by="night_queue",
-        )
-        self.store.complete_night_queue_run(
-            run_id,
-            status=final_status,
-            action_results=action_results,
-            failures=failures,
-            sources=sources,
-            changes=changes,
-            rollback_status=rollback_status,
-            morning_brief=morning_brief,
-        )
+            failure_rows = [*failures, final_failure]
+            fallback_status = "failed"
+            fallback_brief = {
+                "run_id": run_id,
+                "status": fallback_status,
+                "generated_by": "night_queue",
+                "sections": [],
+                "completed_improvements": [],
+                "partial_failure_disclosure": {
+                    "visible_to_user": True, "has_partial_failure": True,
+                    "status": fallback_status, "failure_count": len(failure_rows),
+                    "recovery_suggestions": final_failure["recovery_suggestions"],
+                },
+            }
+            try:
+                self.store.complete_night_queue_run(
+                    run_id, status=fallback_status, action_results=action_results,
+                    failures=failure_rows, sources=sources, changes=changes,
+                    rollback_status=rollback_status, morning_brief=fallback_brief,
+                )
+            except Exception:
+                raise
+            return redact_value({**fallback_brief, "id": run_id})
         return redact_value({**morning_brief, "id": run_id})
 
     def _policy_block(self, action: dict[str, Any], policy: dict[str, Any], run_id: str, *, reason: str) -> dict[str, Any]:

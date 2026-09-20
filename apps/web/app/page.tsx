@@ -3,6 +3,10 @@
 import { FormEvent, useEffect, useRef, useState } from 'react';
 import type { RefObject } from 'react';
 import ConnectedWork from './components/connected-work';
+import ConnectedChat from './components/connected-chat';
+import ConnectedToday from './components/connected-today';
+import ConnectedMemory from './components/connected-memory';
+import type { ChatRequest } from './components/connected-chat';
 import { AnimatePresence, MotionConfig, motion } from 'motion/react';
 import {
   Activity,
@@ -1131,7 +1135,7 @@ function PromptIsland({
 }
 
 function CommandDock({ active, onOpenChat }: { active: SpaceId; onOpenChat: () => void }) {
-  const status = active === 'today' ? 'Voorbeeldmissie' : active === 'flows' ? 'Lokale taken · opgeslagen checkpoints' : 'Voorbeeldgeheugen';
+  const status = active === 'today' ? 'Vandaag' : active === 'flows' ? 'Lokale taken · opgeslagen checkpoints' : 'Geheugen';
   return (
     <div className="command-dock">
       <span><span className="status-pulse" />{status}</span>
@@ -1155,6 +1159,8 @@ export default function HomePage() {
   const [prompt, setPrompt] = useState('');
   const [lastPrompt, setLastPrompt] = useState('');
   const [responseReady, setResponseReady] = useState(true);
+  const [chatRequest, setChatRequest] = useState<ChatRequest | null>(null);
+  const [chatDemo, setChatDemo] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   const [activeFlowStep, setActiveFlowStep] = useState(-1);
   const [selectedMemory, setSelectedMemory] = useState('per');
@@ -1191,15 +1197,14 @@ export default function HomePage() {
     toastTimerRef.current = window.setTimeout(() => setToast(null), 2600);
   };
 
-  const submitPrompt = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    const value = prompt.trim();
-    if (!value) return;
+  const submitPromptText = (value: string) => {
+    const trimmed = value.trim();
+    if (!trimmed) return;
 
     timersRef.current.forEach((timer) => window.clearTimeout(timer));
     timersRef.current = [];
-    setLastPrompt(value);
-    setPrompt('');
+    setLastPrompt(trimmed);
+    setChatRequest({ id: Date.now(), content: trimmed });
     setResponseReady(false);
     setActiveSpace('chat');
     setSettingsOpen(false);
@@ -1214,6 +1219,11 @@ export default function HomePage() {
         showToast('Context samengebracht');
       }, 1950),
     );
+  };
+
+  const submitPrompt = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    submitPromptText(prompt);
   };
 
   const runFlow = () => {
@@ -1301,21 +1311,29 @@ export default function HomePage() {
           inert={overlayOpen || undefined}
         >
           {activeSpace === 'today' && (
-            <TodayView
+            <ConnectedToday
               onOpenChat={openChatCommand}
               onOpenWork={() => switchSpace('flows')}
-              onApprove={() => setReviewKind('approval')}
-              onReviewLearning={() => setReviewKind('learning')}
+              onOpenMemory={() => switchSpace('memory')}
+              demo={<TodayView onOpenChat={openChatCommand} onOpenWork={() => switchSpace('flows')} onApprove={() => setReviewKind('approval')} onReviewLearning={() => setReviewKind('learning')} />}
             />
           )}
           {activeSpace === 'chat' && (
-            <ChatView
-              prompt={lastPrompt}
-              responseReady={responseReady}
-              onPlan={() => {
-                switchSpace('flows');
-                showToast('Een visuele planflow staat klaar');
-              }}
+            <ConnectedChat
+              request={chatRequest}
+              draft={prompt}
+              onDraftChange={setPrompt}
+              onSubmitRequest={submitPromptText}
+              onClearDraft={() => setPrompt('')}
+              onModeChange={setChatDemo}
+              demo={<ChatView
+                prompt={lastPrompt}
+                responseReady={responseReady}
+                onPlan={() => {
+                  switchSpace('flows');
+                  showToast('Een visuele planflow staat klaar');
+                }}
+              />}
             />
           )}
           {activeSpace === 'flows' && (
@@ -1333,7 +1351,7 @@ export default function HomePage() {
               onApprove={() => setReviewKind('approval')}
             />} />
           )}
-          {activeSpace === 'memory' && <MemoryView selected={selectedMemory} onSelect={setSelectedMemory} />}
+          {activeSpace === 'memory' && <ConnectedMemory demo={<MemoryView selected={selectedMemory} onSelect={setSelectedMemory} />} />}
         </motion.div>
       </AnimatePresence>
 
@@ -1348,7 +1366,7 @@ export default function HomePage() {
       />
       <DropZones visible={dragging} />
 
-      {activeSpace === 'chat' ? (
+      {activeSpace === 'chat' && chatDemo ? (
         <PromptIsland
           value={prompt}
           onChange={setPrompt}
@@ -1357,7 +1375,7 @@ export default function HomePage() {
           onVoice={() => setGaiaState((state) => state === 'listening' ? 'idle' : 'listening')}
           inputRef={inputRef}
         />
-      ) : <CommandDock active={activeSpace} onOpenChat={openChatCommand} />}
+      ) : activeSpace !== 'chat' ? <CommandDock active={activeSpace} onOpenChat={openChatCommand} /> : null}
 
       <SettingsSheet open={settingsOpen} onClose={() => setSettingsOpen(false)} />
       <AgentPicker
@@ -1402,7 +1420,7 @@ export default function HomePage() {
         )}
       </AnimatePresence>
 
-      <div className="prototype-note">{activeSpace === 'flows' ? 'Werk: live backend of expliciet ontwerpvoorbeeld' : 'Interactief concept · voorbeelddata'}</div>
+      {(activeSpace === 'flows' || activeSpace === 'chat') && <div className="prototype-note">{activeSpace === 'flows' ? 'Werk: lokale status of expliciet ontwerpvoorbeeld' : chatDemo ? 'Chat: expliciet ontwerpvoorbeeld' : 'Chat: verbonden met Leon'}</div>}
     </main>
     </MotionConfig>
   );

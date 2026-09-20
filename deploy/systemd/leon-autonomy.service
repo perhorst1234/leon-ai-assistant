@@ -1,0 +1,10 @@
+[Unit]
+Description=Leon bounded local overnight source scan
+After=local-fs.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=%h/leon-ai-assistant
+EnvironmentFile=-%h/leon-ai-assistant/.env.local
+Environment=LEON_DB_PATH=%h/leon-ai-assistant/.runtime/control-plane.sqlite
+ExecStart=%h/leon-ai-assistant/.venv/bin/python -m leon_control_plane.autonomy_cli --db %h/leon-ai-assistant/.runtime/control-plane.sqlite --seed %h/leon-ai-assistant/state/control-plane.seed.json --budget-mode economy

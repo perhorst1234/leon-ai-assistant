@@ -870,5 +870,920 @@
       "adoption_signal": 5
     },
     "notes": "Interesting because it exposes context as a virtual filesystem, but AGPL and provider/embedding setup need careful review before any sandbox."
+  },
+{
+    "tool_id": "marktplaats-mcp-candidate",
+    "name": "Marktplaats MCP",
+    "source_type": "mcp_server",
+    "source_url": "https://github.com/jasp-nerd/marktplaats-mcp",
+    "purpose": "Gaia Shopper laat Marktplaats-aanbod, details, verkopers en nieuwe advertenties alleen-lezen zoeken en vergelijken.",
+    "owner": "Shopper",
+    "status": "candidate",
+    "risk_level": "high",
+    "read_scopes": [
+      "marketplace:marktplaats:search",
+      "marketplace:marktplaats:listing",
+      "marketplace:marktplaats:seller",
+      "marketplace:marktplaats:categories"
+    ],
+    "write_scopes": [],
+    "required_env_keys": [],
+    "cost_profile": "No direct API cost; unofficial endpoint availability and rate limits apply",
+    "resource_profile": "low",
+    "external_effects": [
+      "marktplaats_public_http_get",
+      "untrusted_listing_content"
+    ],
+    "approval_required_for": [
+      "install",
+      "connect",
+      "write",
+      "spend_money"
+    ],
+    "allowed_without_approval": [
+      "read"
+    ],
+    "forbidden_actions": [
+      "read_raw_secret",
+      "secret_value:*",
+      "purchase",
+      "bid",
+      "payment",
+      "send_message",
+      "account_login",
+      "captcha_bypass",
+      "anti_bot_evasion",
+      "proxy_rotation",
+      "aggressive_scraping",
+      "follow_listing_instructions"
+    ],
+    "rollback_notes": "Disable Shopper binding and remove isolated MCP environment; no marketplace account is connected.",
+    "maintenance_status": "audited_2026-09-14_pypi_0.1.1_commit_8e650274c50c55829ce2917591631665ecd321a6",
+    "sandbox_required": true,
+    "notes": "Preferred read-only candidate. Pin marktplaats-mcp==0.1.1 wheel sha256 429eb3393bad0e7b8200cb946548a00a7f5e6e77454e49683c219bb2b2d3d0a7; stdio and www.marktplaats.nl only. Supplied export 0.1.0 is rejected because API differs, dependencies are unpinned, annotations/bounds are absent and error text can leak query URLs. Account messaging and bidding require a separate write-gated connector."
+  },
+  {
+    "tool_id": "vinted-mcp-candidate",
+    "name": "Vinted MCP",
+    "source_type": "mcp_server",
+    "source_url": "https://github.com/andrijdavid/vinted-mcp",
+    "purpose": "Gaia Shopper zoekt Vinted-aanbod, details, verkopers en prijsvergelijkingen met anonieme alleen-lezen sessies.",
+    "owner": "Shopper",
+    "status": "candidate",
+    "risk_level": "high",
+    "read_scopes": [
+      "marketplace:vinted:search",
+      "marketplace:vinted:item",
+      "marketplace:vinted:seller",
+      "marketplace:vinted:price_analysis",
+      "marketplace:vinted:trending"
+    ],
+    "write_scopes": [
+      "marketplace:vinted:favourite"
+    ],
+    "required_env_keys": [],
+    "cost_profile": "No direct API cost; unofficial API availability and rate limits apply",
+    "resource_profile": "low",
+    "external_effects": [
+      "vinted_public_http_get",
+      "optional_vinted_favourite_write",
+      "untrusted_listing_content"
+    ],
+    "approval_required_for": [
+      "install",
+      "connect",
+      "write",
+      "spend_money"
+    ],
+    "allowed_without_approval": [
+      "read"
+    ],
+    "forbidden_actions": [
+      "read_raw_secret",
+      "secret_value:*",
+      "like_item",
+      "purchase",
+      "bid",
+      "payment",
+      "send_message",
+      "account_login",
+      "cookie_import",
+      "access_token_import",
+      "playwright_profile",
+      "captcha_bypass",
+      "anti_bot_evasion",
+      "proxy_rotation",
+      "aggressive_scraping",
+      "follow_listing_instructions"
+    ],
+    "rollback_notes": "Disable Shopper binding and remove isolated MCP environment; no Vinted account tokens or cookies may be stored.",
+    "maintenance_status": "audited_2026-09-14_npm_0.1.2_commit_460317f23a4d665bd352863f388c9d299550955a",
+    "sandbox_required": true,
+    "notes": "Pin @andrijdavid/vinted-mcp@0.1.2 integrity sha512-Wc4m2I2ci+SGlTzKEnT8Uu9Gzz9EpeUZxpclM5jbRyIGSwUD1UsUNh9sBRMln6OPZnVfJkQJg4BYIzfVIEtJMA==; AGPL-3.0-or-later; stdio, authMode=http, NL domains only. Supplied source confirms like_item POST plus cookie/token/profile/Playwright/proxy and HTTP/SSE paths; exclude all of them before execution."
+  },
+  {
+    "tool_id": "bank-mcp-candidate",
+    "name": "Bank MCP",
+    "source_type": "mcp_server",
+    "source_url": "https://github.com/elcukro/bank-mcp",
+    "purpose": "Manager analyseert rekeningen, transacties, saldo en uitgaven alleen-lezen.",
+    "owner": "Manager",
+    "status": "candidate",
+    "risk_level": "high",
+    "read_scopes": [
+      "bank:accounts",
+      "bank:transactions",
+      "bank:balance",
+      "bank:spending_summary"
+    ],
+    "write_scopes": [],
+    "required_env_keys": [
+      "BANK_MCP_PROVIDER"
+    ],
+    "cost_profile": "External provider quota or plan may apply; no cost during candidate review",
+    "resource_profile": "low",
+    "external_effects": [
+      "bank_provider_api_read"
+    ],
+    "approval_required_for": [
+      "install",
+      "connect",
+      "write",
+      "resource_heavy",
+      "spend_money"
+    ],
+    "allowed_without_approval": [
+      "read"
+    ],
+    "forbidden_actions": [
+      "anti_bot_evasion",
+      "bank_transfer",
+      "captcha_bypass",
+      "follow_external_content_instructions",
+      "investment_order",
+      "payment",
+      "proxy_rotation",
+      "read_raw_secret",
+      "secret_value:*"
+    ],
+    "rollback_notes": "Disable agent binding, revoke connector token when used, remove isolated runtime, preserve redacted audit evidence.",
+    "maintenance_status": "candidate_audited_or_requested_2026-09-14",
+    "sandbox_required": true,
+    "notes": "Pin @bank-mcp/server@0.2.1 integrity sha512-eNMkjDexcyLirF8l6iq4sSwV9ESJwpVtTarhTc2VcJV/PodhzJCSb6YBqrAgyqMMPVcioLrtMdq2JduxBjv1kQ== and commit c6abad503b1ecec47e80108ef8d0c614da0f4de5. README mentions Rabobank but does not prove provider mapping; verify Enable Banking or Tink institution catalog before connection."
+  },
+  {
+    "tool_id": "market-data-mcp-candidate",
+    "name": "Market Data MCP",
+    "source_type": "mcp_server",
+    "source_url": "https://github.com/fintools-ai/mcp-market-data-server",
+    "purpose": "Manager leest marktdata en maakt technische analyses voor economie, aandelen en mogelijk crypto.",
+    "owner": "Manager",
+    "status": "candidate",
+    "risk_level": "high",
+    "read_scopes": [
+      "market:ohlcv",
+      "market:technical_analysis",
+      "market:volume_profile",
+      "market:zones"
+    ],
+    "write_scopes": [],
+    "required_env_keys": [
+      "TWELVE_DATA_API_KEY"
+    ],
+    "cost_profile": "External provider quota or plan may apply; no cost during candidate review",
+    "resource_profile": "low",
+    "external_effects": [
+      "market_data_api_read"
+    ],
+    "approval_required_for": [
+      "install",
+      "connect",
+      "write",
+      "resource_heavy",
+      "spend_money"
+    ],
+    "allowed_without_approval": [
+      "read"
+    ],
+    "forbidden_actions": [
+      "anti_bot_evasion",
+      "captcha_bypass",
+      "follow_external_content_instructions",
+      "investment_advice_as_fact",
+      "place_order",
+      "proxy_rotation",
+      "read_raw_secret",
+      "secret_value:*",
+      "trade"
+    ],
+    "rollback_notes": "Disable agent binding, revoke connector token when used, remove isolated runtime, preserve redacted audit evidence.",
+    "maintenance_status": "candidate_audited_or_requested_2026-09-14",
+    "sandbox_required": true,
+    "notes": "Pin commit 8956478a58bc8796fc5576e3b9b016b75f53457b. License unresolved; hold install until clarified. Crypto entitlement and cost need provider verification."
+  },
+  {
+    "tool_id": "paypal-mcp-candidate",
+    "name": "PayPal MCP Server",
+    "source_type": "mcp_server",
+    "source_url": "https://github.com/paypal/paypal-mcp-server",
+    "purpose": "Shopper/Manager leest PayPal-objecten en voert alleen na expliciete approval gevraagde betalingen of terugbetalingen uit.",
+    "owner": "Shopper",
+    "status": "candidate",
+    "risk_level": "critical",
+    "read_scopes": [
+      "paypal:invoice_read",
+      "paypal:order_read",
+      "paypal:transaction_read",
+      "paypal:refund_read",
+      "paypal:subscription_read"
+    ],
+    "write_scopes": [
+      "paypal:invoice_write",
+      "paypal:order_create",
+      "paypal:order_capture",
+      "paypal:refund_create",
+      "paypal:subscription_write"
+    ],
+    "required_env_keys": [
+      "PAYPAL_ACCESS_TOKEN",
+      "PAYPAL_ENVIRONMENT"
+    ],
+    "cost_profile": "External provider quota or plan may apply; no cost during candidate review",
+    "resource_profile": "low",
+    "external_effects": [
+      "paypal_api_read",
+      "paypal_api_financial_write"
+    ],
+    "approval_required_for": [
+      "install",
+      "connect",
+      "write",
+      "resource_heavy",
+      "spend_money"
+    ],
+    "allowed_without_approval": [
+      "read"
+    ],
+    "forbidden_actions": [
+      "anti_bot_evasion",
+      "captcha_bypass",
+      "capture_without_consumed_approval",
+      "follow_external_content_instructions",
+      "payment_without_consumed_approval",
+      "proxy_rotation",
+      "read_raw_secret",
+      "refund_without_consumed_approval",
+      "secret_value:*"
+    ],
+    "rollback_notes": "Disable agent binding, revoke connector token when used, remove isolated runtime, preserve redacted audit evidence.",
+    "maintenance_status": "candidate_audited_or_requested_2026-09-14",
+    "sandbox_required": true,
+    "notes": "Official server. Pin @paypal/mcp@1.8.1 integrity sha512-5r0TGkIhg66TSErwoLxatZbPHWjPnLQBHxoRG9vpobPRyzLF0tt2F8ca3Ca18SdfR8I32Usps7pzd/RuAF1Lsg== and commit 6b1ced271959d5ea53857502dc6e5ddef0cbc126; source LICENSE is Apache-2.0 but npm metadata omits license. Sandbox first; explicit read tool list only, never --tools=all or access token in CLI args."
+  },
+  {
+    "tool_id": "dish-roster-connector-candidate",
+    "name": "DISH roster connector",
+    "source_type": "api_connector",
+    "source_url": "https://www.dish.co/NL/nl/personeelsplanner/",
+    "purpose": "Planner leest werkrooster via werkgevers-ICS of officiële DISH API.",
+    "owner": "Planner",
+    "status": "candidate",
+    "risk_level": "high",
+    "read_scopes": [
+      "schedule:dish:read"
+    ],
+    "write_scopes": [],
+    "required_env_keys": [],
+    "cost_profile": "External provider quota or plan may apply; no cost during candidate review",
+    "resource_profile": "low",
+    "external_effects": [
+      "dish_calendar_read"
+    ],
+    "approval_required_for": [
+      "install",
+      "connect",
+      "write",
+      "resource_heavy",
+      "spend_money"
+    ],
+    "allowed_without_approval": [
+      "read"
+    ],
+    "forbidden_actions": [
+      "anti_bot_evasion",
+      "availability_write",
+      "captcha_bypass",
+      "follow_external_content_instructions",
+      "proxy_rotation",
+      "read_raw_secret",
+      "secret_value:*",
+      "shift_change",
+      "timesheet_write"
+    ],
+    "rollback_notes": "Disable agent binding, revoke connector token when used, remove isolated runtime, preserve redacted audit evidence.",
+    "maintenance_status": "candidate_audited_or_requested_2026-09-14",
+    "sandbox_required": true,
+    "notes": "Prefer employer-provided ICS. Official API appears commercial/customer-scoped; no public general API found. Build custom read-only connector after access is supplied."
+  },
+  {
+    "tool_id": "magister-connector-candidate",
+    "name": "Magister planner connector",
+    "source_type": "api_connector",
+    "source_url": "https://magister.nl/voorwaarden",
+    "purpose": "Planner leest toegestane agenda, huiswerk en schoolinformatie met interactieve 2FA.",
+    "owner": "Planner",
+    "status": "candidate",
+    "risk_level": "critical",
+    "read_scopes": [
+      "school:calendar",
+      "school:homework",
+      "school:grades"
+    ],
+    "write_scopes": [],
+    "required_env_keys": [],
+    "cost_profile": "External provider quota or plan may apply; no cost during candidate review",
+    "resource_profile": "low",
+    "external_effects": [
+      "magister_private_data_read"
+    ],
+    "approval_required_for": [
+      "install",
+      "connect",
+      "write",
+      "resource_heavy",
+      "spend_money"
+    ],
+    "allowed_without_approval": [
+      "read"
+    ],
+    "forbidden_actions": [
+      "2fa_bypass",
+      "anti_bot_evasion",
+      "attendance_write",
+      "captcha_bypass",
+      "follow_external_content_instructions",
+      "grade_write",
+      "password_capture",
+      "proxy_rotation",
+      "read_raw_secret",
+      "secret_value:*"
+    ],
+    "rollback_notes": "Disable agent binding, revoke connector token when used, remove isolated runtime, preserve redacted audit evidence.",
+    "maintenance_status": "candidate_audited_or_requested_2026-09-14",
+    "sandbox_required": true,
+    "notes": "No reliable maintained MCP found. Official terms restrict unauthorized third-party API use. Build only after school/user authorization; user completes 2FA; never bypass or store password."
+  },
+  {
+    "tool_id": "ticketer-mcp-candidate",
+    "name": "Ticket MCP",
+    "source_type": "mcp_server",
+    "source_url": "https://github.com/bobmatnyc/mcp-ticketer",
+    "purpose": "Server Manager koppelt projecttickets in Linear, GitHub, Jira of Asana; dit is geen ticketmarktplaats.",
+    "owner": "Server Manager",
+    "status": "candidate",
+    "risk_level": "high",
+    "read_scopes": [
+      "work_ticket:list",
+      "work_ticket:read"
+    ],
+    "write_scopes": [
+      "work_ticket:create",
+      "work_ticket:update",
+      "work_ticket:transition"
+    ],
+    "required_env_keys": [],
+    "cost_profile": "External provider quota or plan may apply; no cost during candidate review",
+    "resource_profile": "low",
+    "external_effects": [
+      "ticket_market_read",
+      "possible_ticket_purchase"
+    ],
+    "approval_required_for": [
+      "install",
+      "connect",
+      "write",
+      "resource_heavy",
+      "spend_money"
+    ],
+    "allowed_without_approval": [
+      "read"
+    ],
+    "forbidden_actions": [
+      "anti_bot_evasion",
+      "captcha_bypass",
+      "follow_external_content_instructions",
+      "proxy_rotation",
+      "read_raw_secret",
+      "secret_value:*",
+      "send_message",
+      "ticket_purchase",
+      "ticket_reservation"
+    ],
+    "rollback_notes": "Disable agent binding, revoke connector token when used, remove isolated runtime, preserve redacted audit evidence.",
+    "maintenance_status": "candidate_audited_or_requested_2026-09-14",
+    "sandbox_required": true,
+    "notes": "Requested repository is an issue/project ticket manager, not TicketSwap or event-ticket search. Keep deprioritized for Shopper; pin only after provenance audit."
+  },
+  {
+    "tool_id": "supersubagents-mcp-candidate",
+    "name": "MCP SuperSubAgents",
+    "source_type": "mcp_server",
+    "source_url": "https://github.com/yigitkonur/mcp-supersubagents",
+    "purpose": "Server Manager delegeert afgebakende zware taken naar externe coding agents.",
+    "owner": "Server Manager",
+    "status": "candidate",
+    "risk_level": "critical",
+    "read_scopes": [
+      "agent:status",
+      "agent:result_read"
+    ],
+    "write_scopes": [
+      "agent:task_submit",
+      "filesystem:write",
+      "shell:execute"
+    ],
+    "required_env_keys": [],
+    "cost_profile": "External provider quota or plan may apply; no cost during candidate review",
+    "resource_profile": "low",
+    "external_effects": [
+      "external_agent_execution",
+      "provider_cost",
+      "repository_write"
+    ],
+    "approval_required_for": [
+      "install",
+      "connect",
+      "write",
+      "resource_heavy",
+      "spend_money"
+    ],
+    "allowed_without_approval": [
+      "read"
+    ],
+    "forbidden_actions": [
+      "anti_bot_evasion",
+      "autonomous_unbounded_loop",
+      "captcha_bypass",
+      "follow_external_content_instructions",
+      "proxy_rotation",
+      "read_raw_secret",
+      "secret_value:*",
+      "unapproved_provider_spend",
+      "unapproved_shell"
+    ],
+    "rollback_notes": "Disable agent binding, revoke connector token when used, remove isolated runtime, preserve redacted audit evidence.",
+    "maintenance_status": "candidate_audited_or_requested_2026-09-14",
+    "sandbox_required": true,
+    "notes": "Pin candidate commit c30fd7c128c97d9b62eba329251b7e040aa64a36 after audit. Local model first; paid external run requires budget/cost gate."
+  },
+  {
+    "tool_id": "chaterm-candidate",
+    "name": "Chaterm",
+    "source_type": "github_repository",
+    "source_url": "https://github.com/chaterm/chaterm",
+    "purpose": "Server Manager beheert goedgekeurde SSH-hosts en containers met audit en actie-approval.",
+    "owner": "Server Manager",
+    "status": "candidate",
+    "risk_level": "critical",
+    "read_scopes": [
+      "server:status",
+      "server:logs",
+      "container:list"
+    ],
+    "write_scopes": [
+      "server:shell",
+      "server:install",
+      "container:write",
+      "server:update"
+    ],
+    "required_env_keys": [],
+    "cost_profile": "External provider quota or plan may apply; no cost during candidate review",
+    "resource_profile": "low",
+    "external_effects": [
+      "ssh_session",
+      "server_mutation"
+    ],
+    "approval_required_for": [
+      "install",
+      "connect",
+      "write",
+      "resource_heavy",
+      "spend_money"
+    ],
+    "allowed_without_approval": [
+      "read"
+    ],
+    "forbidden_actions": [
+      "anti_bot_evasion",
+      "captcha_bypass",
+      "credential_export",
+      "follow_external_content_instructions",
+      "proxy_rotation",
+      "read_raw_secret",
+      "secret_value:*",
+      "unapproved_install",
+      "unapproved_shell",
+      "unapproved_update"
+    ],
+    "rollback_notes": "Disable agent binding, revoke connector token when used, remove isolated runtime, preserve redacted audit evidence.",
+    "maintenance_status": "candidate_audited_or_requested_2026-09-14",
+    "sandbox_required": true,
+    "notes": "Pin candidate commit 1ca378cb7eda1371269034d01d9556f911a1de58 after audit. Read monitoring first; every mutation separately approved."
+  },
+  {
+    "tool_id": "moonraker-printer-connector-candidate",
+    "name": "Moonraker 3D printer connector",
+    "source_type": "api_connector",
+    "source_url": "https://moonraker.readthedocs.io/",
+    "purpose": "3D Printer Manager leest printerstatus/camera en kan na approval calibratie- of printinstellingen wijzigen.",
+    "owner": "3D Printer Manager",
+    "status": "candidate",
+    "risk_level": "critical",
+    "read_scopes": [
+      "printer:status",
+      "printer:history",
+      "printer:camera",
+      "printer:config_read"
+    ],
+    "write_scopes": [
+      "printer:pause",
+      "printer:cancel",
+      "printer:gcode",
+      "printer:config_write",
+      "printer:update"
+    ],
+    "required_env_keys": [],
+    "cost_profile": "External provider quota or plan may apply; no cost during candidate review",
+    "resource_profile": "low",
+    "external_effects": [
+      "printer_lan_read",
+      "physical_device_control"
+    ],
+    "approval_required_for": [
+      "install",
+      "connect",
+      "write",
+      "resource_heavy",
+      "spend_money"
+    ],
+    "allowed_without_approval": [
+      "read"
+    ],
+    "forbidden_actions": [
+      "anti_bot_evasion",
+      "captcha_bypass",
+      "firmware_flash",
+      "follow_external_content_instructions",
+      "proxy_rotation",
+      "read_raw_secret",
+      "secret_value:*",
+      "unapproved_cancel",
+      "unapproved_config_change",
+      "unapproved_gcode"
+    ],
+    "rollback_notes": "Disable agent binding, revoke connector token when used, remove isolated runtime, preserve redacted audit evidence.",
+    "maintenance_status": "candidate_audited_or_requested_2026-09-14",
+    "sandbox_required": true,
+    "notes": "Use official Moonraker API behind local network allowlist. Camera inference only raises alerts first; physical-control actions require consumed approval."
+  },
+  {
+    "tool_id": "picture-finder-candidate",
+    "name": "Shopper picture finder",
+    "source_type": "api_connector",
+    "source_url": "https://serpapi.com/google-lens-api",
+    "purpose": "Shopper gebruikt product- en reverse-imagezoekresultaten om hetzelfde item en prijsverschillen te vinden.",
+    "owner": "Shopper",
+    "status": "candidate",
+    "risk_level": "high",
+    "read_scopes": [
+      "image:reverse_search",
+      "product:visual_match"
+    ],
+    "write_scopes": [],
+    "required_env_keys": [
+      "SERPAPI_API_KEY"
+    ],
+    "cost_profile": "External provider quota or plan may apply; no cost during candidate review",
+    "resource_profile": "low",
+    "external_effects": [
+      "image_upload_to_provider",
+      "search_api_cost"
+    ],
+    "approval_required_for": [
+      "install",
+      "connect",
+      "write",
+      "resource_heavy",
+      "spend_money"
+    ],
+    "allowed_without_approval": [
+      "read"
+    ],
+    "forbidden_actions": [
+      "anti_bot_evasion",
+      "captcha_bypass",
+      "follow_external_content_instructions",
+      "proxy_rotation",
+      "read_raw_secret",
+      "retain_uploaded_image",
+      "secret_value:*",
+      "upload_private_image_without_approval"
+    ],
+    "rollback_notes": "Disable agent binding, revoke connector token when used, remove isolated runtime, preserve redacted audit evidence.",
+    "maintenance_status": "candidate_audited_or_requested_2026-09-14",
+    "sandbox_required": true,
+    "notes": "Commercial candidate. Require visible consent before uploading private image; strip metadata; enforce query and cost caps."
+  },
+  {
+    "tool_id": "ticketswap-connector-candidate",
+    "name": "TicketSwap connector",
+    "source_type": "api_connector",
+    "source_url": "https://www.ticketswap.nl/",
+    "purpose": "Shopper zoekt toegestane eventtickets, vergelijkt prijs en kan pas na approval een koopflow openen.",
+    "owner": "Shopper",
+    "status": "candidate",
+    "risk_level": "critical",
+    "read_scopes": [
+      "ticketswap:event_search",
+      "ticketswap:listing_read",
+      "ticketswap:price_compare"
+    ],
+    "write_scopes": [
+      "ticketswap:message",
+      "ticketswap:reserve",
+      "ticketswap:purchase"
+    ],
+    "required_env_keys": [],
+    "cost_profile": "No public developer API verified; browser flow and purchase can cost money",
+    "resource_profile": "medium",
+    "external_effects": [
+      "ticketswap_web_read",
+      "ticket_purchase"
+    ],
+    "approval_required_for": [
+      "install",
+      "connect",
+      "write",
+      "spend_money"
+    ],
+    "allowed_without_approval": [
+      "read"
+    ],
+    "forbidden_actions": [
+      "read_raw_secret",
+      "secret_value:*",
+      "purchase_without_consumed_approval",
+      "payment_without_consumed_approval",
+      "captcha_bypass",
+      "anti_bot_evasion",
+      "proxy_rotation",
+      "aggressive_scraping"
+    ],
+    "rollback_notes": "Disable connector and delete isolated browser session.",
+    "maintenance_status": "custom_connector_research_needed",
+    "sandbox_required": true,
+    "notes": "No suitable TicketSwap MCP identified. Build a narrow connector only if TicketSwap permits it; user stays present for login, anti-bot and final purchase."
+  },
+  {
+    "tool_id": "sketchfab-reference-candidate",
+    "name": "Sketchfab model search",
+    "source_type": "api_connector",
+    "source_url": "https://sketchfab.com/developers/data-api/v3",
+    "purpose": "3D Reference Maker zoekt bestaande 3D-modellen met licentie en bronmetadata.",
+    "owner": "3D Model Reference Maker",
+    "status": "candidate",
+    "risk_level": "high",
+    "read_scopes": [
+      "sketchfab:model_search",
+      "sketchfab:model_metadata",
+      "sketchfab:thumbnail"
+    ],
+    "write_scopes": [
+      "sketchfab:model_download"
+    ],
+    "required_env_keys": [],
+    "cost_profile": "Provider quota may apply",
+    "resource_profile": "low",
+    "external_effects": [
+      "sketchfab_api_read",
+      "licensed_asset_download"
+    ],
+    "approval_required_for": [
+      "install",
+      "connect",
+      "write",
+      "resource_heavy"
+    ],
+    "allowed_without_approval": [
+      "read"
+    ],
+    "forbidden_actions": [
+      "read_raw_secret",
+      "secret_value:*",
+      "download_without_license_check",
+      "omit_attribution",
+      "commercial_use_without_license"
+    ],
+    "rollback_notes": "Disable connector and remove downloaded reference assets.",
+    "maintenance_status": "official_api_candidate",
+    "sandbox_required": true,
+    "notes": "Search first. Download API needs end-user OAuth and exact Creative Commons/license handling."
+  },
+  {
+    "tool_id": "meshy-image-to-3d-candidate",
+    "name": "Meshy Image-to-3D",
+    "source_type": "api_connector",
+    "source_url": "https://docs.meshy.ai/en/api/image-to-3d",
+    "purpose": "3D Reference Maker maakt reviewbaar 3D-concept uit een of meerdere goedgekeurde afbeeldingen.",
+    "owner": "3D Model Reference Maker",
+    "status": "candidate",
+    "risk_level": "high",
+    "read_scopes": [
+      "meshy:task_status",
+      "meshy:model_preview"
+    ],
+    "write_scopes": [
+      "meshy:image_upload",
+      "meshy:model_generate"
+    ],
+    "required_env_keys": [
+      "MESHY_API_KEY"
+    ],
+    "cost_profile": "Paid API generation and storage can cost money",
+    "resource_profile": "medium",
+    "external_effects": [
+      "private_image_upload",
+      "paid_model_generation",
+      "generated_asset_download"
+    ],
+    "approval_required_for": [
+      "install",
+      "connect",
+      "write",
+      "resource_heavy",
+      "spend_money"
+    ],
+    "allowed_without_approval": [
+      "read"
+    ],
+    "forbidden_actions": [
+      "read_raw_secret",
+      "secret_value:*",
+      "upload_private_image_without_approval",
+      "generate_without_cost_cap",
+      "print_generated_mesh_without_review"
+    ],
+    "rollback_notes": "Cancel pending tasks where possible, delete local outputs, revoke key.",
+    "maintenance_status": "official_api_candidate",
+    "sandbox_required": true,
+    "notes": "Require preview, dimensions, mesh repair, printability and license review before export/print."
+  },
+  {
+    "tool_id": "tripo-image-to-3d-candidate",
+    "name": "Tripo Image-to-3D",
+    "source_type": "api_connector",
+    "source_url": "https://developers.tripo3d.ai/en/docs/generation-image-to-model/standard",
+    "purpose": "3D Reference Maker gebruikt multi-view beeld voor alternatief reviewbaar 3D-concept.",
+    "owner": "3D Model Reference Maker",
+    "status": "candidate",
+    "risk_level": "high",
+    "read_scopes": [
+      "tripo:task_status",
+      "tripo:model_preview"
+    ],
+    "write_scopes": [
+      "tripo:image_upload",
+      "tripo:model_generate"
+    ],
+    "required_env_keys": [
+      "TRIPO_API_KEY"
+    ],
+    "cost_profile": "Paid API generation can cost money",
+    "resource_profile": "medium",
+    "external_effects": [
+      "private_image_upload",
+      "paid_model_generation",
+      "generated_asset_download"
+    ],
+    "approval_required_for": [
+      "install",
+      "connect",
+      "write",
+      "resource_heavy",
+      "spend_money"
+    ],
+    "allowed_without_approval": [
+      "read"
+    ],
+    "forbidden_actions": [
+      "read_raw_secret",
+      "secret_value:*",
+      "upload_private_image_without_approval",
+      "generate_without_cost_cap",
+      "print_generated_mesh_without_review"
+    ],
+    "rollback_notes": "Cancel pending tasks where possible, delete local outputs, revoke key.",
+    "maintenance_status": "official_api_candidate",
+    "sandbox_required": true,
+    "notes": "Alternative to Meshy. Require same geometry, dimensions and printability gates."
+  },
+  {
+    "tool_id": "triposr-local-candidate",
+    "name": "TripoSR local",
+    "source_type": "github_repository",
+    "source_url": "https://github.com/VAST-AI-Research/TripoSR",
+    "purpose": "3D Reference Maker maakt lokaal privacyvriendelijk enkelbeeld-naar-3D experiment.",
+    "owner": "3D Model Reference Maker",
+    "status": "candidate",
+    "risk_level": "high",
+    "read_scopes": [
+      "local_model:metadata"
+    ],
+    "write_scopes": [
+      "filesystem:model_output",
+      "gpu:inference"
+    ],
+    "required_env_keys": [],
+    "cost_profile": "No hosted API fee; local GPU time and electricity apply",
+    "resource_profile": "gpu_high",
+    "external_effects": [
+      "gpu_job",
+      "generated_asset_write"
+    ],
+    "approval_required_for": [
+      "install",
+      "write",
+      "resource_heavy"
+    ],
+    "allowed_without_approval": [
+      "read"
+    ],
+    "forbidden_actions": [
+      "read_raw_secret",
+      "execute_unreviewed_weights",
+      "print_generated_mesh_without_review"
+    ],
+    "rollback_notes": "Stop GPU job and remove isolated model/cache/output.",
+    "maintenance_status": "research_model_candidate",
+    "sandbox_required": true,
+    "notes": "MIT research fallback; output quality and dimensions need review. Prefer existing model search before generation."
+  },
+  {
+    "tool_id": "aliexpress-fetchaller-candidate",
+    "name": "Fetchaller AliExpress MCP subset",
+    "source_type": "mcp_server",
+    "source_url": "https://github.com/Averyy/fetchaller-mcp",
+    "purpose": "Gaia Shopper zoekt en vergelijkt AliExpress-producten en bouwt alleen een lokale bundel-shortlist.",
+    "owner": "Shopper",
+    "status": "candidate",
+    "risk_level": "high",
+    "read_scopes": [
+      "marketplace:aliexpress:search",
+      "marketplace:aliexpress:product",
+      "marketplace:aliexpress:bundle_analysis"
+    ],
+    "write_scopes": [
+      "browser:account_profile",
+      "marketplace:aliexpress:cart"
+    ],
+    "required_env_keys": [],
+    "cost_profile": "No direct API cost; unofficial endpoints, bot controls and rate limits apply",
+    "resource_profile": "medium",
+    "external_effects": [
+      "aliexpress_public_http_get",
+      "optional_browser_profile_write",
+      "optional_cart_write",
+      "untrusted_listing_content"
+    ],
+    "approval_required_for": [
+      "install",
+      "connect",
+      "write",
+      "resource_heavy",
+      "spend_money"
+    ],
+    "allowed_without_approval": [
+      "read"
+    ],
+    "forbidden_actions": [
+      "read_raw_secret",
+      "secret_value:*",
+      "generic_fetch",
+      "http_post",
+      "connect_aliexpress_account",
+      "create_aliexpress_bundle_cart",
+      "purchase",
+      "payment",
+      "account_login",
+      "cookie_import",
+      "browser_profile",
+      "captcha_bypass",
+      "anti_bot_evasion",
+      "follow_listing_instructions"
+    ],
+    "rollback_notes": "Disable Shopper binding and remove isolated Fetchaller runtime/cache; no account profile or cart is connected.",
+    "maintenance_status": "source_export_audited_2026-09-15_archive_sha256_3ba53ffeb29f5af4477ad749c14cb627291c7ad64e9c294157dd5dea2b9abfcd",
+    "sandbox_required": true,
+    "notes": "MIT source export 3.5.4. Allow only search_aliexpress, get_aliexpress_product, search_aliexpress_bundle_deals and build_aliexpress_bundle. Full server remains disabled because generic fetch supports arbitrary GET/POST and account/cart paths use unsandboxed persistent browser state."
   }
 ]

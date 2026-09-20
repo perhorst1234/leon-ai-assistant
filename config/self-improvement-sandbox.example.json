@@ -1,0 +1,9 @@
+{
+  "enabled": false,
+  "executable": "/usr/bin/podman",
+  "image": "",
+  "base_commit": "",
+  "allowed_podman_versions": [],
+  "service_uid": 10001,
+  "service_gid": 10001
+}

@@ -13,13 +13,19 @@ node_modules/
 .vinext/
 .wrangler/
 dist/
+!integrations/shopper/vinted-safe/dist/
+!integrations/shopper/vinted-safe/dist/index.js
+!integrations/shopper/aliexpress-safe/dist/
+!integrations/shopper/aliexpress-safe/dist/index.js
 coverage/
 __pycache__/
 .pytest_cache/
 .venv/
+*.egg-info/
 *.tsbuildinfo
 
 # Private runtime data and recovery copies
+/.runtime/
 /recovery/
 /backups/
 /data/
