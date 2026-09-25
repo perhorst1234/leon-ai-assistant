@@ -23,6 +23,12 @@ kan bij een actief Ollama-model naar de geconfigureerde OpenAI-fallback. De
 providerkeuze wordt aan de aanvraag gebonden. Stand: 448 backendtests en 51
 webtests.
 
+Op 25 september zijn de door de gebruiker aangeleverde Firecrawl-key en
+Google OAuth-client veilig in `.env.local` gezet. Firecrawl staat aan met een
+expliciete domeinallowlist en de live status meldt configured. Google staat
+aan, maar blijft fail-closed tot de gebruiker de OAuth-flow afrondt en een
+access/refresh-token met Agenda- en Gmail-read-only scopes heeft.
+
 ## Doelserver nu
 
 Leon draait lokaal als user-systemd-services: Ollama, backend, worker, web,
