@@ -51,7 +51,7 @@ def test_chat_preview_classifies_sensitive_text_for_local_only_routing(tmp_path,
     monkeypatch.setenv("LEON_LOCAL_MODEL_ENABLED", "1")
     service = ChatService(make_store(tmp_path))
     conversation = service.create_conversation({"request_id": request_id()})
-    sensitive = quote(service, conversation["id"], "Dit is een sensueel onderwerp")
+    sensitive = quote(service, conversation["id"], "Dit is een sensuele vraag")
     ordinary = quote(service, conversation["id"], "Vertel een grap")
     assert sensitive["sensitivity"] == {"category": "sexual", "local_only": True}
     assert ordinary["sensitivity"] == {"category": "normal", "local_only": False}
