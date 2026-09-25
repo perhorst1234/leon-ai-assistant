@@ -4090,8 +4090,8 @@ class ControlPlaneStore:
         task_id = str(proposal.get("task_id") or "")
         if not task_id:
             raise ValueError("Agent assignment proposal requires task_id")
-        if proposal.get("runner_kind") != "local_mock":
-            raise ValueError("Only local_mock runner assignments are supported")
+        if proposal.get("runner_kind") not in {"local_mock", "local_ollama"}:
+            raise ValueError("Only local_mock and local_ollama runner assignments are supported")
         if proposal.get("external_calls_allowed") or proposal.get("secret_values_read"):
             raise ValueError("Unsafe assignment proposal: external calls or secret reads are not allowed")
         with self.connect() as conn:
@@ -4216,6 +4216,7 @@ class ControlPlaneStore:
         proposal_id: str,
         *,
         review_note: str,
+        work_queue: Any | None = None,
         actor_type: str = "reviewer",
         actor_id: str = "dashboard",
     ) -> dict[str, str]:
@@ -4243,50 +4244,64 @@ class ControlPlaneStore:
                 raise ValueError("Terminal tasks cannot be assigned to agents")
             proposal = json.loads(row["proposal_json"])
 
-        if proposal.get("runner_kind") != "local_mock":
-            raise ValueError("Only local_mock assignments can be applied")
+        runner_kind = str(proposal.get("runner_kind") or "")
+        if runner_kind not in {"local_mock", "local_ollama"}:
+            raise ValueError("Only local_mock and local_ollama assignments can be applied")
+        if not bool(proposal.get("execution_allowed")):
+            raise ValueError("Agent assignment policy does not allow execution")
         if proposal.get("external_calls_allowed") or proposal.get("secret_values_read"):
             raise ValueError("Unsafe assignment proposal cannot be applied")
+        if runner_kind == "local_ollama" and work_queue is None:
+            raise ValueError("Local Ollama assignments require the durable work queue")
+
+        timestamp = now_iso()
+        with self.connect() as conn:
+            conn.execute("BEGIN IMMEDIATE")
+            current = conn.execute(
+                "SELECT task_id, status FROM agent_assignment_proposals WHERE id = ?",
+                (proposal_id,),
+            ).fetchone()
+            if current is None:
+                raise ValueError("Unknown agent assignment proposal id")
+            if current["status"] != "prepared":
+                raise ValueError("Only prepared agent assignment proposals can be applied")
+            task = conn.execute("SELECT status FROM tasks WHERE id = ?", (current["task_id"],)).fetchone()
+            if task is None or task["status"] in {"done", "rejected"}:
+                raise ValueError("Terminal or missing tasks cannot be assigned to agents")
+            conn.execute(
+                """
+                UPDATE agent_assignment_proposals
+                SET status = 'applying', review_note = ?, updated_at = ?
+                WHERE id = ? AND status = 'prepared'
+                """,
+                (review_note, timestamp, proposal_id),
+            )
 
         model_route = proposal.get("model_route") or {}
-        run_id = self.create_agent_run(
-            task_id=str(proposal["task_id"]),
-            agent_role=str(proposal.get("agent_role") or "Mock Builder Agent"),
-            task_type=str(proposal.get("task_type") or "documentation"),
-            complexity=str(proposal.get("complexity") or "medium"),
-            risk=str(proposal.get("risk") or "medium"),
-            privacy=str(proposal.get("privacy") or "normal"),
-            budget_mode=str(proposal.get("budget_mode") or "balanced"),
-            model_route=model_route,
-            task_packet=proposal.get("task_packet") or {},
-            allowed_actions=list(proposal.get("allowed_actions") or []),
-            forbidden_actions=list(proposal.get("forbidden_actions") or []),
-            actor_type="system",
-            actor_id="agent-assignment-gate",
-        )
-        result_summary = (
-            f"Local mock assignment for task '{proposal.get('task_title')}' created a reviewable agent run "
-            f"using route {model_route.get('route')} / {model_route.get('model')}. "
-            "No external calls, shell commands, file writes, account connections, GPU jobs, or secret reads were performed."
-        )
-        evidence = [
-            {
-                "type": "assignment_gate",
-                "summary": "Agent run was started from an explicitly applied assignment proposal.",
-                "agent_assignment_proposal_id": proposal_id,
-            },
-            {
-                "type": "safety",
-                "summary": "Runner kind is local_mock with external calls, shell commands, file writes, and secret reads disabled.",
-            },
-            {
-                "type": "model_route",
-                "summary": model_route.get("reason", ""),
-                "route": model_route.get("route"),
-                "model": model_route.get("model"),
-            },
-        ]
-        self.complete_agent_run(run_id, result_summary=result_summary, evidence=evidence)
+        try:
+            run_id = self.create_agent_run(
+                task_id=str(proposal["task_id"]),
+                agent_role=str(proposal.get("agent_role") or "Mock Builder Agent"),
+                task_type=str(proposal.get("task_type") or "documentation"),
+                complexity=str(proposal.get("complexity") or "medium"),
+                risk=str(proposal.get("risk") or "medium"),
+                privacy=str(proposal.get("privacy") or "normal"),
+                budget_mode=str(proposal.get("budget_mode") or "balanced"),
+                model_route=model_route,
+                task_packet=proposal.get("task_packet") or {},
+                allowed_actions=list(proposal.get("allowed_actions") or []),
+                forbidden_actions=list(proposal.get("forbidden_actions") or []),
+                runner_kind=runner_kind,
+                actor_type="system",
+                actor_id="agent-assignment-gate",
+            )
+        except Exception:
+            with self.connect() as conn:
+                conn.execute(
+                    "UPDATE agent_assignment_proposals SET status = 'prepared', review_note = '', updated_at = ? WHERE id = ? AND status = 'applying' AND applied_agent_run_id IS NULL",
+                    (now_iso(), proposal_id),
+                )
+            raise
 
         timestamp = now_iso()
         with self.connect() as conn:
@@ -4295,7 +4310,7 @@ class ControlPlaneStore:
                 UPDATE agent_assignment_proposals
                 SET status = 'applied', applied_agent_run_id = ?,
                     review_note = ?, updated_at = ?, applied_at = ?
-                WHERE id = ?
+                WHERE id = ? AND status = 'applying'
                 """,
                 (run_id, review_note, timestamp, timestamp, proposal_id),
             )
@@ -4306,7 +4321,7 @@ class ControlPlaneStore:
                 event_type="agent_assignment_applied",
                 task_id=str(proposal["task_id"]),
                 risk_level=str(proposal.get("risk") or "medium"),
-                summary=f"Agent assignment proposal {proposal_id} applied to local mock run {run_id}.",
+                summary=f"Agent assignment proposal {proposal_id} applied to {runner_kind} run {run_id}.",
                 evidence="dashboard agent assignment review",
                 redacted_payload={
                     "agent_assignment_proposal_id": proposal_id,
@@ -4321,7 +4336,59 @@ class ControlPlaneStore:
                 },
                 timestamp=timestamp,
             )
-        return {"agent_run_id": run_id}
+        if runner_kind == "local_mock":
+            result_summary = (
+                f"Local mock assignment for task '{proposal.get('task_title')}' created a reviewable agent run "
+                f"using route {model_route.get('route')} / {model_route.get('model')}. "
+                "No external calls, shell commands, file writes, account connections, GPU jobs, or secret reads were performed."
+            )
+            evidence = [
+                {
+                    "type": "assignment_gate",
+                    "summary": "Agent run was started from an explicitly applied assignment proposal.",
+                    "agent_assignment_proposal_id": proposal_id,
+                },
+                {
+                    "type": "safety",
+                    "summary": "Runner kind is local_mock with external calls, shell commands, file writes, and secret reads disabled.",
+                },
+                {
+                    "type": "model_route",
+                    "summary": model_route.get("reason", ""),
+                    "route": model_route.get("route"),
+                    "model": model_route.get("model"),
+                },
+            ]
+            self.complete_agent_run(run_id, result_summary=result_summary, evidence=evidence)
+        if runner_kind == "local_ollama":
+            from leon_control_plane.agent_runtime import build_local_agent_prompt
+
+            prompt = build_local_agent_prompt(proposal.get("task_packet") or {})
+            try:
+                job = work_queue.enqueue_agent_run(
+                    task_id=str(proposal["task_id"]),
+                    agent_run_id=run_id,
+                    assignment_proposal_id=proposal_id,
+                    prompt=prompt,
+                )
+            except Exception:
+                self.complete_agent_run(
+                    run_id,
+                    result_summary="Local agent work could not be queued.",
+                    evidence=[{
+                        "type": "local_queue_failure",
+                        "summary": "The bounded local model job was not accepted by the durable queue.",
+                    }],
+                    status="failed",
+                    recovery_suggestions=[{
+                        "action": "create_new_assignment",
+                        "summary": "Check local model configuration and create a new assignment proposal.",
+                    }],
+                    actor_id="agent-assignment-gate",
+                )
+                raise
+            return {"agent_run_id": run_id, "work_job_id": str(job["id"]), "status": "queued"}
+        return {"agent_run_id": run_id, "status": "waiting_for_review"}
 
     def create_agent_run(
         self,
@@ -4337,6 +4404,7 @@ class ControlPlaneStore:
         task_packet: dict[str, Any],
         allowed_actions: list[str],
         forbidden_actions: list[str],
+        runner_kind: str = "local_mock",
         actor_type: str = "system",
         actor_id: str = "agent-runtime",
     ) -> str:
@@ -4348,13 +4416,17 @@ class ControlPlaneStore:
         forbidden_actions = _redact_audit_value(forbidden_actions)
         model_route = _redact_audit_value(model_route)
         role = normalize_agent_run_role(agent_role)
+        if runner_kind not in {"local_mock", "local_ollama"}:
+            raise ValueError("Unsupported local agent runner")
+        if runner_kind == "local_ollama" and str(risk).lower() in {"high", "r4", "r5"}:
+            raise ValueError("High-risk agent runs cannot use the local Ollama runner")
         gate = evaluate_action_policy(
-            action_type="local_mock_agent_run",
-            requested_scope="local_mock_agent_run",
+            action_type="local_text_agent_run" if runner_kind == "local_ollama" else "local_mock_agent_run",
+            requested_scope="local_text_agent_run" if runner_kind == "local_ollama" else "local_mock_agent_run",
             metadata={
                 "allowed_actions": allowed_actions,
                 "forbidden_actions": forbidden_actions,
-                "runner_kind": "local_mock",
+                "runner_kind": runner_kind,
             },
         )
         if not gate["execution_allowed"]:
@@ -4452,7 +4524,7 @@ class ControlPlaneStore:
                 task_id=task_id,
                 risk_level=risk,
                 summary=f"Agent run {run_id} started for task {task_id}.",
-                evidence="mock/local agent runtime adapter",
+                evidence=f"{runner_kind} agent runtime adapter",
                 redacted_payload={
                     "agent_run_id": run_id,
                     "agent_role": agent_role,
@@ -4481,7 +4553,7 @@ class ControlPlaneStore:
                 target_type="agent_run_task_packet",
                 target_ref=run_id,
                 operation="delete",
-                summary="Local mock run stores only temporary task packet/output state and can be deleted with the run record.",
+                summary=f"{runner_kind} run stores only temporary task packet/output state and can be deleted with the run record.",
                 undo_payload={"delete_agent_run_id": run_id},
                 deletion_supported=True,
                 audit_event_id=start_audit_event_id,
@@ -4528,6 +4600,10 @@ class ControlPlaneStore:
             ).fetchone()
             if row is None:
                 raise ValueError("Unknown agent run id")
+            if row["status"] != "running":
+                if row["status"] == status:
+                    return
+                raise ValueError("Only running agent runs can be completed")
             try:
                 task_packet = json.loads(row["task_packet_json"] or "{}")
             except json.JSONDecodeError:
@@ -4578,7 +4654,7 @@ class ControlPlaneStore:
                 task_id=row["task_id"],
                 risk_level=row["risk"],
                 summary=f"Agent run {run_id} completed with status {status}.",
-                evidence="mock/local agent runtime adapter",
+                evidence="local agent runtime adapter",
                 redacted_payload={
                     "agent_run_id": run_id,
                     "agent_role": row["agent_role"],

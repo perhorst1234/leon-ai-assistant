@@ -6,6 +6,8 @@ import threading
 import uuid
 
 from leon_control_plane.local_model import LocalModelConfig
+from leon_control_plane.agent_assignment import build_agent_assignment_proposal
+from leon_control_plane.agent_runtime import build_local_agent_prompt
 from leon_control_plane.local_worker import LocalWorker
 from leon_control_plane.model_work import ModelExecutor, preview
 from leon_control_plane.openai_text import OpenAIConfig
@@ -116,3 +118,171 @@ def test_transient_local_failure_is_retried_without_external_cost(tmp_path, monk
     assert saved["status"] == "succeeded"
     assert saved["accounted_microusd"] == 0
     assert len(calls) == 2
+
+
+def test_local_agent_assignment_runs_durably_and_waits_for_review(tmp_path, monkeypatch):
+    monkeypatch.setenv("LEON_LOCAL_MODEL_ENABLED", "1")
+    monkeypatch.setenv("LEON_LOCAL_MODEL_HOST", "127.0.0.1")
+    monkeypatch.setenv("LEON_LOCAL_MODEL_PORT", "11434")
+    monkeypatch.setenv("LEON_LOCAL_MODEL_NAME", "qwen2.5-coder:14b")
+    queue = WorkQueue(make_store(tmp_path))
+    task_id = queue.store.create_task(
+        title="Maak lokaal implementatieplan",
+        goal="Lever een kort en controleerbaar plan.",
+        risk_level="medium",
+    )
+    proposal = build_agent_assignment_proposal(
+        task=queue.store.get_task(task_id),
+        runner_kind="local_ollama",
+        agent_role="Leon Local Agent",
+    )
+    assert proposal["execution_allowed"] is True
+    assert proposal["model_route"]["provider"] == "ollama"
+    assert proposal["shell_commands_allowed"] is False
+    assert proposal["file_writes_allowed"] is False
+    proposal_id = queue.store.create_agent_assignment_proposal(proposal)
+    applied = queue.store.apply_agent_assignment_proposal(
+        proposal_id,
+        review_note="Text-only lokale uitvoering is akkoord.",
+        work_queue=queue,
+    )
+    running = next(item for item in queue.store.get_state()["agent_runs"] if item["id"] == applied["agent_run_id"])
+    assert applied["status"] == "queued"
+    assert running["status"] == "running"
+
+    def transport(payload, config):
+        assert "Voer geen tools" in payload["input"]
+        return {
+            "model": config.model,
+            "response": "Resultaat\nPlan klaar.\n\nBewijs\nTaakcontext gebruikt.\n\nOpen vragen\nGeen.",
+            "done": True,
+            "done_reason": "stop",
+            "prompt_eval_count": 80,
+            "eval_count": 24,
+        }
+
+    worker = LocalWorker(queue, model_executor=ModelExecutor(
+        queue,
+        config=OpenAIConfig(),
+        local_config=_config(),
+        local_transport=transport,
+    ))
+    assert worker.run_once()
+    job = queue.get(applied["work_job_id"])
+    completed = next(item for item in queue.store.get_state()["agent_runs"] if item["id"] == applied["agent_run_id"])
+    assert job["status"] == "succeeded"
+    assert job["provider"] == "ollama"
+    assert job["accounted_microusd"] == 0
+    assert completed["status"] == "waiting_for_review"
+    assert completed["review_status"] == "pending"
+    assert completed["result_summary"].startswith("Resultaat")
+    assert any(item["type"] == "local_model" for item in completed["evidence"])
+    assert queue.store.validate_audit_hash_chain()
+
+
+def test_local_agent_prompt_is_bounded_and_redacted():
+    raw_secret = "sk-" + ("z" * 32)
+    prompt = build_local_agent_prompt({
+        "title": "Veilige analyse",
+        "goal": f"Vat dit samen zonder {raw_secret}",
+        "acceptance_criteria": "Geen tools.",
+        "agent_role": "Leon Local Agent",
+        "task_type": "documentation",
+        "source_refs": [],
+        "allowed_actions": ["produce_reviewable_result"],
+        "forbidden_actions": ["read_raw_secrets", "execute_shell_commands", "modify_files"],
+    })
+    assert raw_secret not in prompt
+    assert "[REDACTED_SECRET]" in prompt
+    assert len(prompt.encode("utf-8")) <= 4096
+
+
+def test_local_model_extends_fenced_lease_for_cold_start(tmp_path, monkeypatch):
+    monkeypatch.setenv("LEON_LOCAL_MODEL_ENABLED", "1")
+    now = [1_000.0]
+    queue = WorkQueue(make_store(tmp_path), clock=lambda: now[0])
+    task = queue.store.create_task(title="Cold start", goal="Wait safely", risk_level="low")
+    job = queue.enqueue(
+        task_id=task,
+        request_id=str(uuid.uuid4()),
+        kind=MODEL_KIND,
+        model_request={
+            "prompt": "Geef een kort antwoord.",
+            "max_output_tokens": 64,
+            "max_cost_microusd": 1,
+            "approve_external_text": True,
+        },
+    )
+
+    def slow_transport(_payload, config):
+        now[0] += 31
+        return {
+            "model": config.model,
+            "response": "Klaar.",
+            "done": True,
+            "done_reason": "stop",
+            "prompt_eval_count": 5,
+            "eval_count": 2,
+        }
+
+    worker = LocalWorker(queue, model_executor=ModelExecutor(
+        queue,
+        config=OpenAIConfig(),
+        local_config=_config(),
+        local_transport=slow_transport,
+    ))
+    assert worker.run_once()
+    assert queue.get(job["id"])["status"] == "succeeded"
+
+
+def test_worker_recovers_assignment_applied_before_queue_insert(tmp_path, monkeypatch):
+    monkeypatch.setenv("LEON_LOCAL_MODEL_ENABLED", "1")
+    store = make_store(tmp_path)
+    task_id = store.create_task(title="Recover local run", goal="Resume after crash", risk_level="medium")
+    proposal = build_agent_assignment_proposal(
+        task=store.get_task(task_id),
+        runner_kind="local_ollama",
+        agent_role="Leon Local Agent",
+    )
+    proposal_id = store.create_agent_assignment_proposal(proposal)
+
+    class LostAfterApplyQueue:
+        def enqueue_agent_run(self, **_kwargs):
+            return {"id": "job-lost-before-persist"}
+
+    applied = store.apply_agent_assignment_proposal(
+        proposal_id,
+        review_note="Simulate crash boundary.",
+        work_queue=LostAfterApplyQueue(),
+    )
+    queue = WorkQueue(store)
+    recovered = [job for job in queue.list() if job["task_id"] == task_id]
+    assert len(recovered) == 1
+    assert recovered[0]["status"] == "queued"
+    assert recovered[0]["provider"] == "ollama"
+    run = next(item for item in store.get_state()["agent_runs"] if item["id"] == applied["agent_run_id"])
+    assert run["status"] == "running"
+
+
+def test_high_risk_local_agent_assignment_cannot_be_applied(tmp_path, monkeypatch):
+    monkeypatch.setenv("LEON_LOCAL_MODEL_ENABLED", "1")
+    store = make_store(tmp_path)
+    task_id = store.create_task(title="High risk local run", goal="Do not execute", risk_level="high")
+    proposal = build_agent_assignment_proposal(
+        task=store.get_task(task_id),
+        runner_kind="local_ollama",
+        agent_role="Leon Local Agent",
+    )
+    assert proposal["execution_allowed"] is False
+    proposal_id = store.create_agent_assignment_proposal(proposal)
+    try:
+        store.apply_agent_assignment_proposal(
+            proposal_id,
+            review_note="Must remain blocked.",
+            work_queue=WorkQueue(store),
+        )
+    except ValueError as exc:
+        assert "does not allow" in str(exc)
+    else:
+        raise AssertionError("high-risk local agent assignment was applied")
+    assert store.get_state()["agent_runs"] == []

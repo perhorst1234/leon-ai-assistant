@@ -4402,6 +4402,42 @@ def test_agent_assignment_apply_is_not_duplicate(tmp_path: Path) -> None:
     assert len(store.get_state()["agent_runs"]) == 1
 
 
+def test_agent_assignment_concurrent_apply_is_fenced(tmp_path: Path) -> None:
+    store = make_store(tmp_path)
+    task_id = store.create_task(title="Fence assignment", goal="Start once", priority="P1", risk_level="low")
+    proposal_id = store.create_agent_assignment_proposal(build_agent_assignment_proposal(task=store.get_task(task_id)))
+    entered = threading.Event()
+    release = threading.Event()
+    original = store.create_agent_run
+
+    def delayed_create(**kwargs):
+        entered.set()
+        assert release.wait(5)
+        return original(**kwargs)
+
+    store.create_agent_run = delayed_create  # type: ignore[method-assign]
+    outcomes = []
+
+    def apply_first():
+        try:
+            outcomes.append(store.apply_agent_assignment_proposal(proposal_id, review_note="First apply."))
+        except Exception as exc:  # pragma: no cover - assertion below reports it
+            outcomes.append(exc)
+
+    thread = threading.Thread(target=apply_first)
+    thread.start()
+    assert entered.wait(5)
+    try:
+        store.apply_agent_assignment_proposal(proposal_id, review_note="Concurrent apply.")
+        raise AssertionError("Concurrent assignment apply should fail")
+    except ValueError as exc:
+        assert "prepared" in str(exc)
+    release.set()
+    thread.join(5)
+    assert len(outcomes) == 1 and isinstance(outcomes[0], dict)
+    assert len(store.get_state()["agent_runs"]) == 1
+
+
 def test_agent_assignment_reject_does_not_start_run(tmp_path: Path) -> None:
     store = make_store(tmp_path)
     task_id = store.create_task(title="Rejectable assignment", goal="No run after reject", priority="P2", risk_level="low")
@@ -4446,8 +4482,8 @@ def test_agent_runtime_provider_decision_config_is_safe() -> None:
     config_path = Path(__file__).resolve().parents[1] / "config" / "agent-runtime-provider.json"
     config = json.loads(config_path.read_text(encoding="utf-8"))
     assert config["primary_provider"]["id"] == "openai_agents_sdk_python"
-    assert config["current_runtime"]["id"] == "local_mock"
-    assert config["current_runtime"]["status"] == "active_only_runtime"
+    assert config["current_runtime"]["id"] == "local_ollama"
+    assert config["current_runtime"]["status"] == "active_text_only_runtime"
     contract = config["adapter_contract"]
     assert contract["must_start_from"] == "agent_assignment_proposals"
     assert contract["write_action_requirement"] == "consumed approval id"

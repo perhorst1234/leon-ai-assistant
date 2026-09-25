@@ -85,6 +85,8 @@ class LocalWorker:
         self.model_executor = model_executor if model_executor is not None else ModelExecutor(queue)
 
     def run_once(self) -> bool:
+        self.queue.recover_agent_run_jobs()
+        self.queue.reconcile_agent_runs()
         claim = self.queue.claim()
         if claim is None:
             return False
@@ -99,6 +101,7 @@ class LocalWorker:
             # Private file contents/paths from unexpected exceptions stay out of receipts.
             result = {"ok": False, "step": JOB_STEPS[claim["kind"]][claim["step"]], "reason": "execution_error"}
         self.queue.checkpoint(claim, result)
+        self.queue.reconcile_agent_runs()
         return True
 
 
@@ -114,7 +117,7 @@ def main(argv=None) -> int:
         local_model_config = LocalModelConfig.from_env(env_file=args.env_file)
     except ModelPreflightError as exc:
         parser.error(str(exc))
-    queue = WorkQueue(ControlPlaneStore(args.db, args.seed))
+    queue = WorkQueue(ControlPlaneStore(args.db, args.seed), local_model_config=local_model_config)
     worker = LocalWorker(queue, model_executor=ModelExecutor(queue, config=model_config, local_config=local_model_config))
     try:
         while True:

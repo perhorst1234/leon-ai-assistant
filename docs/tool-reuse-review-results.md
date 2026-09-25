@@ -70,7 +70,7 @@ Bewijsbronnen:
 
 Belangrijkste gates:
 
-- `local_mock` blijft default totdat een aparte sandbox/adapter gate slaagt.
+- `local_ollama` text-only blijft default totdat een aparte externe sandbox/adapter gate slaagt.
 - Alleen `OPENAI_API_KEY` als required env-key naam; geen waarde in logs/API/audit.
 - Geen ShellTool, ApplyPatchTool, ComputerTool, hosted MCP, web/file/code tools in eerste sandbox.
 - Leon permission preflight vóór elke custom function-tool uitvoering.
@@ -79,11 +79,11 @@ Belangrijkste gates:
 
 Latere sandbox-acceptatiecriteria:
 
-- Disabled-by-default adapter achter `local_mock` fallback.
+- Disabled-by-default externe adapter achter `local_ollama` fallback.
 - Eén read-only text-agent run zonder tools, met modelrouting en audit events.
 - Daarna één function-tool demo met Leon permission preflight vóór uitvoering.
 - Geen raw `.env.local` reads; alleen scoped client-injectie.
-- Rollback getest: providerconfig terug naar `local_mock`, dependency/venv/container verwijderen, geen statuspromotie.
+- Rollback getest: providerconfig terug naar `local_ollama`, dependency/venv/container verwijderen, geen statuspromotie.
 
 ## Model Context Protocol servers
 

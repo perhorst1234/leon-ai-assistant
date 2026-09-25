@@ -86,7 +86,30 @@ def view(conn, job_id):
 
 def _eligible(queue, conn, job):
     task = conn.execute("SELECT risk_level FROM tasks WHERE id=?", (job["task_id"],)).fetchone()
-    return queue._task_eligible(conn, job["task_id"]) and task[0] in {"low", "R0", "R1"}
+    if not queue._task_eligible(conn, job["task_id"]):
+        return False
+    try:
+        job_id = job["id"]
+    except (KeyError, IndexError):
+        job_id = job.get("job_id") if isinstance(job, dict) else None
+    binding = conn.execute(
+        """
+        SELECT r.status AS run_status, r.risk, p.status AS proposal_status, p.runner_kind
+        FROM agent_run_work b
+        JOIN agent_runs r ON r.id = b.agent_run_id
+        JOIN agent_assignment_proposals p ON p.id = b.assignment_proposal_id
+        WHERE b.job_id = ?
+        """,
+        (job_id,),
+    ).fetchone()
+    if binding is not None:
+        return (
+            binding["run_status"] == "running"
+            and binding["proposal_status"] == "applied"
+            and binding["runner_kind"] == "local_ollama"
+            and str(binding["risk"]).lower() not in {"high", "r4", "r5"}
+        )
+    return task[0] in {"low", "R0", "R1"}
 
 
 def _unknown():
@@ -130,6 +153,16 @@ class ModelExecutor:
                 self.config.validate()
             if not _eligible(queue, conn, job):
                 raise ValueError("Model execution requires an eligible low-risk task")
+            # Model generation may legitimately outlive the queue's short
+            # claim lease, especially while Ollama loads a cold model. Extend
+            # the same fenced lease before sending; checkpoint still requires
+            # the original token and rejects any stale worker.
+            if is_local:
+                execution_window = self.local_config.timeout_seconds + 30
+                conn.execute(
+                    "UPDATE work_jobs SET lease_until = ?, updated_at = ? WHERE id = ? AND lease_token = ?",
+                    (now + execution_window, now, job["id"], claim["token"]),
+                )
             # Revalidate the complete wire request, including the current model route.
             expected = (local_request_payload(payload["input"], payload["max_output_tokens"], self.local_config)
                         if is_local else request_payload(payload["input"], payload["max_output_tokens"]))

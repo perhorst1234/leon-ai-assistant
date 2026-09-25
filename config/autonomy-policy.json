@@ -7,7 +7,7 @@
     "creating local SQLite control-plane rows for tasks, proposals, routing decisions and audit events",
     "running local tests, compile checks and read-only diagnostics",
     "starting or restarting the local Leon dashboard process",
-    "creating reviewable plans, task proposals and local_mock agent runs",
+    "creating reviewable plans, task proposals and bounded local_ollama text-only agent runs",
     "making reversible UI/dashboard improvements that do not expose secrets or external systems"
   ],
   "must_request_user_approval": [

@@ -11,7 +11,7 @@ Dit document beschrijft de eerste veilige sandbox voor OpenAI Agents SDK als Leo
 Bewijs leveren dat OpenAI Agents SDK achter Leon’s bestaande control-plane gates kan draaien zonder deze te omzeilen:
 
 - `agent_assignment_proposals` blijven de startpoort;
-- `local_mock` blijft fallback en default;
+- `local_ollama` text-only blijft fallback en default;
 - alleen env-key presence wordt gecontroleerd;
 - toolcalls blijven onder Leon permission preflight;
 - agent-output blijft reviewbaar vóór acceptatie;
@@ -38,7 +38,7 @@ Toegestaan na expliciete sandbox-approval:
 - één text-only agent run zonder tools;
 - één lokale custom function-tool demo met Leon preflight vóór uitvoering;
 - audit-only tracing test met redaction of tracing disabled;
-- rollback-test naar `local_mock`.
+- rollback-test naar `local_ollama`.
 
 Niet toegestaan in de eerste sandbox:
 
@@ -73,7 +73,7 @@ Regels:
 
 1. Reviewer maakt een sandbox approval-card voor install/API-gebruik.
 2. Na approval wordt een disposable sandboxomgeving voorbereid.
-3. Providerconfig blijft `local_mock` default; nieuwe adapter staat `disabled`.
+3. Providerconfig blijft `local_ollama` default; nieuwe adapter staat `disabled`.
 4. Sandbox voert eerst alleen een dry-run adapterplan uit.
 5. Daarna volgt één text-only provider call met laag-risico prompt.
 6. Daarna volgt één custom function-tool demo waarbij Leon permission preflight eerst beslist.
@@ -104,7 +104,7 @@ Payloadregels:
 
 De sandbox slaagt alleen als al deze punten bewezen zijn:
 
-- `local_mock` blijft default vóór, tijdens en na sandbox.
+- `local_ollama` blijft default vóór, tijdens en na sandbox.
 - Ontbrekende `OPENAI_API_KEY` geeft `waiting_for_secret`, geen provider-call.
 - Text-only run schrijft audit events en eindigt `waiting_for_review`.
 - Custom function-tool call wordt vooraf door Leon permission policy beoordeeld.
@@ -112,7 +112,7 @@ De sandbox slaagt alleen als al deze punten bewezen zijn:
 - Prompt met fake secret wordt geredact in state/API/audit/trace.
 - Geen ShellTool/ApplyPatchTool/ComputerTool/hosted tools/MCP beschikbaar.
 - Audit hash-chain blijft valide.
-- Rollback zet providerconfig terug naar alleen `local_mock` en verwijdert sandboxomgeving.
+- Rollback zet providerconfig terug naar alleen `local_ollama` en verwijdert sandboxomgeving.
 
 ## Approval die later nodig is
 
@@ -122,7 +122,7 @@ Een latere sandbox-uitvoering vereist een approval-card met:
 - scope: alleen disposable sandbox, geen Leon repo runtime-mutatie;
 - kosten: maximaal één laag-risico testcall binnen vooraf gekozen limiet;
 - data: alleen testprompt, geen persoonlijke data;
-- rollback: sandbox verwijderen en providerconfig op `local_mock`;
+- rollback: sandbox verwijderen en providerconfig op `local_ollama`;
 - expiry: korte geldigheid, éénmalig.
 
 ## Dashboard taak-uitkomst

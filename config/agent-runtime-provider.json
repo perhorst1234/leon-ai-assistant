@@ -40,9 +40,9 @@
     }
   ],
   "current_runtime": {
-    "id": "local_mock",
-    "status": "active_only_runtime",
-    "purpose": "Exercise task packets, model routing, audit, review, and dashboard flows without external calls."
+    "id": "local_ollama",
+    "status": "active_text_only_runtime",
+    "purpose": "Run approved, durable text-only agent assignments through loopback Ollama on the local M40 without tools or external calls."
   },
   "adapter_contract": {
     "must_start_from": "agent_assignment_proposals",

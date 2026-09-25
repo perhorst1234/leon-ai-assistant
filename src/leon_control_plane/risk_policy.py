@@ -77,7 +77,14 @@ R5_ACTIONS = {
 R4_ACTIONS = {"write", "send_email", "calendar_mutation", "external_write", "post_publicly"}
 R3_ACTIONS = {"modify_files", "write_code", "execute_shell_commands", "system_change"}
 R2_ACTIONS = {"local_persistent_write", "memory_store", "graph_node_add", "task_create", "config_update"}
-R1_ACTIONS = {"local_temp_processing", "summarize", "embedding_generate", "cache_build", "local_mock_agent_run"}
+R1_ACTIONS = {
+    "local_temp_processing",
+    "summarize",
+    "embedding_generate",
+    "cache_build",
+    "local_mock_agent_run",
+    "local_text_agent_run",
+}
 READ_ONLY_ACTIONS = {"read", "web_research", "memory_retrieval", "status_check", "source_review", "direct_answer"}
 HARD_BLOCK_ACTIONS = {"read_raw_secret", "secret_exfiltration", "unsafe_abuse", "malware", "phishing", "captcha_bypass"}
 

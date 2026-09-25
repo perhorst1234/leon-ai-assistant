@@ -1,14 +1,14 @@
 # Leon AI Assistant — agent runtime provider decision
 
-Status: decision record  
-Decision date: 2026-08-01  
-Decision: use OpenAI Agents SDK for Python as the first real agent adapter target, behind Leon's existing gates.
+Status: updated decision record
+Decision date: 2026-09-25
+Decision: use loopback Ollama on the local M40 as the active text-only agent runtime; keep OpenAI Agents SDK behind the existing dry-run gate for future tool-capable cloud agents.
 
 ## Decision
 
-Keep `local_mock` as the only active runtime for now. For the first real model-backed runtime, target OpenAI Agents SDK for Python.
+Use `local_ollama` as the default runtime for reviewed agent assignments. It reuses Leon's durable work queue, receives a bounded redacted task packet, has no tools, and returns a result that still requires human review. `local_mock` remains available for compatibility tests.
 
-No framework is installed in this slice. Real provider execution remains blocked until the provider adapter is implemented behind:
+External OpenAI Agents SDK execution remains blocked until a provider adapter is implemented behind:
 
 - `agent_assignment_proposals`;
 - task packets;
@@ -18,7 +18,14 @@ No framework is installed in this slice. Real provider execution remains blocked
 - secret redaction;
 - capability-scoped tools.
 
-## Why OpenAI Agents SDK first
+## Why local Ollama first
+
+- The deployed M40 and Ollama route are validated and already power Leon chat.
+- Loopback-only text generation has no provider charge and does not expose task context externally.
+- The existing work queue already provides leases, retries, checkpoints and restart recovery.
+- A text-only runtime can be useful immediately without granting shell, filesystem or connector capabilities.
+
+## Future tool-capable adapter
 
 - The project is currently Python and local-first.
 - The user already wants OpenAI/Codex as the cloud route for tool-making and coding.
@@ -67,7 +74,7 @@ Forbidden until later explicit approval:
 - Pydantic AI docs: https://pydantic.dev/docs/ai/overview/
 - VoltAgent docs: https://voltagent.dev/docs/
 
-## Next implementation slice
+## Future implementation slice
 
 Implement a disabled-by-default `openai_agents_sdk_python` provider adapter shell:
 

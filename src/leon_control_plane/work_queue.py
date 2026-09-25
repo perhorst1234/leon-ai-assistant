@@ -23,8 +23,9 @@ LEASE_SECONDS = 30
 
 
 class WorkQueue:
-    def __init__(self, store: ControlPlaneStore, *, clock=time.time):
+    def __init__(self, store: ControlPlaneStore, *, clock=time.time, local_model_config=None):
         self.store, self.clock = store, clock
+        self.local_model_config = local_model_config
         store.initialize()
         with closing(store.connect()) as conn, conn:
             conn.executescript("""
@@ -42,8 +43,16 @@ class WorkQueue:
                     result_json TEXT NOT NULL, recorded_at REAL NOT NULL,
                     PRIMARY KEY(job_id, step)
                 );
+                CREATE TABLE IF NOT EXISTS agent_run_work (
+                    job_id TEXT PRIMARY KEY REFERENCES work_jobs(id),
+                    agent_run_id TEXT NOT NULL UNIQUE REFERENCES agent_runs(id),
+                    assignment_proposal_id TEXT NOT NULL UNIQUE REFERENCES agent_assignment_proposals(id),
+                    synced_at REAL
+                );
             """)
             model_work.initialize(conn)
+        self.recover_agent_run_jobs()
+        self.reconcile_agent_runs()
 
     @contextmanager
     def _transaction(self):
@@ -138,6 +147,180 @@ class WorkQueue:
                 model_work.insert(conn, job_id, approved)
             self._event(conn, row, "queued")
             return self._view(conn, row)
+
+    def enqueue_agent_run(
+        self,
+        *,
+        task_id: str,
+        agent_run_id: str,
+        assignment_proposal_id: str,
+        prompt: str,
+        max_output_tokens: int = 768,
+    ):
+        """Queue one idempotent, loopback-only model call for an approved agent run."""
+
+        model_request = {
+            "prompt": prompt,
+            "max_output_tokens": max_output_tokens,
+            "max_cost_microusd": 1,
+            "approve_external_text": True,
+        }
+        approved = model_work.prepare(model_request, local_config=self.local_model_config)
+        if json.loads(approved)["payload"].get("provider") != "ollama":
+            raise ValueError("Local agent runs require the loopback Ollama provider")
+        request_id = str(uuid.uuid5(uuid.NAMESPACE_URL, f"leon-agent-assignment:{assignment_proposal_id}"))
+        with self._transaction() as conn:
+            binding = conn.execute(
+                "SELECT job_id, agent_run_id FROM agent_run_work WHERE assignment_proposal_id = ?",
+                (assignment_proposal_id,),
+            ).fetchone()
+            if binding is not None:
+                if binding["agent_run_id"] != agent_run_id:
+                    raise ValueError("Assignment proposal is already bound to a different agent run")
+                return self._view(conn, self._job(conn, binding["job_id"]))
+            run = conn.execute(
+                "SELECT task_id, status, risk FROM agent_runs WHERE id = ?",
+                (agent_run_id,),
+            ).fetchone()
+            assignment = conn.execute(
+                "SELECT task_id, status, runner_kind, applied_agent_run_id FROM agent_assignment_proposals WHERE id = ?",
+                (assignment_proposal_id,),
+            ).fetchone()
+            if run is None or run["task_id"] != task_id or run["status"] != "running":
+                raise ValueError("Agent run is not eligible for local model work")
+            if str(run["risk"]).lower() in {"high", "r4", "r5"}:
+                raise ValueError("High-risk agent runs cannot use the local model queue")
+            if (
+                assignment is None
+                or assignment["task_id"] != task_id
+                or assignment["status"] != "applied"
+                or assignment["runner_kind"] != "local_ollama"
+                or assignment["applied_agent_run_id"] != agent_run_id
+            ):
+                raise ValueError("Agent assignment has not authorized this local model run")
+            if not self._task_eligible(conn, task_id):
+                raise ValueError("Task must remain eligible for local agent execution")
+            if conn.execute("SELECT COUNT(*) FROM work_jobs WHERE status IN ('queued','running','paused')").fetchone()[0] >= 100:
+                raise ValueError("Local work queue is full")
+            job_id, now = f"work-{uuid.uuid4().hex}", self.clock()
+            conn.execute(
+                "INSERT INTO work_jobs(id,request_id,task_id,kind,status,created_at,updated_at) VALUES(?,?,?,?,?,?,?)",
+                (job_id, request_id, task_id, MODEL_KIND, "queued", now, now),
+            )
+            model_work.insert(conn, job_id, approved)
+            conn.execute(
+                "INSERT INTO agent_run_work(job_id,agent_run_id,assignment_proposal_id) VALUES(?,?,?)",
+                (job_id, agent_run_id, assignment_proposal_id),
+            )
+            row = self._job(conn, job_id)
+            self._event(conn, row, "queued", {"agent_run_id": agent_run_id})
+            return self._view(conn, row)
+
+    def recover_agent_run_jobs(self) -> int:
+        """Recreate a missing durable job after a crash between apply and enqueue."""
+
+        with closing(self.store.connect()) as conn:
+            rows = list(conn.execute(
+                """
+                SELECT p.id AS proposal_id, p.task_id, p.applied_agent_run_id, p.proposal_json
+                FROM agent_assignment_proposals p
+                JOIN agent_runs r ON r.id = p.applied_agent_run_id
+                LEFT JOIN agent_run_work b ON b.assignment_proposal_id = p.id
+                WHERE p.status = 'applied' AND p.runner_kind = 'local_ollama'
+                  AND r.status = 'running' AND b.job_id IS NULL
+                ORDER BY p.created_at, p.id
+                """
+            ))
+        recovered = 0
+        for row in rows:
+            try:
+                from leon_control_plane.agent_runtime import build_local_agent_prompt
+
+                proposal = json.loads(row["proposal_json"])
+                prompt = build_local_agent_prompt(proposal.get("task_packet") or {})
+                self.enqueue_agent_run(
+                    task_id=row["task_id"],
+                    agent_run_id=row["applied_agent_run_id"],
+                    assignment_proposal_id=row["proposal_id"],
+                    prompt=prompt,
+                )
+                recovered += 1
+            except (ValueError, json.JSONDecodeError):
+                # Configuration may be temporarily unavailable during service
+                # startup. The long-running worker retries this reconciliation.
+                continue
+        return recovered
+
+    def reconcile_agent_runs(self) -> int:
+        """Project terminal queue results into their reviewable agent runs."""
+
+        with closing(self.store.connect()) as conn:
+            rows = list(conn.execute(
+                """
+                SELECT b.job_id, b.agent_run_id, b.assignment_proposal_id, j.status, j.error
+                FROM agent_run_work b
+                JOIN work_jobs j ON j.id = b.job_id
+                JOIN agent_runs r ON r.id = b.agent_run_id
+                WHERE b.synced_at IS NULL AND r.status = 'running'
+                  AND j.status IN ('succeeded','failed','cancelled')
+                ORDER BY j.created_at, j.id
+                """
+            ))
+        synced = 0
+        for row in rows:
+            with closing(self.store.connect()) as conn:
+                results = self._results(conn, row["job_id"])
+                details = model_work.view(conn, row["job_id"])
+            if row["status"] == "succeeded" and results and results[-1].get("ok") is True:
+                result = results[-1]
+                text = str(result.get("text") or "").strip()
+                encoded = text.encode("utf-8")[:16384]
+                while True:
+                    try:
+                        summary = encoded.decode("utf-8")
+                        break
+                    except UnicodeDecodeError:
+                        encoded = encoded[:-1]
+                evidence = [
+                    {
+                        "type": "local_model",
+                        "summary": "Text-only result generated by the loopback Ollama worker on the local M40.",
+                        "provider": details.get("provider"),
+                        "model": details.get("model"),
+                        "accounted_microusd": details.get("accounted_microusd", 0),
+                    },
+                    {
+                        "type": "assignment_gate",
+                        "summary": "Run started from an explicitly applied agent assignment and still requires human review.",
+                        "agent_assignment_proposal_id": row["assignment_proposal_id"],
+                    },
+                    {
+                        "type": "safety",
+                        "summary": "No tools, shell commands, file writes, account access, external provider calls, or raw secret reads were available.",
+                    },
+                ]
+                self.store.complete_agent_run(
+                    row["agent_run_id"], result_summary=summary, evidence=evidence,
+                    actor_id="local-ollama-agent-worker",
+                )
+            else:
+                reason = "Local agent model work was cancelled." if row["status"] == "cancelled" else "Local agent model work failed after bounded retries."
+                self.store.complete_agent_run(
+                    row["agent_run_id"], result_summary=reason,
+                    evidence=[{
+                        "type": "local_model_failure",
+                        "summary": reason,
+                        "job_id": row["job_id"],
+                        "reason": row["error"] or "check_failed",
+                    }],
+                    status="failed",
+                    recovery_suggestions=[{"action": "create_new_assignment", "summary": "Check Ollama health and create a new assignment proposal."}],
+                    actor_id="local-ollama-agent-worker",
+                )
+            with self._transaction() as conn:
+                conn.execute("UPDATE agent_run_work SET synced_at = ? WHERE job_id = ?", (self.clock(), row["job_id"]))
+            synced += 1
+        return synced
 
     def control(self, job_id: str, action: str):
         if action not in {"pause", "resume", "cancel"}:

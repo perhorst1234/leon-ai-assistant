@@ -24,6 +24,7 @@ from leon_control_plane.connector_registry import classify_connector_action, nor
 from leon_control_plane.decision_layer import evaluate_cases, classify_user_request, load_eval_cases
 from leon_control_plane.github_catalog import refresh_manifest_github_metadata
 from leon_control_plane.local_gpu_validation import normalize_local_gpu_policy
+from leon_control_plane.local_model import DEFAULT_MODEL, LocalModelConfig
 from leon_control_plane.mcp_intake import build_mcp_candidate_intake
 from leon_control_plane.night_queue import DEFAULT_ALLOWED_RISK_CLASSES, NightQueueScheduler
 from leon_control_plane.orchestrator import build_orchestration_proposal
@@ -36,6 +37,7 @@ from leon_control_plane.tool_adoption import build_tool_adoption_shortlist
 from leon_control_plane.tool_registry import classify_tool_action, normalize_tool_manifest, score_tool_candidate
 from leon_control_plane.tool_review import build_review_packets
 from leon_control_plane.work_api import work_request
+from leon_control_plane.work_queue import WorkQueue
 from leon_control_plane.overview_api import overview_request
 from leon_control_plane.server_monitor import server_status_request
 from leon_control_plane.google_api import google_request
@@ -1498,7 +1500,7 @@ def render_dashboard() -> str:
 
       <article class="card span-12">
         <h2>Agent assignment proposals</h2>
-        <p class="small muted">Assignments starten alleen local_mock agent-runs na expliciete apply; geen externe calls of secret reads.</p>
+        <p class="small muted">Assignments starten na expliciete apply een duurzame, text-only Ollama-run op de lokale M40; geen tools, externe calls of secret reads.</p>
         <div class="list" id="agentAssignmentProposals"></div>
       </article>
 
@@ -4273,17 +4275,24 @@ class Handler(BaseHTTPRequestHandler):
         if not task_id:
             raise ValueError("Expected task_id")
         task = STORE.get_task(task_id)
+        runner_kind = str(data.get("runner_kind") or "local_ollama")
+        local_model_name = DEFAULT_MODEL
+        if runner_kind == "local_ollama":
+            local_config = LocalModelConfig.from_env(env_file=ENV_PATH)
+            local_config.validate()
+            local_model_name = local_config.model
         proposal = build_agent_assignment_proposal(
             task=task,
-            agent_role=str(data.get("agent_role") or "Mock Builder Agent"),
-            runner_kind=str(data.get("runner_kind") or "local_mock"),
+            agent_role=str(data.get("agent_role") or "Leon Local Agent"),
+            runner_kind=runner_kind,
             task_type=str(data.get("task_type") or "") or None,
             complexity=str(data.get("complexity") or "") or None,
-            privacy=str(data.get("privacy") or "normal"),
+            privacy=str(data.get("privacy") or "private"),
             budget_mode=str(data.get("budget_mode") or "balanced"),
-            local_gpu_ready=bool(data.get("local_gpu_ready", False)),
+            local_gpu_ready=bool(data.get("local_gpu_ready", True)),
             local_route_status=str(data.get("local_route_status") or ""),
             local_latency_ms=data.get("local_latency_ms"),
+            local_model_name=local_model_name,
         )
         proposal_id = STORE.create_agent_assignment_proposal(proposal)
         proposal["proposal_id"] = proposal_id
@@ -4295,7 +4304,11 @@ class Handler(BaseHTTPRequestHandler):
         review_note = str(data.get("review_note") or "").strip()
         if not proposal_id:
             raise ValueError("Expected agent assignment proposal id")
-        result = STORE.apply_agent_assignment_proposal(proposal_id, review_note=review_note)
+        result = STORE.apply_agent_assignment_proposal(
+            proposal_id,
+            review_note=review_note,
+            work_queue=WorkQueue(STORE, local_model_config=LocalModelConfig.from_env(env_file=ENV_PATH)),
+        )
         self._send_json({"ok": True, **result})
 
     def _handle_agent_assignment_reject(self) -> None:

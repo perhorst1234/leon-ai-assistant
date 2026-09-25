@@ -57,11 +57,11 @@ Required before any runtime enablement:
 - redacted audit evidence;
 - no raw secret exposure to agent prompts, traces, logs or dashboard state;
 - rollback plan tested before promotion;
-- `local_mock` remains the active agent runtime until a separate provider adapter slice passes.
+- the active runtime must remain local, bounded and tool-free until a separate external provider adapter slice passes.
 
 ## Next implementation order
 
-1. Keep `local_mock` active and implement only disabled-by-default adapter shells.
+1. Keep `local_ollama` text-only and implement external adapters only as disabled-by-default shells.
 2. If agent runtime work starts, sandbox OpenAI Agents SDK first with a text-only run, then one Leon-preflighted function tool.
 3. If local model work starts, validate hardware and driver state, then benchmark llama.cpp before Ollama.
 4. Evaluate LiteLLM only after a concrete gateway need appears.

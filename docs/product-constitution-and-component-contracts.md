@@ -136,7 +136,7 @@ Bands:
 - Inputs: task packet, assignment proposal, model route, allowed/forbidden actions.
 - Outputs: reviewable agent run with result summary and evidence.
 - Must not: start real provider/tool execution outside assignment/provider gates.
-- Acceptance: active runtime remains `local_mock` until provider adapter approval criteria are implemented.
+- Acceptance: active runtime remains bounded `local_ollama` text-only until external provider adapter approval criteria are implemented.
 
 ### Research Agent
 

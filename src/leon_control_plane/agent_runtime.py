@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from typing import Any
 
 from leon_control_plane.agent_run_model import normalize_agent_run_role
@@ -27,6 +28,45 @@ DEFAULT_FORBIDDEN_ACTIONS = [
     "spend_money",
     "start_gpu_intensive_jobs",
 ]
+
+
+def build_local_agent_prompt(task_packet: dict[str, Any]) -> str:
+    """Build a bounded, redacted prompt for a text-only local agent run."""
+
+    safe_packet = redact_value(task_packet)
+    compact = {
+        "title": safe_packet.get("title", ""),
+        "goal": safe_packet.get("goal", ""),
+        "acceptance_criteria": safe_packet.get("acceptance_criteria", ""),
+        "agent_role": safe_packet.get("agent_role", "Leon Local Agent"),
+        "task_type": safe_packet.get("task_type", "documentation"),
+        "source_refs": list(safe_packet.get("source_refs") or [])[:8],
+        "allowed_actions": list(safe_packet.get("allowed_actions") or []),
+        "forbidden_actions": list(safe_packet.get("forbidden_actions") or []),
+    }
+    instruction = (
+        "Je bent Leon, een lokale text-only assistent. Werk alleen met de taakcontext hieronder. "
+        "Voer geen tools, shellcommando's, bestandswijzigingen, downloads, externe calls of accountacties uit. "
+        "Verzin geen bewijs. Lever een bruikbaar resultaat in het Nederlands met precies de koppen "
+        "Resultaat, Bewijs en Open vragen. Benoem bij Bewijs welke feiten uit de context je gebruikte. "
+        "Zet ontbrekende informatie bij Open vragen.\n\nTaakcontext:\n"
+    )
+    encoded = json.dumps(compact, ensure_ascii=False, sort_keys=True)
+    maximum = 4096 - len(instruction.encode("utf-8"))
+    while len(encoded.encode("utf-8")) > maximum and len(str(compact.get("goal") or "")) > 32:
+        compact["goal"] = str(compact["goal"])[: max(32, len(str(compact["goal"])) // 2)]
+        encoded = json.dumps(compact, ensure_ascii=False, sort_keys=True)
+    if len(encoded.encode("utf-8")) > maximum:
+        compact["source_refs"] = []
+        compact["acceptance_criteria"] = str(compact.get("acceptance_criteria") or "")[:256]
+        encoded = json.dumps(compact, ensure_ascii=False, sort_keys=True)
+    prompt = instruction + encoded
+    if len(prompt.encode("utf-8")) > 4096:
+        raise ValueError("Local agent task packet exceeds the bounded prompt")
+    scan = scan_value(prompt)
+    if scan.total:
+        prompt = str(redact_value(prompt))
+    return prompt
 
 
 def build_task_packet(
