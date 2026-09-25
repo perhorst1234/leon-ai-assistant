@@ -49,10 +49,11 @@ def _digest(value):
     return hashlib.sha256(value.encode("utf-8")).hexdigest()
 
 
-def _approval_digest(prompt, max_output_tokens, max_cost_microusd):
-    """Bind the approved prompt and both execution limits together."""
+def _approval_digest(prompt, max_output_tokens, max_cost_microusd, provider=None):
+    """Bind the approved prompt, limits, and selected provider together."""
     approval = json.dumps(
-        {"prompt": prompt, "max_output_tokens": max_output_tokens, "max_cost_microusd": max_cost_microusd},
+        {"prompt": prompt, "max_output_tokens": max_output_tokens, "max_cost_microusd": max_cost_microusd,
+         **({"provider": provider} if provider else {})},
         sort_keys=True,
         separators=(",", ":"),
     )
@@ -186,7 +187,7 @@ class ChatService:
                         "sensitivity": sensitivity,
                         # Keep the established field name for the web client, but
                         # bind the approval to the exact limits as well as text.
-                        "prompt_sha256": _approval_digest(prompt, details["max_output_tokens"], quote["max_cost_microusd"])}
+                        "prompt_sha256": _approval_digest(prompt, details["max_output_tokens"], quote["max_cost_microusd"], quote["provider"])}
 
     def _recover(self, row):
         """Attach an already created queue record after a process crash."""
@@ -241,9 +242,10 @@ class ChatService:
                     conversation = self._conversation(conn, conversation_id)
                     included, prompt = self._included(conn, conversation_id, content)
                     requested_provider = details.get("provider")
-                    model_preview({"prompt": prompt, "max_output_tokens": details["max_output_tokens"], "max_cost_microusd": details["max_cost_microusd"], "provider": requested_provider})
+                    route_quote = model_preview({"prompt": prompt, "max_output_tokens": details["max_output_tokens"], "max_cost_microusd": details["max_cost_microusd"], "provider": requested_provider})
+                    effective_provider = requested_provider or route_quote["provider"]
                     if details["preview_sha256"] != _approval_digest(
-                        prompt, details["max_output_tokens"], details["max_cost_microusd"]
+                        prompt, details["max_output_tokens"], details["max_cost_microusd"], effective_provider
                     ):
                         raise ValueError("Chat preview is stale or does not match the exact approved context")
                     previous_at = conn.execute("SELECT COALESCE(MAX(created_at),0) FROM chat_messages WHERE conversation_id=?", (conversation_id,)).fetchone()[0]
@@ -256,7 +258,7 @@ class ChatService:
                     conn.execute("""INSERT INTO chat_messages(id,conversation_id,request_id,role,status,prompt,prompt_sha256,conversation_revision,
                         request_content,provider,max_output_tokens,max_cost_microusd,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
                         (assistant_id, conversation_id, request_id, "assistant", "pending", prompt,
-                         _approval_digest(prompt, details["max_output_tokens"], details["max_cost_microusd"]), next_revision, content, requested_provider,
+                         _approval_digest(prompt, details["max_output_tokens"], details["max_cost_microusd"], effective_provider), next_revision, content, effective_provider,
                          details["max_output_tokens"], details["max_cost_microusd"], assistant_at, assistant_at))
                     conn.execute("UPDATE chat_conversations SET revision=?,updated_at=? WHERE id=?", (next_revision, now, conversation_id))
                     assistant = self._message(conn, assistant_id)
