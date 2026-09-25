@@ -1,23 +1,24 @@
 # Leon / Gaia — uitvoeringsbacklog
 
-**21 september, publieke website:** `https://leon-ai-assistant.duckdns.org`
+**25 september, publieke website:** `https://leon-ai-assistant.duckdns.org`
 heeft een geldig certificaat en extern HTTP 200. De webapp vraagt bij eerste
 gebruik om een eenmalige instelcode en een zelfgekozen wachtwoord, daarna om
-alleen het wachtwoord. Het productieaccount wacht op de eigenaar. Routerlease,
+alleen het wachtwoord. Het productieaccount is geregistreerd. Routerlease,
 DuckDNS en TLS worden door user-systemd onderhouden. Geïsoleerde registratie-
 en loginflow, API-toegang en browserweergave zijn getest; zie
 [publieke toegang](public-access.md). LAN NAT-loopback ontbreekt vermoedelijk;
-de tijdelijke tunnel is beschikbaar als fallback. De algemene agentruntime en
-connectoraccounts blijven de eerstvolgende productstappen.
+de tijdelijke tunnel is beschikbaar als fallback. Connectoraccounts en de
+self-improvement-doelcontainer blijven de eerstvolgende productstappen.
 
 **21 september, doelserver:** vijf lokale user-systemd-units draaien. Chat via
 Ollama/Qwen 14B op de Tesla M40 is end-to-end bewezen; OpenCode/GPT-OSS 20B
 heeft echte file read/edit/readback uitgevoerd met 80C piek. M40-coding-agent
 en pinned setup staan in `scripts/`. De 89C-afslag is gebruikerskeuze, geen
 duurproef; Proxmox-fan-RPM is vanuit de VM onbekend. Zie
-[M40-bewijs](m40-deployment-evidence.md). Volgende productstap: echte
-geautoriseerde agent-run-uitvoering in plaats van de mock-adapter, gevolgd
-door connectoracceptatie, self-improvement-sandbox en volledige scenario's.
+[M40-bewijs](m40-deployment-evidence.md). Echte geautoriseerde text-only
+agent-runs gebruiken nu dezelfde duurzame Ollama-wachtrij; de echte M40-proef
+bleef op 71C en eindigde reviewbaar. Volgende productstap: connectoracceptatie,
+self-improvement-sandbox en volledige scenario's.
 
 **14 september, OS-sandboxkern:** fail-closed rootless Podman-contract toegevoegd,
 nog niet API-wired. Immutable image en exact base commit, service-identiteit,

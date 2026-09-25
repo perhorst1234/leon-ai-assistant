@@ -1,6 +1,6 @@
 # Overdracht — Leon / Gaia
 
-Stand: **21 september 2026**. De gebruiker wil vooral coderen; houd deze overdracht kort.
+Stand: **25 september 2026**. De gebruiker wil vooral coderen; houd deze overdracht kort.
 
 ## Doelserver nu
 
@@ -8,8 +8,8 @@ Leon draait lokaal als user-systemd-services: Ollama, backend, worker, web,
 Caddy, router/DuckDNS-timer, tijdelijke tunnel en autonomietimer. Publieke
 HTTPS via `https://leon-ai-assistant.duckdns.org` is van buitenaf beproefd.
 Registratie vraagt een eenmalige code uit `.runtime/leon-web-setup-code` en
-laat de gebruiker zelf een wachtwoord kiezen; het productieaccount is nog niet
-geregistreerd. Zie [publieke toegang](public-access.md). De M40-chatroute (`qwen2.5-coder:14b`) is via browser, API,
+laat de gebruiker zelf een wachtwoord kiezen; het productieaccount is
+geregistreerd en tokenlogin is uit de webflow verwijderd. Zie [publieke toegang](public-access.md). De M40-chatroute (`qwen2.5-coder:14b`) is via browser, API,
 SQLite-worker en GPU end-to-end beproefd; OpenAI blijft uit. De lokale
 OpenCode-coding-agent gebruikt `gpt-oss:20b`; echte `read`- en `edit`-tools zijn
 op een wegwerpbestand bewezen, met 80C piek in de schrijftest. Setup is
@@ -19,7 +19,12 @@ ook de driververtragingstemperatuur. Proxmox regelt de fysieke fan buiten de
 VM; het hostscript en RPM zijn vanuit hier niet verifieerbaar. Zie
 [M40-bewijs](m40-deployment-evidence.md).
 
-Open: algemene agent-run-API is nog mock, live connectoraccounts en
+De algemene assignmentflow gebruikt nu eveneens een echte duurzame,
+text-only `local_ollama`-run op de M40. Een geïsoleerde productie-equivalente
+proef eindigde in `waiting_for_review`, met nul providerkosten, geldige
+auditketen en 71C piek. Cold-startleases, dubbele apply en herstel tussen
+assignment/apply en queue-insert hebben regressietests. Stand: 440 backendtests,
+48 webtests, typecheck en productiebuild. Open: live connectoraccounts en
 self-improvement-testcontainer ontbreken, plus brede productacceptatie en
 publicatie van deze serverwijzigingen. Nieuwe wijzigingen eerst testen,
 draaiende services herstarten en veilige bron naar GitHub synchroniseren.

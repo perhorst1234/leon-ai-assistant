@@ -20,7 +20,15 @@ config asks before edits and shell commands; the smoke test used an inline
 edit-only allowance and denied shell commands. Install the pinned CLI/model
 with `./scripts/leon-m40-coding-setup`; run it through
 `./scripts/leon-m40-coding-agent`. It is an interactive coding CLI, separate
-from Leon's still-mock general agent-run endpoint.
+from Leon's general assignment runtime. That runtime now also uses a durable,
+text-only Ollama job after explicit assignment review; it exposes no tools.
+
+On 25 September an isolated end-to-end assignment used the real 14B model,
+persisted a successful queue checkpoint, projected the output to
+`waiting_for_review`, recorded zero provider cost and kept the audit chain
+valid. Peak sampled temperature was 71C. A separate 20B read-only review was
+stopped manually at 87C before the configured 89C cutoff and unloaded from
+VRAM.
 
 ## Target-host evidence
 
