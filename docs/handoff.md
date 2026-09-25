@@ -47,8 +47,8 @@ draaiende services herstarten en veilige bron naar GitHub synchroniseren.
 
 ## Lopende aanvulling
 
-- 14 september: fail-closed rootless Podman-uitvoerkern toegevoegd, bewust nog
-  niet gekoppeld aan API. Contract vereist immutable image/base commit,
+- 14 september: fail-closed rootless Podman-uitvoerkern toegevoegd en aan de
+  self-improvement API/Gaia gekoppeld. Contract vereist immutable image/base commit,
   root-owned stabiele Podman-binary, eigen niet-root serviceaccount, lokale
   rootless cgroup-v2/seccomp-host, vaste netwerk/proxy/filesystem/process/resource-
   grenzen en non-root smoke-run. Alleen descriptor-veilig gelezen bestanden

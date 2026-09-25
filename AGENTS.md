@@ -37,15 +37,13 @@
   `docs/m40-deployment-evidence.md` voor bewijs en open grenzen.
 
 - 14 september, `codex/complete-leon`: fail-closed rootless Podman-contract voor
-  latere self-improvement-tests gereed, nog niet API-wired. Immutable image en
-  base commit, root-owned executable/inode, lokale rootless cgroup-v2/seccomp,
-  vaste resource-/netwerk-/proxy-/volumegrenzen, descriptor-veilige private
-  snapshots, geïsoleerde Python, begrensde geredigeerde output en verplichte
-  cleanup. API/Gaia bindt vooraf modus, policyhash en imagecommit. 368
-  backendtests + twee subtests, 46 webtests, typecheck/build/lint; Python-,
-  security-, React- en TypeScript-review zonder resterende P1/P2. Zie
-  `docs/os-sandbox.md`. Static blijft default. Volgende: Ubuntu-doelhostbewijs met
-  gebouwde digest-gepinde image en browserbewijs voor beide modi.
+  self-improvement-tests is API/Gaia-wired en bindt vooraf modus, policyhash en
+  imagecommit. Immutable image/base commit, root-owned executable/inode,
+  cgroup-v2/seccomp, vaste resource-/netwerk-/proxy-/volumegrenzen,
+  descriptor-veilige snapshots, begrensde geredigeerde output en cleanup zijn
+  afgedekt. De doel-VM heeft nog geen Podman/Docker; static blijft daarom de
+  enige live modus. Volgende bewijsstap is installatie/configuratie van rootless
+  Podman met digest-gepinde image en een target-host smoke.
 
 - 13 september, `codex/complete-leon`: Gaia Werk heeft nu ingeklapte
   self-improvement preview/checkbox/run-bediening met scoped atomische approval.

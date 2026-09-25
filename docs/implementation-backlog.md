@@ -38,8 +38,8 @@ agent-runs gebruiken nu dezelfde duurzame Ollama-wachtrij; de echte M40-proef
 bleef op 71C en eindigde reviewbaar. Volgende productstap: connectoracceptatie,
 self-improvement-sandbox en volledige scenario's.
 
-**14 september, OS-sandboxkern:** fail-closed rootless Podman-contract toegevoegd,
-nog niet API-wired. Immutable image en exact base commit, service-identiteit,
+**14 september, OS-sandboxkern:** fail-closed rootless Podman-contract toegevoegd
+en aan self-improvement API/Gaia gekoppeld. Immutable image en exact base commit,
 root-owned executable/inode, lokale rootless cgroup-v2/seccomp-probe, vaste
 network/proxy/image-volume/filesystem/process/resourcegrenzen en non-root smoke
 zijn verplicht. Workspacepaden worden niet gemount: toegestane bytes gaan via
@@ -48,7 +48,8 @@ uitvoering begrensd en geredigeerd; cleanup is verplicht voor succes. 15 gericht
 sandboxtests en volledige backend 368 tests + twee subtests, 46 webtests,
 typecheck/build/lint geslaagd. Reviews zonder resterende P1/P2. API/approval en Gaia binden nu exact execution
 mode, policyhash en imagecommit, met durable sanitized testbewijs; static blijft
-default. Open: doelimage bouwen/pinnen, Ubuntu-hostacceptatie en browserbewijs
+default. Open: Podman ontbreekt op de doel-VM; doelimage bouwen/pinnen,
+Ubuntu-hostacceptatie en browserbewijs
 voor static/Podman-modi. Zie [OS-sandbox](os-sandbox.md).
 
 **13 september, agenttaaklevenscyclus:** geaccepteerde lokale agentruns brengen
