@@ -1211,6 +1211,13 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
     setSettingsOpen(false);
     setAgentPickerOpen(false);
     setReviewKind(null);
+    // ConnectedChat owns the real preview/approval lifecycle. Do not run the
+    // visual demo timer there: it used to show "Context samengebracht" while
+    // the approval card was still below the fold, which looked like a hang.
+    if (activeSpace === 'chat' && !chatDemo) {
+      setGaiaState('idle');
+      return;
+    }
     setGaiaState('thinking');
     timersRef.current.push(
       window.setTimeout(() => setGaiaState('acting'), 1050),

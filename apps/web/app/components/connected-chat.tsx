@@ -98,6 +98,7 @@ export default function ConnectedChat({
   const conversationLoadVersion = useRef(0);
   const previewVersion = useRef(0);
   const reviewRef = useRef<typeof review>(null);
+  const reviewPanelRef = useRef<HTMLElement>(null);
   useEffect(() => { reviewRef.current = review; }, [review]);
 
   const api = useCallback<ChatApi>((resource, body, id, query) => requestChat(token, resource, body, id, query), [token]);
@@ -177,6 +178,7 @@ export default function ConnectedChat({
       if (!result.preview || result.preview.execution_allowed !== false || result.preview.provider_calls_made !== false) throw new Error('Onverwachte preview; niets goedgekeurd.');
       if (version !== previewVersion.current || selectedRef.current !== conversationId) return;
       setReview({ content, conversationId, preview: result.preview }); setApproved(false);
+      setNotice('Context staat klaar. Vink de goedkeuring aan om Leon te laten antwoorden.');
     } catch (reason) {
       if (version === previewVersion.current) setError(reason instanceof Error ? reason.message : 'Preview niet bevestigd.');
     } finally {
@@ -241,6 +243,11 @@ export default function ConnectedChat({
   const current = useMemo(() => conversations.find(item => item.id === selectedId), [conversations, selectedId]);
   const hasConversation = Boolean(selectedId);
   const activeReview = review && review.content === draft ? review : null;
+  useEffect(() => {
+    if (!activeReview) return;
+    window.requestAnimationFrame(() => reviewPanelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' }));
+  }, [activeReview]);
+
   const updateDraft = (value: string) => {
     if (value !== draft) ++previewVersion.current;
     if (review && value !== review.content) { setReview(null); setApproved(false); setNotice('De tekst is gewijzigd; bekijk de tekst en kosten opnieuw.'); }
@@ -280,7 +287,7 @@ export default function ConnectedChat({
             {!hasConversation && connected && <p className="chat-empty">Kies een gesprek of begin onderaan met een nieuwe gedachte.</p>}
             {messages.map(message => <article className={`chat-message chat-message-${message.role}`} key={message.id}><span className="chat-message-label">{message.role === 'user' ? 'Per' : 'Gaia'}</span><p>{message.content}</p>{messageStatus(message) && <small className={message.status === 'error' || message.status === 'unknown' ? 'chat-message-warning' : ''}>{messageStatus(message)}</small>}</article>)}
           </div>
-          {activeReview && <section className="chat-review" aria-label="Tekst en uitvoering goedkeuren"><div className="chat-review-heading"><span><ShieldCheck size={16} /> Tekst en context controleren</span><button type="button" aria-label="Preview sluiten" onClick={() => { setReview(null); setApproved(false); }}><X size={15} /></button></div><p className="chat-review-meta">{activeReview.preview.provider === 'ollama' ? 'Lokale M40' : 'OpenAI'} · {activeReview.preview.model} · {includedCount(activeReview.preview.included_messages)} eerdere berichten · revisie {activeReview.preview.conversation_revision}</p><blockquote>{activeReview.preview.prompt}</blockquote><p>{activeReview.preview.provider === 'ollama' ? 'Lokale uitvoering zonder API-kosten.' : `Reservering: $${(activeReview.preview.reserved_microusd / 1e6).toFixed(6)} USD.`} Er is nog niets naar een model verstuurd.</p><label className="model-approval"><input type="checkbox" checked={approved} disabled={busy} onChange={event => setApproved(event.target.checked)} />Ik keur precies deze tekst, context en uitvoeringslimiet goed.</label><button type="button" className="trace-action" disabled={!approved || busy} onClick={() => void submitApproved()}>Goedkeuren en in wachtrij zetten</button></section>}
+          {activeReview && <section ref={reviewPanelRef} className="chat-review" aria-label="Tekst en uitvoering goedkeuren"><div className="chat-review-heading"><span><ShieldCheck size={16} /> Tekst en context controleren</span><button type="button" aria-label="Preview sluiten" onClick={() => { setReview(null); setApproved(false); }}><X size={15} /></button></div><p className="chat-review-meta">{activeReview.preview.provider === 'ollama' ? 'Lokale M40' : 'OpenAI'} · {activeReview.preview.model} · {includedCount(activeReview.preview.included_messages)} eerdere berichten · revisie {activeReview.preview.conversation_revision}</p><blockquote>{activeReview.preview.prompt}</blockquote><p>{activeReview.preview.provider === 'ollama' ? 'Lokale uitvoering zonder API-kosten.' : `Reservering: $${(activeReview.preview.reserved_microusd / 1e6).toFixed(6)} USD.`} Er is nog niets naar een model verstuurd.</p><label className="model-approval"><input type="checkbox" checked={approved} disabled={busy} onChange={event => setApproved(event.target.checked)} />Ik keur precies deze tekst, context en uitvoeringslimiet goed.</label><button type="button" className="trace-action" disabled={!approved || busy} onClick={() => void submitApproved()}>Goedkeuren en in wachtrij zetten</button></section>}
           {pending?.conversation_id === selectedId && <section className="chat-pending" aria-label="Onzekere verzending"><strong>Verzending nog niet bevestigd</strong><p>Gaia maakt geen nieuwe aanvraag. Controleer dezelfde aanvraag-id of probeer exact die id opnieuw.</p><div><button type="button" className="secondary-control" disabled={busy} onClick={() => void recoverPending()}>Controleer status</button><button type="button" className="trace-action" disabled={busy} onClick={() => void retryPending()}>Herstel met dezelfde id</button></div></section>}
           <form className="chat-composer" onSubmit={event => { event.preventDefault(); if (draft.trim()) onSubmitRequest(draft); }}><label className="sr-only" htmlFor="connected-chat-prompt">Vraag Gaia iets</label><textarea id="connected-chat-prompt" rows={2} value={draft} onChange={event => updateDraft(event.target.value)} placeholder="Schrijf een gedachte voor Gaia…" disabled={busy} /><button type="submit" aria-label="Bekijk tekst en kosten" disabled={busy || !draft.trim()}><ArrowUp size={17} /></button></form>
           <p className="chat-footnote">Preview toont de exacte tekst en gesprekscontext. Goedkeuring staat nooit vooraf aan; wijzigen maakt de preview ongeldig.</p>

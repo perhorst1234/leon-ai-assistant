@@ -2547,6 +2547,16 @@ input:focus-visible {
 /* Connected Today/Memory use document flow inside the spatial demo shell. */
 .gaia-shell:has(.connected-today) .companion-stage { display: none; }
 
+/* Connected Chat has its own bounded panel. Keep Leon visible as a small,
+   stable companion beside the heading instead of floating over the transcript. */
+.gaia-shell:has(.connected-chat) .companion-stage {
+  left: calc(100% - 104px) !important;
+  top: 246px !important;
+  z-index: 3;
+  transform: scale(0.36) !important;
+}
+.gaia-shell:has(.connected-chat) .companion-status { display: none; }
+
 .space-view.connected-memory,
 .space-view.connected-today {
   position: absolute;
@@ -2621,4 +2631,8 @@ input:focus-visible {
     gap: 14px;
     margin-top: 16px;
   }
+}
+
+@media (max-width: 700px) {
+  .gaia-shell:has(.connected-chat) .companion-stage { display: none; }
 }
