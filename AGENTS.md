@@ -8,6 +8,13 @@
   stand: 445 backendtests, 51 webtests, typecheck/build/lint; lint nul errors en
   vijf bestaande warnings. Zie `docs/weather-readonly.md`.
 
+- 25 september, doelserver-evidence: read-only preflight bevestigt Ubuntu
+  x86_64, Tesla M40 24GB, driver 580.178.04, 10 CPU-threads en circa 9.3 GB
+  RAM; de tree is schoon en systemd actief. Geïsoleerde delivery-smoke slaagt
+  voor setup, geauthenticeerde backend/web, doctor, backup, stop en restore.
+  Podman/Docker ontbreken; self-improvement blijft daarom static-only.
+  Zie `docs/server-preflight-evidence-2026-09-25.md`.
+
 - 21 september, publieke toegang: Caddy met Let's Encrypt voor
   `leon-ai-assistant.duckdns.org`, UPnP-routerleases en DuckDNS-timer draaien op
   de doel-VM. Externe HTTPS-meetpunten bevestigen HTTP 200. De webapp heeft
@@ -113,7 +120,11 @@
 - Controleer branch, HEAD en onopgeslagen wijzigingen voordat je synchroniseert. Bewaar werk van de gebruiker; overschrijf geen SSD/serverkopie met deze repository.
 - De SSD-code is volledig lokaal hersteld via WSL: zie `docs/wsl-recovery.md`. De oorspronkelijke gedeeltelijke snapshot staat op `codex/ssd-recovery-2026-09-06`; de volledige privébackup staat in `Documents/leon-ssd-full-2026-09-06`. Actuele server.py/store.py/test_control_plane.py en database zijn terug. Integreer gecontroleerde bron met `codex/night-queue-evidence`; publiceer geen privébackup. Bewaar Python/SQLite en ongecommitte serverwerk.
 - Maak onderscheid tussen ontworpen, aanwezig in code, lokaal getest en getest op de doelserver. Een UI-demo is geen werkende agentruntime.
-- Doelhardware: Ubuntu, Tesla M40, Xeon E5-2676 v3, 16 GB systeem-RAM als basis en mogelijk 32 GB. Phase 4 noemt 24 GB VRAM; nog meten. Controleer GPU-, driver-, CUDA- en modelcompatibiliteit. OpenAI is optioneel voor korte goedkope taken met expliciet budget, geen onbeperkte fallback.
+- Doelhardware: Ubuntu x86_64, Tesla M40 24GB, 10 CPU-threads en circa 9.3 GB
+  zichtbaar RAM; driver 580.178.04 is op 25 september gemeten. Controleer bij
+  hardwarewijzigingen opnieuw GPU-, driver-, CUDA- en modelcompatibiliteit.
+  OpenAI is optioneel voor korte goedkope taken met expliciet budget, geen
+  onbeperkte fallback.
 - Houd lange taken hervatbaar met concrete checkpoints en bewijs. Leg testcommando's, uitkomsten en beperkingen vast; meld een mislukte push als niet gesynchroniseerd.
 - Deze repository is openbaar. Commit geen `.env`, tokens, sleutels, persoonlijke logs, gesprekken, databasebestanden, schijfexports of modelgewichten. Controleer herstelde code vóór een push.
 - Bestaande financiële, communicatie-, installatie- en serveracties in de productvisie hebben expliciete bevoegdheden nodig; UI-approval alleen is geen backendautorisatie.

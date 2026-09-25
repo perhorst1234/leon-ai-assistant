@@ -99,7 +99,26 @@ def _process_group_running(pgid: int) -> bool:
         os.killpg(pgid, 0)
     except (ProcessLookupError, PermissionError):
         return False
-    return True
+    # Linux can retain a process-group leader as a zombie after SIGKILL.  In
+    # that state killpg(2) still succeeds, although no runnable service is
+    # left.  Inspect the group so delivery smoke/stop do not report a false
+    # leak while still treating any live member as running.
+    try:
+        result = subprocess.run(
+            ["ps", "-eo", "pgid=,state="],
+            capture_output=True, text=True, check=False,
+        )
+    except OSError:
+        return True
+    if result.returncode != 0:
+        return True
+    for line in result.stdout.splitlines():
+        fields = line.split()
+        if len(fields) < 2 or fields[0] != str(pgid):
+            continue
+        if not fields[1].startswith("Z"):
+            return True
+    return False
 
 
 def _owned_process(record: dict) -> bool:

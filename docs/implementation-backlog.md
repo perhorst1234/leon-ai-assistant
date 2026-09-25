@@ -20,7 +20,12 @@ en loginflow, API-toegang en browserweergave zijn getest; zie
 de tijdelijke tunnel is beschikbaar als fallback. Google/Firecrawl-accounts en de
 self-improvement-doelcontainer blijven de eerstvolgende productstappen.
 
-**21 september, doelserver:** vijf lokale user-systemd-units draaien. Chat via
+Dezelfde dag rapporteerde de read-only doelserver-preflight een Tesla M40 24GB,
+driver 580.178.04, 10 CPU-threads en 9.3 GB RAM. De geïsoleerde delivery-smoke
+doorliep setup, auth, doctor, backup, stop en restore met geldige SQLite-
+integriteit. Zie [doelserverbewijs](server-preflight-evidence-2026-09-25.md).
+
+**21 september, doelserver:** de lokale user-systemd-units draaien. Chat via
 Ollama/Qwen 14B op de Tesla M40 is end-to-end bewezen; OpenCode/GPT-OSS 20B
 heeft echte file read/edit/readback uitgevoerd met 80C piek. M40-coding-agent
 en pinned setup staan in `scripts/`. De 89C-afslag is gebruikerskeuze, geen
@@ -134,7 +139,7 @@ Stand: 6 september 2026. De eigenaar vraagt volledige stapsgewijze uitvoering. *
 5. **Gaia verbinden:** bestaand ontwerp behouden; chat/werk/approval/memory koppelen aan werkelijke status. Fouten en mock/demo zichtbaar onderscheiden.
 6. **Gecontroleerde autonomie:** nachtqueue, memory/value-engine, research en morning brief met budget, annulering en herstarttests; geen verzonnen resultaten.
 7. **Connectors per stuk:** begin read-only; agenda/mail, serverbeheer, shopper, finance en printer vereisen eigen scopes, concrete approvals en regressietests. Externe pakketten pas na licentie-/onderhoud-/veiligheidscontrole.
-8. **Ubuntu-oplevering:** reproduceerbare installatie, secretbeheer, healthchecks, private backup/restore, systemd, logrotatie en begrensde resources. Test op 16 GB RAM/M40; 32 GB blijft optioneel. Fan-control pas na sensoren en fail-safe test.
+8. **Ubuntu-oplevering:** reproduceerbare installatie, secretbeheer, healthchecks, private backup/restore, systemd, logrotatie en begrensde resources. Doelserver-preflight en delivery-smoke zijn bewezen op de gemeten M40/9.3-GB-VM; reboot/rollback, Podman-sandbox en fan-failsafe blijven aparte acceptatiechecks.
 
 Releaseklaar betekent relevante acceptatiechecks aantoonbaar geslaagd, geen bekende kritieke veiligheidsfouten, begrensde kosten en herstelbare fouten. Een lokale mocktest bewijst geen werkende dienst of hardware.
 

@@ -18,6 +18,7 @@ sys.path.insert(0, str(REPO / "src"))
 from leon_control_plane.delivery import (  # noqa: E402
     DeliveryConfig,
     _literal_env,
+    _process_group_running,
     _read_processes,
     backup,
     doctor,
@@ -33,16 +34,6 @@ def _request_json(url: str, token: str) -> int:
     with urllib.request.urlopen(request, timeout=10) as response:
         json.loads(response.read().decode("utf-8"))
         return response.status
-
-
-def _group_running(pgid: int) -> bool:
-    try:
-        os.killpg(pgid, 0)
-    except ProcessLookupError:
-        return False
-    except PermissionError:
-        return False
-    return True
 
 
 def main() -> int:
@@ -91,9 +82,9 @@ def main() -> int:
             stopped = stop(config)
             assert stopped == 3
             end = time.monotonic() + 8
-            while time.monotonic() < end and any(_group_running(pid) for pid in pids):
+            while time.monotonic() < end and any(_process_group_running(pid) for pid in pids):
                 time.sleep(0.1)
-            assert not any(_group_running(pid) for pid in pids)
+            assert not any(_process_group_running(pid) for pid in pids)
 
             with sqlite3.connect(config.db) as connection:
                 connection.execute("DELETE FROM delivery_smoke")

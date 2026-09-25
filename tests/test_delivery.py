@@ -122,6 +122,16 @@ def test_owned_python_process_allows_resolved_interpreter_path(monkeypatch):
     assert delivery._owned_process({"pid": 1234, "command": command})
 
 
+def test_process_group_running_ignores_zombie_members(monkeypatch):
+    class Result:
+        returncode = 0
+        stdout = " 42001 Z\n 42001 Z\n"
+
+    monkeypatch.setattr(delivery.os, "killpg", lambda _pgid, _signal: None)
+    monkeypatch.setattr(delivery.subprocess, "run", lambda *args, **kwargs: Result())
+    assert delivery._process_group_running(42001) is False
+
+
 def test_start_refuses_an_in_use_port_before_launching(tmp_path, monkeypatch):
     item = config(tmp_path)
     setup(item, install=False)

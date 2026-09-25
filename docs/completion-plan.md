@@ -30,7 +30,9 @@ mocktest of onbereikbare hardware als afgeronde integratie tellen.
 
 Stand 25 september: stappen 1–2 lokaal geïmplementeerd en met offline tests plus
 echte browserinteractie tegen een nepmodel gecontroleerd. Stap 3 heeft lokale
-scripts en Ubuntu-unitvoorbeelden; doelserveracceptatie blijft open. Stap 4 is
+scripts en Ubuntu-unitvoorbeelden; doelserver-preflight, systemd-readiness en de
+geïsoleerde delivery-smoke zijn op de doelserver geslaagd. Volledige reboot- en
+rollbackacceptatie en de Podman-sandbox blijven open. Stap 4 is
 lokaal geïmplementeerd en via browser tegen tijdelijke SQLite gecontroleerd.
 Stap 5 is voor de accountloze Open-Meteo-weerbron live voltooid: vaste
 Amsterdam-scope, bronvermelding, fouttests, cache en audit zijn op de doel-VM

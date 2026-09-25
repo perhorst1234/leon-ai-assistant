@@ -37,10 +37,12 @@ De algemene assignmentflow gebruikt nu eveneens een echte duurzame,
 text-only `local_ollama`-run op de M40. Een geïsoleerde productie-equivalente
 proef eindigde in `waiting_for_review`, met nul providerkosten, geldige
 auditketen en 71C piek. Cold-startleases, dubbele apply en herstel tussen
-assignment/apply en queue-insert hebben regressietests. Stand: 440 backendtests,
-51 webtests, typecheck en productiebuild. Open: Google/Firecrawl-accounts en
-self-improvement-testcontainer ontbreken, plus brede productacceptatie en
-publicatie van deze serverwijzigingen. Nieuwe wijzigingen eerst testen,
+assignment/apply en queue-insert hebben regressietests. Stand: 445 backendtests,
+51 webtests, typecheck en productiebuild. Doelserver-preflight en de
+geïsoleerde delivery-smoke zijn nu ook geslaagd; zie
+[doelserverbewijs](server-preflight-evidence-2026-09-25.md). Open:
+Google/Firecrawl-accounts en self-improvement-testcontainer ontbreken, plus
+brede productacceptatie en publicatie van deze serverwijzigingen. Nieuwe wijzigingen eerst testen,
 draaiende services herstarten en veilige bron naar GitHub synchroniseren.
 
 ## Lopende aanvulling
@@ -214,6 +216,11 @@ Server-HEAD: `6b1863b6e1fdc612672c816ac048313c677115ca`, 16 lokale commits plus 
 
 `codex/ssd-recovery-2026-09-06` blijft de historische gedeeltelijke snapshot. De ontwikkelbranch `codex/night-queue-evidence` verenigt die bron met de actuele main-overdracht. Originele servergeschiedenis/private logs worden niet gepusht. Zie [WSL-bewijs](wsl-recovery.md) en [historische audit](server-recovery-audit.md).
 
-Doel blijft Ubuntu, M40, Xeon E5-2676 v3, 16 GB RAM (32 optioneel). Nog open: GPU/driver/modelmeting, live providers, financiële/communicatie/installer-approvalketens, connectors, volledige productacceptatie. Phase-4-stories zijn niet afgevinkt op basis van mocktests.
+Doelserver-readiness is nu gemeten: Ubuntu x86_64, Tesla M40 24GB, driver
+580.178.04, 10 CPU-threads en ongeveer 9.3 GB RAM zichtbaar. De eerdere
+16-GB-aanname was onjuist en is vervangen door deze meting. Nog open: Podman-
+installatie en sandboxacceptatie, live Google/Firecrawl-providers, financiële/
+communicatie/installer-approvalketens, overige connectors en volledige
+productacceptatie. Phase-4-stories zijn niet afgevinkt op basis van mocktests.
 
 Voor hervatten op de server: controleer HEAD/branch/dirty werk en gebruik bij twijfel een nieuwe kloon; overschrijf de oorspronkelijke bron of database niet. GitHub is de code-/planoverdracht, geen backup van lopende processen of gesprekken.
