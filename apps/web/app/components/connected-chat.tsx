@@ -101,7 +101,9 @@ export default function ConnectedChat({
   const previewVersion = useRef(0);
   const reviewRef = useRef<typeof review>(null);
   const reviewPanelRef = useRef<HTMLElement>(null);
+  const pendingRef = useRef<PendingRequest | null>(null);
   useEffect(() => { reviewRef.current = review; }, [review]);
+  useEffect(() => { pendingRef.current = pending; }, [pending]);
 
   const api = useCallback<ChatApi>((resource, body, id, query) => requestChat(token, resource, body, id, query), [token]);
 
@@ -170,7 +172,8 @@ export default function ConnectedChat({
   }, [api, loadConversation]);
 
   const submitTurn = useCallback(async (conversationId: string, content: string, preview: Preview) => {
-    const matchingPending = pending && pending.conversation_id === conversationId && pending.content === content ? pending : null;
+    const currentPending = pendingRef.current;
+    const matchingPending = currentPending && currentPending.conversation_id === conversationId && currentPending.content === content ? currentPending : null;
     const requestId = matchingPending?.request_id ?? createRequestId();
     const stored: PendingRequest = { conversation_id: conversationId, request_id: requestId, content,
       max_output_tokens: outputTokens, max_cost_microusd: preview.max_cost_microusd, preview_sha256: preview.prompt_sha256, provider: preview.provider };
@@ -186,7 +189,7 @@ export default function ConnectedChat({
       await loadConversation(conversationId);
     } catch (reason) { setError(reason instanceof Error ? reason.message : 'Verzending onzeker; controleer dezelfde aanvraag opnieuw.'); }
     finally { setBusy(false); }
-  }, [api, loadConversation, onClearDraft, pending]);
+  }, [api, loadConversation, onClearDraft]);
 
   const previewDraft = useCallback(async (content: string) => {
     if (!content.trim()) return;
@@ -199,11 +202,7 @@ export default function ConnectedChat({
       if (!result.preview || result.preview.execution_allowed !== false || result.preview.provider_calls_made !== false) throw new Error('Onverwachte preview; niets goedgekeurd.');
       if (version !== previewVersion.current || selectedRef.current !== conversationId) return;
       setReview({ content, conversationId, preview: result.preview }); setApproved(false);
-      if (result.preview.provider === 'ollama') {
-        await submitTurn(conversationId, content, result.preview);
-      } else {
-        setNotice('OpenAI staat klaar. Controleer de tekst en kosten voordat hij wordt verstuurd.');
-      }
+      await submitTurn(conversationId, content, result.preview);
     } catch (reason) {
       if (version === previewVersion.current) setError(reason instanceof Error ? reason.message : 'Preview niet bevestigd.');
     } finally {
