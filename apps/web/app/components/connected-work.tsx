@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { Check, Cpu, Database, LockKeyhole, Pause, Play, RefreshCw, X } from 'lucide-react';
 import './connected-work.css';
+import { createRequestId } from '../lib/request-id';
 import ModelRequestForm from './model-request-form';
 import type { ModelPreview } from '../../lib/model-submission';
 import ModelCostRecovery from './model-cost-recovery';
@@ -132,7 +133,7 @@ export default function ConnectedWork({ demo }: { demo: ReactNode }) {
             <section className="agent-ensemble"><div className="sidebar-heading"><span><Cpu size={16} /> Nieuwe lokale controle</span></div>
               <label className="work-field">Koppel aan taak<select value={activeTask} disabled={!connected} onChange={event => { setTaskId(event.target.value); pendingRequest.current = null; }}><option value="" disabled>Kies een taak</option>{tasks.map(task => <option key={task.id} value={task.id}>{task.title}</option>)}</select></label>
               <button type="button" className="trace-action" disabled={controlsDisabled || !activeTask} onClick={() => void mutate(async () => {
-                if (!pendingRequest.current || pendingRequest.current.taskId !== activeTask) pendingRequest.current = { taskId: activeTask, requestId: crypto.randomUUID() };
+                if (!pendingRequest.current || pendingRequest.current.taskId !== activeTask) pendingRequest.current = { taskId: activeTask, requestId: createRequestId() };
                 const result = await api('jobs', token, { task_id: activeTask, request_id: pendingRequest.current.requestId });
                 if (!result.job?.id) throw new Error('Taakaanmaak niet bevestigd. Ververs de status voordat je opnieuw probeert.');
                 setSelectedId(result.job.id); setDetailJob(result.job); pendingRequest.current = null;

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { ArrowUp, Check, ChevronDown, MessageCircle, Plus, RefreshCw, ShieldCheck, X } from 'lucide-react';
 import { previewStillMatches } from './chat-preview';
+import { createRequestId } from '../lib/request-id';
 import './connected-work.css';
 
 type ChatRequest = { id: number; content: string };
@@ -159,7 +160,7 @@ export default function ConnectedChat({
 
   const ensureConversation = useCallback(async () => {
     if (selectedRef.current) return selectedRef.current;
-    const id = crypto.randomUUID();
+    const id = createRequestId();
     const result = await api('chat-conversations', { request_id: id, title: 'Nieuw gesprek' });
     if (!result.conversation?.id) throw new Error('Nieuw gesprek is niet bevestigd.');
     const conversation = result.conversation;
@@ -170,7 +171,7 @@ export default function ConnectedChat({
 
   const submitTurn = useCallback(async (conversationId: string, content: string, preview: Preview) => {
     const matchingPending = pending && pending.conversation_id === conversationId && pending.content === content ? pending : null;
-    const requestId = matchingPending?.request_id ?? crypto.randomUUID();
+    const requestId = matchingPending?.request_id ?? createRequestId();
     const stored: PendingRequest = { conversation_id: conversationId, request_id: requestId, content,
       max_output_tokens: outputTokens, max_cost_microusd: preview.max_cost_microusd, preview_sha256: preview.prompt_sha256, provider: preview.provider };
     setBusy(true); setError(''); setNotice(''); writePending(stored); setPending(stored);
@@ -267,7 +268,7 @@ export default function ConnectedChat({
     if (!connected || busy) return;
     setBusy(true); setError(''); setNotice('');
     try {
-      const id = crypto.randomUUID();
+      const id = createRequestId();
       const result = await api('chat-conversations', { request_id: id, title: 'Nieuw gesprek' });
       if (!result.conversation?.id) throw new Error('Nieuw gesprek is niet bevestigd.');
       setConversations(current => [result.conversation!, ...current]);
