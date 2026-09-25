@@ -16,6 +16,13 @@ Tijdens de volledige suite bleek de bestaande preflight te kunnen crashen als
 `nvidia-smi` zelfs na SIGKILL ononderbreekbaar bleef. Die tweede timeout wordt
 nu begrensd als probe-fout gerapporteerd; de gerichte regressieset slaagt.
 
+De verbonden chat is nu een echte chat: nieuwe gesprekken worden direct
+aangemaakt en lokale M40-beurten worden zonder extra checkbox verzonden. Een
+lokale classificatie markeert sensuele tekst en forceert Ollama; normale tekst
+kan bij een actief Ollama-model naar de geconfigureerde OpenAI-fallback. De
+providerkeuze wordt aan de aanvraag gebonden. Stand: 448 backendtests en 51
+webtests.
+
 ## Doelserver nu
 
 Leon draait lokaal als user-systemd-services: Ollama, backend, worker, web,
