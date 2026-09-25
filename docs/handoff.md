@@ -9,7 +9,7 @@ Open-Meteo. Backend en web valideren een begrensd contract; alleen één vaste
 HTTPS-host, 64 KiB antwoord, drie dagen en tien minuten cache zijn toegestaan.
 Bron/licentie zijn zichtbaar en iedere poging wordt geaudit. Een echte call op
 de doel-VM, daaropvolgende cache-hit en geldige auditketen zijn bewezen. De
-volledige stand is 445 backendtests, 51 webtests, TypeScript, productiebuild en
+volledige stand is 446 backendtests, 51 webtests, TypeScript, productiebuild en
 lint met nul errors/vijf bestaande warnings. Zie [weerconnector](weather-readonly.md).
 
 Tijdens de volledige suite bleek de bestaande preflight te kunnen crashen als
@@ -37,7 +37,7 @@ De algemene assignmentflow gebruikt nu eveneens een echte duurzame,
 text-only `local_ollama`-run op de M40. Een geïsoleerde productie-equivalente
 proef eindigde in `waiting_for_review`, met nul providerkosten, geldige
 auditketen en 71C piek. Cold-startleases, dubbele apply en herstel tussen
-assignment/apply en queue-insert hebben regressietests. Stand: 445 backendtests,
+assignment/apply en queue-insert hebben regressietests. Stand: 446 backendtests,
 51 webtests, typecheck en productiebuild. Doelserver-preflight en de
 geïsoleerde delivery-smoke zijn nu ook geslaagd; zie
 [doelserverbewijs](server-preflight-evidence-2026-09-25.md). Open:

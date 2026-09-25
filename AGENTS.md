@@ -5,8 +5,13 @@
   read-only HTTPS naar één host, 64 KiB antwoordlimiet, tien minuten cache,
   dubbele contractvalidatie, zichtbare bron/licentie en connectoraudit. Echte
   providerproef op de doel-VM, cache-hit en geldige auditketen bewezen. Volledige
-  stand: 445 backendtests, 51 webtests, typecheck/build/lint; lint nul errors en
+  stand: 446 backendtests, 51 webtests, typecheck/build/lint; lint nul errors en
   vijf bestaande warnings. Zie `docs/weather-readonly.md`.
+
+- 25 september, chat-UX: echte verbonden chat toont niet langer de demo-toast
+  “Context samengebracht” tijdens een nog wachtende preview. De reviewkaart
+  scrollt automatisch in beeld met de expliciete goedkeuringsstap; het globale
+  Leon-poppetje staat compact naast de chatkop en bedekt het gesprek niet.
 
 - 25 september, doelserver-evidence: read-only preflight bevestigt Ubuntu
   x86_64, Tesla M40 24GB, driver 580.178.04, 10 CPU-threads en circa 9.3 GB
