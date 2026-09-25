@@ -15,6 +15,7 @@ import uuid
 from leon_control_plane.model_work import preview as model_preview
 from leon_control_plane.openai_text import MAX_INPUT_BYTES
 from leon_control_plane.secret_scanner import assert_no_secrets
+from leon_control_plane.sensitivity import classify_prompt
 from leon_control_plane.work_queue import MODEL_KIND, WorkQueue
 
 
@@ -174,6 +175,7 @@ class ChatService:
         quote = model_preview({"prompt": prompt, "max_output_tokens": details["max_output_tokens"], "max_cost_microusd": details["max_cost_microusd"]})
         return quote | {"conversation_id": conversation["id"], "conversation_revision": conversation["revision"],
                         "included_messages": included, "prompt": prompt,
+                        "sensitivity": classify_prompt(content),
                         # Keep the established field name for the web client, but
                         # bind the approval to the exact limits as well as text.
                         "prompt_sha256": _approval_digest(prompt, details["max_output_tokens"], quote["max_cost_microusd"])}

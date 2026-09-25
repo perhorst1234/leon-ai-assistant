@@ -47,6 +47,15 @@ def test_chat_preview_shows_exact_bounded_context_and_submit_is_idempotent(tmp_p
     assert [(item["role"], item["status"]) for item in loaded["messages"]] == [("user", "complete"), ("assistant", "pending")]
 
 
+def test_chat_preview_classifies_sensitive_text_for_local_only_routing(tmp_path):
+    service = ChatService(make_store(tmp_path))
+    conversation = service.create_conversation({"request_id": request_id()})
+    sensitive = quote(service, conversation["id"], "Dit is een sensueel onderwerp")
+    ordinary = quote(service, conversation["id"], "Vertel een grap")
+    assert sensitive["sensitivity"] == {"category": "sexual", "local_only": True}
+    assert ordinary["sensitivity"] == {"category": "normal", "local_only": False}
+
+
 def test_stale_preview_cannot_approve_changed_conversation(tmp_path):
     service = ChatService(make_store(tmp_path))
     conversation = service.create_conversation({"request_id": request_id()})

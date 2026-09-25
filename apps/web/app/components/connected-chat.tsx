@@ -15,6 +15,7 @@ type ChatMessage = {
 type Preview = {
   prompt: string; prompt_sha256: string; conversation_revision: number; included_messages: number | Array<unknown>;
   provider: 'ollama' | 'openai'; model: string; reserved_microusd: number; max_cost_microusd: number; execution_allowed?: false; provider_calls_made?: false;
+  sensitivity?: { category: 'normal' | 'sexual'; local_only: boolean };
 };
 type PendingRequest = {
   conversation_id: string; request_id: string; content: string; max_output_tokens: number;
@@ -167,6 +168,25 @@ export default function ConnectedChat({
     return conversation.id;
   }, [api, loadConversation]);
 
+  const submitTurn = useCallback(async (conversationId: string, content: string, preview: Preview) => {
+    const matchingPending = pending && pending.conversation_id === conversationId && pending.content === content ? pending : null;
+    const requestId = matchingPending?.request_id ?? crypto.randomUUID();
+    const stored: PendingRequest = { conversation_id: conversationId, request_id: requestId, content,
+      max_output_tokens: outputTokens, max_cost_microusd: preview.max_cost_microusd, preview_sha256: preview.prompt_sha256 };
+    setBusy(true); setError(''); setNotice(''); writePending(stored); setPending(stored);
+    try {
+      const result = await api('chat-messages', {
+        request_id: requestId, content, max_output_tokens: outputTokens,
+        max_cost_microusd: preview.max_cost_microusd, preview_sha256: preview.prompt_sha256, approve_external_text: true,
+      }, conversationId);
+      if (!result.message || result.message.request_id !== requestId) throw new Error('Verzending niet bevestigd; bewaar dezelfde aanvraag-id voor herstel.');
+      clearPending(); setPending(null); setReview(null); setApproved(false); onClearDraft();
+      setNotice('Bericht verzonden. Leon antwoordt zodra de M40 klaar is.');
+      await loadConversation(conversationId);
+    } catch (reason) { setError(reason instanceof Error ? reason.message : 'Verzending onzeker; controleer dezelfde aanvraag opnieuw.'); }
+    finally { setBusy(false); }
+  }, [api, loadConversation, onClearDraft, pending]);
+
   const previewDraft = useCallback(async (content: string) => {
     if (!content.trim()) return;
     const version = ++previewVersion.current;
@@ -178,13 +198,17 @@ export default function ConnectedChat({
       if (!result.preview || result.preview.execution_allowed !== false || result.preview.provider_calls_made !== false) throw new Error('Onverwachte preview; niets goedgekeurd.');
       if (version !== previewVersion.current || selectedRef.current !== conversationId) return;
       setReview({ content, conversationId, preview: result.preview }); setApproved(false);
-      setNotice('Context staat klaar. Vink de goedkeuring aan om Leon te laten antwoorden.');
+      if (result.preview.provider === 'ollama') {
+        await submitTurn(conversationId, content, result.preview);
+      } else {
+        setNotice('OpenAI staat klaar. Controleer de tekst en kosten voordat hij wordt verstuurd.');
+      }
     } catch (reason) {
       if (version === previewVersion.current) setError(reason instanceof Error ? reason.message : 'Preview niet bevestigd.');
     } finally {
       if (version === previewVersion.current) setBusy(false);
     }
-  }, [api, ensureConversation]);
+  }, [api, ensureConversation, submitTurn]);
 
   useEffect(() => {
     if (!request || lastRequest.current === request.id) return;
@@ -194,22 +218,7 @@ export default function ConnectedChat({
 
   const submitApproved = async () => {
     if (!review || review.content !== draft || !approved || busy) return;
-    const matchingPending = pending && pending.conversation_id === review.conversationId && pending.content === review.content ? pending : null;
-    const requestId = matchingPending?.request_id ?? crypto.randomUUID();
-    const stored: PendingRequest = { conversation_id: review.conversationId, request_id: requestId, content: review.content,
-      max_output_tokens: outputTokens, max_cost_microusd: review.preview.max_cost_microusd, preview_sha256: review.preview.prompt_sha256 };
-    setBusy(true); setError(''); setNotice(''); writePending(stored); setPending(stored);
-    try {
-      const result = await api('chat-messages', {
-        request_id: requestId, content: review.content, max_output_tokens: outputTokens,
-        max_cost_microusd: review.preview.max_cost_microusd, preview_sha256: review.preview.prompt_sha256, approve_external_text: true,
-      }, review.conversationId);
-      if (!result.message || result.message.request_id !== requestId) throw new Error('Verzending niet bevestigd; bewaar dezelfde aanvraag-id voor herstel.');
-      clearPending(); setPending(null); setReview(null); setApproved(false); onClearDraft();
-      setNotice('Bericht opgeslagen. Het antwoord verschijnt zodra de worker klaar is.');
-      await loadConversation(review.conversationId);
-    } catch (reason) { setError(reason instanceof Error ? reason.message : 'Verzending onzeker; controleer dezelfde aanvraag opnieuw.'); }
-    finally { setBusy(false); }
+    await submitTurn(review.conversationId, review.content, review.preview);
   };
 
   const recoverPending = async () => {
@@ -254,6 +263,20 @@ export default function ConnectedChat({
     onDraftChange(value);
   };
 
+  const createConversation = async () => {
+    if (!connected || busy) return;
+    setBusy(true); setError(''); setNotice('');
+    try {
+      const id = crypto.randomUUID();
+      const result = await api('chat-conversations', { request_id: id, title: 'Nieuw gesprek' });
+      if (!result.conversation?.id) throw new Error('Nieuw gesprek is niet bevestigd.');
+      setConversations(current => [result.conversation!, ...current]);
+      await loadConversation(result.conversation.id);
+      onClearDraft(); setReview(null); setApproved(false); setNotice('Nieuw gesprek aangemaakt.');
+    } catch (reason) { setError(reason instanceof Error ? reason.message : 'Nieuw gesprek kon niet worden aangemaakt.'); }
+    finally { setBusy(false); }
+  };
+
   if (showDemo) return <>
     <div className="work-mode-switch" aria-label="Chatmodus">
       <button type="button" aria-pressed={false} onClick={() => { setShowDemo(false); onModeChange(false); }}>Verbonden chat</button>
@@ -271,7 +294,7 @@ export default function ConnectedChat({
     <div className="space-view chat-view connected-chat">
       <div className="chat-workspace">
         <aside className="chat-conversation-list" aria-label="Opgeslagen gesprekken">
-          <div className="chat-list-heading"><span><MessageCircle size={16} /> Gesprekken</span><button type="button" aria-label="Nieuw gesprek" disabled={!connected || busy} onClick={() => { selectedRef.current = ''; setSelectedId(''); setMessages([]); }}><Plus size={16} /></button></div>
+          <div className="chat-list-heading"><span><MessageCircle size={16} /> Gesprekken</span><button type="button" aria-label="Nieuw gesprek" disabled={!connected || busy} onClick={() => void createConversation()}><Plus size={16} /></button></div>
           {!token && <p className="chat-muted">Verbind met Leon om je gesprekken te laden.</p>}
           {conversations.map(conversation => <button type="button" className="chat-conversation-item" data-selected={conversation.id === selectedId || undefined} key={conversation.id} onClick={() => void loadConversation(conversation.id)}>{titleFor(conversation)}<small>{conversation.updated_at ? new Date(conversation.updated_at * 1000).toLocaleString('nl-NL') : 'Opgeslagen gesprek'}</small></button>)}
           {nextBefore && <button type="button" className="chat-more" disabled={busy} onClick={() => void refreshConversations(nextBefore)}>Laad oudere gesprekken <ChevronDown size={14} /></button>}
@@ -287,10 +310,10 @@ export default function ConnectedChat({
             {!hasConversation && connected && <p className="chat-empty">Kies een gesprek of begin onderaan met een nieuwe gedachte.</p>}
             {messages.map(message => <article className={`chat-message chat-message-${message.role}`} key={message.id}><span className="chat-message-label">{message.role === 'user' ? 'Per' : 'Gaia'}</span><p>{message.content}</p>{messageStatus(message) && <small className={message.status === 'error' || message.status === 'unknown' ? 'chat-message-warning' : ''}>{messageStatus(message)}</small>}</article>)}
           </div>
-          {activeReview && <section ref={reviewPanelRef} className="chat-review" aria-label="Tekst en uitvoering goedkeuren"><div className="chat-review-heading"><span><ShieldCheck size={16} /> Tekst en context controleren</span><button type="button" aria-label="Preview sluiten" onClick={() => { setReview(null); setApproved(false); }}><X size={15} /></button></div><p className="chat-review-meta">{activeReview.preview.provider === 'ollama' ? 'Lokale M40' : 'OpenAI'} · {activeReview.preview.model} · {includedCount(activeReview.preview.included_messages)} eerdere berichten · revisie {activeReview.preview.conversation_revision}</p><blockquote>{activeReview.preview.prompt}</blockquote><p>{activeReview.preview.provider === 'ollama' ? 'Lokale uitvoering zonder API-kosten.' : `Reservering: $${(activeReview.preview.reserved_microusd / 1e6).toFixed(6)} USD.`} Er is nog niets naar een model verstuurd.</p><label className="model-approval"><input type="checkbox" checked={approved} disabled={busy} onChange={event => setApproved(event.target.checked)} />Ik keur precies deze tekst, context en uitvoeringslimiet goed.</label><button type="button" className="trace-action" disabled={!approved || busy} onClick={() => void submitApproved()}>Goedkeuren en in wachtrij zetten</button></section>}
+          {activeReview && <section ref={reviewPanelRef} className="chat-review" aria-label="Tekst en uitvoering goedkeuren"><div className="chat-review-heading"><span><ShieldCheck size={16} /> Tekst en context controleren</span><button type="button" aria-label="Preview sluiten" onClick={() => { setReview(null); setApproved(false); }}><X size={15} /></button></div><p className="chat-review-meta">{activeReview.preview.provider === 'ollama' ? 'Lokale M40' : 'OpenAI'} · {activeReview.preview.model} · {includedCount(activeReview.preview.included_messages)} eerdere berichten · revisie {activeReview.preview.conversation_revision}</p>{activeReview.preview.sensitivity?.local_only && <p className="chat-notice">Gevoelige inhoud herkend: deze beurt blijft verplicht op de M40.</p>}<blockquote>{activeReview.preview.prompt}</blockquote><p>{activeReview.preview.provider === 'ollama' ? 'Lokale uitvoering zonder API-kosten.' : `Reservering: $${(activeReview.preview.reserved_microusd / 1e6).toFixed(6)} USD.`} Er is nog niets naar een model verstuurd.</p><label className="model-approval"><input type="checkbox" checked={approved} disabled={busy} onChange={event => setApproved(event.target.checked)} />Ik keur precies deze tekst, context en uitvoeringslimiet goed.</label><button type="button" className="trace-action" disabled={!approved || busy} onClick={() => void submitApproved()}>Goedkeuren en in wachtrij zetten</button></section>}
           {pending?.conversation_id === selectedId && <section className="chat-pending" aria-label="Onzekere verzending"><strong>Verzending nog niet bevestigd</strong><p>Gaia maakt geen nieuwe aanvraag. Controleer dezelfde aanvraag-id of probeer exact die id opnieuw.</p><div><button type="button" className="secondary-control" disabled={busy} onClick={() => void recoverPending()}>Controleer status</button><button type="button" className="trace-action" disabled={busy} onClick={() => void retryPending()}>Herstel met dezelfde id</button></div></section>}
           <form className="chat-composer" onSubmit={event => { event.preventDefault(); if (draft.trim()) onSubmitRequest(draft); }}><label className="sr-only" htmlFor="connected-chat-prompt">Vraag Gaia iets</label><textarea id="connected-chat-prompt" rows={2} value={draft} onChange={event => updateDraft(event.target.value)} placeholder="Schrijf een gedachte voor Gaia…" disabled={busy} /><button type="submit" aria-label="Bekijk tekst en kosten" disabled={busy || !draft.trim()}><ArrowUp size={17} /></button></form>
-          <p className="chat-footnote">Preview toont de exacte tekst en gesprekscontext. Goedkeuring staat nooit vooraf aan; wijzigen maakt de preview ongeldig.</p>
+          <p className="chat-footnote">Lokale M40-chat wordt direct verzonden. OpenAI en acties met kosten of externe gevolgen blijven eerst ter controle zichtbaar.</p>
         </section>
       </div>
     </div>
