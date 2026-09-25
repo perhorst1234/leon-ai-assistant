@@ -28,6 +28,14 @@ def test_local_preview_has_no_provider_charge(monkeypatch):
     assert quote["provider_calls_made"] is False
 
 
+def test_busy_local_preview_uses_openai_unless_provider_is_forced_local(monkeypatch):
+    monkeypatch.setenv("LEON_LOCAL_MODEL_ENABLED", "1")
+    cloud = preview({"prompt": "Een gewone vraag.", "max_output_tokens": 64, "max_cost_microusd": 5000}, local_busy=True)
+    private = preview({"prompt": "Een sensueel onderwerp.", "max_output_tokens": 64, "max_cost_microusd": 1, "provider": "ollama"}, local_busy=True)
+    assert cloud["provider"] == "openai"
+    assert private["provider"] == "ollama"
+
+
 def test_local_http_roundtrip_uses_only_loopback_and_zero_cost(tmp_path, monkeypatch):
     observed = []
 

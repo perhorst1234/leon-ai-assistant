@@ -19,7 +19,7 @@ type Preview = {
 };
 type PendingRequest = {
   conversation_id: string; request_id: string; content: string; max_output_tokens: number;
-  max_cost_microusd: number; preview_sha256: string;
+  max_cost_microusd: number; preview_sha256: string; provider?: 'ollama' | 'openai';
 };
 type ApiPayload = {
   error?: string; conversation?: Conversation; conversations?: Conversation[]; messages?: ChatMessage[];
@@ -56,7 +56,7 @@ function readPending(): PendingRequest | null {
       || typeof parsed.content !== 'string' || typeof parsed.preview_sha256 !== 'string') throw new Error('Ongeldige bewaarde chat-aanvraag.');
     return { conversation_id: parsed.conversation_id, request_id: parsed.request_id, content: parsed.content,
       max_output_tokens: parsed.max_output_tokens ?? outputTokens, max_cost_microusd: parsed.max_cost_microusd ?? maxCostMicrousd,
-      preview_sha256: parsed.preview_sha256 };
+      preview_sha256: parsed.preview_sha256, provider: parsed.provider === 'openai' || parsed.provider === 'ollama' ? parsed.provider : undefined };
   } catch (error) {
     throw error instanceof Error ? error : new Error('Ongeldige bewaarde chat-aanvraag.');
   }
@@ -172,12 +172,12 @@ export default function ConnectedChat({
     const matchingPending = pending && pending.conversation_id === conversationId && pending.content === content ? pending : null;
     const requestId = matchingPending?.request_id ?? crypto.randomUUID();
     const stored: PendingRequest = { conversation_id: conversationId, request_id: requestId, content,
-      max_output_tokens: outputTokens, max_cost_microusd: preview.max_cost_microusd, preview_sha256: preview.prompt_sha256 };
+      max_output_tokens: outputTokens, max_cost_microusd: preview.max_cost_microusd, preview_sha256: preview.prompt_sha256, provider: preview.provider };
     setBusy(true); setError(''); setNotice(''); writePending(stored); setPending(stored);
     try {
       const result = await api('chat-messages', {
         request_id: requestId, content, max_output_tokens: outputTokens,
-        max_cost_microusd: preview.max_cost_microusd, preview_sha256: preview.prompt_sha256, approve_external_text: true,
+        max_cost_microusd: preview.max_cost_microusd, preview_sha256: preview.prompt_sha256, provider: preview.provider, approve_external_text: true,
       }, conversationId);
       if (!result.message || result.message.request_id !== requestId) throw new Error('Verzending niet bevestigd; bewaar dezelfde aanvraag-id voor herstel.');
       clearPending(); setPending(null); setReview(null); setApproved(false); onClearDraft();
@@ -240,7 +240,7 @@ export default function ConnectedChat({
     try {
       const result = await api('chat-messages', {
         request_id: pending.request_id, content: pending.content, max_output_tokens: pending.max_output_tokens,
-        max_cost_microusd: pending.max_cost_microusd, preview_sha256: pending.preview_sha256, approve_external_text: true,
+        max_cost_microusd: pending.max_cost_microusd, preview_sha256: pending.preview_sha256, provider: pending.provider, approve_external_text: true,
       }, pending.conversation_id);
       if (!result.message || result.message.request_id !== pending.request_id) throw new Error('Aanvraag-id niet bevestigd.');
       clearPending(); setPending(null); setNotice('Dezelfde aanvraag-id is opnieuw gecontroleerd; geen dubbele boodschap aangemaakt.');

@@ -13,6 +13,7 @@ import time
 import uuid
 
 from leon_control_plane.model_work import preview as model_preview
+from leon_control_plane.local_model import LocalModelConfig, is_busy as local_model_is_busy
 from leon_control_plane.openai_text import MAX_INPUT_BYTES
 from leon_control_plane.secret_scanner import assert_no_secrets
 from leon_control_plane.sensitivity import classify_prompt
@@ -74,7 +75,7 @@ class ChatService:
                     request_id TEXT UNIQUE, role TEXT NOT NULL CHECK(role IN ('user','assistant')),
                     content TEXT NOT NULL DEFAULT '', status TEXT NOT NULL,
                     job_id TEXT UNIQUE, prompt TEXT, prompt_sha256 TEXT, conversation_revision INTEGER,
-                    request_content TEXT, max_output_tokens INTEGER, max_cost_microusd INTEGER,
+                    request_content TEXT, provider TEXT, max_output_tokens INTEGER, max_cost_microusd INTEGER,
                     created_at REAL NOT NULL, updated_at REAL NOT NULL
                 );
                 CREATE INDEX IF NOT EXISTS chat_conversations_page ON chat_conversations(created_at DESC, id DESC);
@@ -83,6 +84,8 @@ class ChatService:
             columns = {row[1] for row in conn.execute("PRAGMA table_info(chat_messages)")}
             if "request_content" not in columns:
                 conn.execute("ALTER TABLE chat_messages ADD COLUMN request_content TEXT")
+            if "provider" not in columns:
+                conn.execute("ALTER TABLE chat_messages ADD COLUMN provider TEXT")
 
     @staticmethod
     def _conversation(conn, conversation_id):
@@ -172,10 +175,15 @@ class ChatService:
             conversation = self._conversation(conn, details["conversation_id"])
             self._refresh_conversation(conn, conversation["id"])
             included, prompt = self._included(conn, conversation["id"], content)
-        quote = model_preview({"prompt": prompt, "max_output_tokens": details["max_output_tokens"], "max_cost_microusd": details["max_cost_microusd"]})
+        # Classify the complete bounded prompt so a neutral follow-up cannot
+        # move an earlier sensitive turn to an external provider.
+        sensitivity = classify_prompt(prompt)
+        local_busy = local_model_is_busy(LocalModelConfig.from_env())
+        requested_provider = "ollama" if sensitivity["local_only"] else None
+        quote = model_preview({"prompt": prompt, "max_output_tokens": details["max_output_tokens"], "max_cost_microusd": details["max_cost_microusd"], "provider": requested_provider}, local_busy=local_busy)
         return quote | {"conversation_id": conversation["id"], "conversation_revision": conversation["revision"],
                         "included_messages": included, "prompt": prompt,
-                        "sensitivity": classify_prompt(content),
+                        "sensitivity": sensitivity,
                         # Keep the established field name for the web client, but
                         # bind the approval to the exact limits as well as text.
                         "prompt_sha256": _approval_digest(prompt, details["max_output_tokens"], quote["max_cost_microusd"])}
@@ -190,7 +198,8 @@ class ChatService:
         # idempotency path verifies task, kind, prompt and limits before returning it.
         job = WorkQueue(self.store).enqueue(task_id=conversation["task_id"], request_id=row["request_id"], kind=MODEL_KIND,
             model_request={"prompt": row["prompt"], "max_output_tokens": row["max_output_tokens"],
-                           "max_cost_microusd": row["max_cost_microusd"], "approve_external_text": True})
+                           "max_cost_microusd": row["max_cost_microusd"], "approve_external_text": True,
+                           **({"provider": row["provider"]} if row["provider"] else {})})
         now = self.clock()
         with closing(self.store.connect()) as conn, conn:
             conn.execute("UPDATE chat_messages SET job_id=?,status='pending',updated_at=? WHERE id=?", (job["id"], now, row["id"]))
@@ -198,7 +207,7 @@ class ChatService:
 
     def submit(self, conversation_id, details):
         required = {"request_id", "content", "max_output_tokens", "max_cost_microusd", "approve_external_text", "preview_sha256"}
-        if not isinstance(details, dict) or set(details) != required or details["approve_external_text"] is not True:
+        if not isinstance(details, dict) or set(details) - (required | {"provider"}) or not required.issubset(details) or details["approve_external_text"] is not True:
             raise ValueError("Expected an approved preview, shared text and explicit limits")
         request_id = _uuid(details["request_id"])
         content = _text(details["content"], "Chat message", MAX_MESSAGE_BYTES)
@@ -231,7 +240,8 @@ class ChatService:
                 else:
                     conversation = self._conversation(conn, conversation_id)
                     included, prompt = self._included(conn, conversation_id, content)
-                    model_preview({"prompt": prompt, "max_output_tokens": details["max_output_tokens"], "max_cost_microusd": details["max_cost_microusd"]})
+                    requested_provider = details.get("provider")
+                    model_preview({"prompt": prompt, "max_output_tokens": details["max_output_tokens"], "max_cost_microusd": details["max_cost_microusd"], "provider": requested_provider})
                     if details["preview_sha256"] != _approval_digest(
                         prompt, details["max_output_tokens"], details["max_cost_microusd"]
                     ):
@@ -244,9 +254,9 @@ class ChatService:
                     conn.execute("INSERT INTO chat_messages(id,conversation_id,role,content,status,created_at,updated_at) VALUES(?,?,?,?,?,?,?)",
                                  (user_id, conversation_id, "user", content, "complete", now, now))
                     conn.execute("""INSERT INTO chat_messages(id,conversation_id,request_id,role,status,prompt,prompt_sha256,conversation_revision,
-                        request_content,max_output_tokens,max_cost_microusd,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                        request_content,provider,max_output_tokens,max_cost_microusd,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
                         (assistant_id, conversation_id, request_id, "assistant", "pending", prompt,
-                         _approval_digest(prompt, details["max_output_tokens"], details["max_cost_microusd"]), next_revision, content,
+                         _approval_digest(prompt, details["max_output_tokens"], details["max_cost_microusd"]), next_revision, content, requested_provider,
                          details["max_output_tokens"], details["max_cost_microusd"], assistant_at, assistant_at))
                     conn.execute("UPDATE chat_conversations SET revision=?,updated_at=? WHERE id=?", (next_revision, now, conversation_id))
                     assistant = self._message(conn, assistant_id)

@@ -13,7 +13,7 @@ from leon_control_plane.openai_text import (
 )
 from leon_control_plane.local_model import (
     LocalModelConfig, parse_response as parse_local_response, request_payload as local_request_payload,
-    send_response as send_local_response,
+    send_response as send_local_response, is_busy as local_model_is_busy,
 )
 from leon_control_plane.secret_scanner import assert_no_secrets
 from leon_control_plane import model_receipts
@@ -29,22 +29,27 @@ def initialize(conn):
     model_receipts.initialize(conn)
 
 
-def _route(prompt, max_output_tokens, local_config=None):
+def _route(prompt, max_output_tokens, local_config=None, *, provider=None, local_busy=False):
     local_config = local_config if local_config is not None else LocalModelConfig.from_env()
-    if local_config.enabled:
+    if local_config.enabled and (provider == "ollama" or (provider is None and not local_busy)):
         return local_request_payload(prompt, max_output_tokens, local_config), 0
+    if provider == "ollama":
+        return local_request_payload(prompt, max_output_tokens, local_config), 0
+    if provider not in {None, "openai"}:
+        raise ValueError("Unsupported model provider")
     payload = request_payload(prompt, max_output_tokens)
     return payload, reservation(payload)
 
 
-def prepare(details, *, local_config=None):
-    if not isinstance(details, dict) or set(details) != {
-        "prompt", "max_output_tokens", "max_cost_microusd", "approve_external_text",
-    }:
+def prepare(details, *, local_config=None, local_busy=False):
+    if not isinstance(details, dict) or set(details) - {
+        "prompt", "max_output_tokens", "max_cost_microusd", "approve_external_text", "provider",
+    } or not {"prompt", "max_output_tokens", "max_cost_microusd", "approve_external_text"}.issubset(details):
         raise ValueError("Expected exact shared text, output limit, cost cap and explicit approval")
     if details["approve_external_text"] is not True:
         raise ValueError("Explicit external-text and cost approval is required")
-    payload, hold = _route(details["prompt"], details["max_output_tokens"], local_config)
+    payload, hold = _route(details["prompt"], details["max_output_tokens"], local_config,
+                           provider=details.get("provider"), local_busy=local_busy)
     cap = positive_int(details["max_cost_microusd"], "per-call cost cap", 1_000_000)
     if hold > cap:
         raise ValueError("Approved cost cap is below the conservative reservation")
@@ -56,11 +61,11 @@ def insert(conn, job_id, approved_json):
                  (job_id, approved_json, hashlib.sha256(approved_json.encode()).hexdigest()))
 
 
-def preview(details):
+def preview(details, *, local_busy=False):
     """Local validation/quote only: no job, approval, reservation or provider call."""
-    if not isinstance(details, dict) or set(details) != {"prompt", "max_output_tokens", "max_cost_microusd"}:
+    if not isinstance(details, dict) or set(details) - {"prompt", "max_output_tokens", "max_cost_microusd", "provider"} or not {"prompt", "max_output_tokens", "max_cost_microusd"}.issubset(details):
         raise ValueError("Expected shared text, output limit and cost cap")
-    approved = json.loads(prepare({**details, "approve_external_text": True}))
+    approved = json.loads(prepare({**details, "approve_external_text": True}, local_busy=local_busy))
     payload = approved["payload"]
     hold = 0 if payload.get("provider") == "ollama" else reservation(payload)
     return {"model": payload["model"], "provider": payload.get("provider", "openai"), "reserved_microusd": hold,

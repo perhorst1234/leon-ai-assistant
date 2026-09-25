@@ -129,6 +129,27 @@ def send_response(payload: dict, config: LocalModelConfig) -> dict:
         conn.close()
 
 
+def is_busy(config: LocalModelConfig) -> bool:
+    """Read only Ollama status; failures count as busy for privacy-safe routing."""
+    if not config.enabled:
+        return False
+    config.validate()
+    conn = http.client.HTTPConnection(config.host, config.port, timeout=0.5)
+    try:
+        conn.request("GET", "/api/ps")
+        response = conn.getresponse()
+        raw = response.read(65537)
+        if response.status != 200 or len(raw) > 65536:
+            return True
+        data = json.loads(raw)
+        models = data.get("models") if isinstance(data, dict) else None
+        return isinstance(models, list) and bool(models)
+    except Exception:
+        return True
+    finally:
+        conn.close()
+
+
 def parse_response(data: dict, payload: dict) -> dict:
     if not isinstance(data, dict) or data.get("model") != payload["model"] or data.get("done") is not True:
         raise ValueError("Unexpected local model response")
