@@ -65,75 +65,75 @@
     }
   },
   "local_gpu": {
-    "enabled": false,
-    "readiness_status": "not_validated",
-    "selected_backend": "",
-    "selected_model": "",
+    "enabled": true,
+    "readiness_status": "validated",
+    "selected_backend": "ollama-0.34.2-cuda-v12",
+    "selected_model": "qwen2.5-coder:14b-q4_K_M",
     "validation": {
       "schema_version": 1,
-      "status": "not_validated",
-      "route_allowed": false,
+      "status": "validated",
+      "route_allowed": true,
       "checks": {
         "hardware_detection": {
-          "status": "not_run",
-          "summary": "No local GPU inventory has been recorded.",
+          "status": "passed",
+          "summary": "Tesla M40 24GB detected in the deployment VM through PCI passthrough and nvidia-smi.",
           "evidence": {
-            "gpu_detected": false,
-            "device_name": "",
-            "vram_mb": 0
+            "gpu_detected": true,
+            "device_name": "Tesla M40 24GB",
+            "vram_mb": 23040
           },
-          "last_run_at": null,
-          "source_ref": ""
+          "last_run_at": "2026-09-20T18:20:00Z",
+          "source_ref": "docs/m40-deployment-evidence.md"
         },
         "driver_cuda_readiness": {
-          "status": "not_run",
-          "summary": "No NVIDIA driver, CUDA, or backend healthcheck evidence has been recorded.",
+          "status": "passed",
+          "summary": "NVIDIA driver and Ollama CUDA v12 runner loaded the complete model on compute capability 5.2.",
           "evidence": {
-            "driver_version": "",
-            "cuda_available": false,
-            "backend_healthcheck": ""
+            "driver_version": "580.178.04",
+            "cuda_available": true,
+            "backend_healthcheck": "Ollama /api/generate passed; 49/49 layers on CUDA GPU"
           },
-          "last_run_at": null,
-          "source_ref": ""
+          "last_run_at": "2026-09-20T18:24:00Z",
+          "source_ref": "docs/m40-deployment-evidence.md"
         },
         "benchmark_results": {
-          "status": "not_run",
-          "summary": "No bounded local model benchmark has been recorded.",
+          "status": "passed",
+          "summary": "Bounded coding prompt completed on the M40; a warm health prompt completed in 1296 ms.",
           "evidence": {
-            "tokens_per_second": 0,
-            "latency_ms": 0,
-            "test_model": ""
+            "tokens_per_second": 15.34,
+            "latency_ms": 1296,
+            "test_model": "qwen2.5-coder:14b-q4_K_M"
           },
-          "last_run_at": null,
-          "source_ref": ""
+          "last_run_at": "2026-09-20T18:39:00Z",
+          "source_ref": "docs/m40-deployment-evidence.md"
         },
         "quality_comparison": {
-          "status": "not_run",
-          "summary": "No quality comparison against the cloud baseline has been recorded.",
+          "status": "passed",
+          "summary": "Local and cloud models both passed all three bounded synthetic acceptance tasks.",
           "evidence": {
-            "eval_set": "",
-            "cloud_baseline_model": "",
-            "quality_delta": ""
+            "eval_set": "three synthetic tasks: code correction, city extraction, eight-word summary",
+            "cloud_baseline_model": "gpt-5.6-luna",
+            "quality_delta": "0 tasks; local 3/3 and cloud 3/3"
           },
-          "last_run_at": null,
-          "source_ref": ""
+          "last_run_at": "2026-09-20T18:38:00Z",
+          "source_ref": "docs/m40-deployment-evidence.md"
         },
         "cost_comparison": {
-          "status": "not_run",
-          "summary": "No provider-cost versus local resource-cost comparison has been recorded.",
+          "status": "passed",
+          "summary": "The validated local route has no per-request provider charge and is suitable for routine private prompts.",
           "evidence": {
-            "provider_cost_baseline": "",
-            "local_resource_cost": "",
-            "worth_routing": false
+            "provider_cost_baseline": "89 input + 97 output tokens; conservative app accounting about USD 0.000139",
+            "local_resource_cost": "existing owned M40; measured inference power and electricity only, no provider charge",
+            "worth_routing": true
           },
-          "last_run_at": null,
-          "source_ref": ""
+          "last_run_at": "2026-09-20T18:38:00Z",
+          "source_ref": "docs/m40-deployment-evidence.md"
         }
       }
     },
     "preferred_backend_order": [
-      "llama.cpp",
       "ollama",
+      "llama.cpp",
       "exllamav2",
       "vllm-if-supported"
     ],

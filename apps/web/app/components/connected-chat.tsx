@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { FormEvent, ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import { ArrowUp, Check, ChevronDown, MessageCircle, Plus, RefreshCw, ShieldCheck, X } from 'lucide-react';
 import { previewStillMatches } from './chat-preview';
 import './connected-work.css';
@@ -14,7 +14,7 @@ type ChatMessage = {
 };
 type Preview = {
   prompt: string; prompt_sha256: string; conversation_revision: number; included_messages: number | Array<unknown>;
-  model: string; reserved_microusd: number; max_cost_microusd: number; execution_allowed?: false; provider_calls_made?: false;
+  provider: 'ollama' | 'openai'; model: string; reserved_microusd: number; max_cost_microusd: number; execution_allowed?: false; provider_calls_made?: false;
 };
 type PendingRequest = {
   conversation_id: string; request_id: string; content: string; max_output_tokens: number;
@@ -81,8 +81,7 @@ export default function ConnectedChat({
   onSubmitRequest: (value: string) => void; onClearDraft: () => void; onModeChange: (demo: boolean) => void;
 }) {
   const [showDemo, setShowDemo] = useState(false);
-  const [tokenDraft, setTokenDraft] = useState('');
-  const [token, setToken] = useState('');
+  const token = 'session';
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [selectedId, setSelectedId] = useState('');
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -138,16 +137,6 @@ export default function ConnectedChat({
     setConnected(true); setError('');
     if (!selectedRef.current && result.conversations[0]) await loadConversation(result.conversations[0].id);
   }, [api, loadConversation]);
-
-  const connect = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    const value = tokenDraft.trim();
-    if (!value) return;
-    setBusy(true); setError('');
-    try { setToken(value); await requestChat(value, 'chat-conversations', undefined, undefined, { limit: '25' }); }
-    catch (reason) { setToken(''); setError(reason instanceof Error ? reason.message : 'Verbinding mislukt.'); }
-    finally { setBusy(false); }
-  };
 
   useEffect(() => {
     if (!token || showDemo) return;
@@ -283,16 +272,15 @@ export default function ConnectedChat({
         </aside>
         <section className="chat-panel" aria-label="Gesprek met Gaia">
           <header className="chat-panel-heading"><div><span className="view-icon"><MessageCircle size={17} /></span><div><h1>{current ? titleFor(current) : 'Gesprek'}</h1><p>{connected ? 'Context blijft opgeslagen bij Leon.' : 'Verbind om echte gesprekken te laden.'}</p></div></div><button type="button" className="chat-refresh" disabled={!token || busy} onClick={() => void refreshConversations()} aria-label="Gesprekken verversen"><RefreshCw size={16} /></button></header>
-          {!token && <form className="work-connect chat-connect" onSubmit={connect}><label htmlFor="chat-token">Leon-dashboardtoken</label><input id="chat-token" type="password" autoComplete="off" value={tokenDraft} onChange={event => setTokenDraft(event.target.value)} required /><button className="pause-control" type="submit" disabled={busy}><ShieldCheck size={15} /> Verbind</button><p>Gebruik je Leon-dashboardtoken. Het blijft alleen in het geheugen van deze weergave.</p></form>}
           {error && <p className="work-error" role="alert">{error}</p>}
           {notice && <p className="chat-notice" role="status"><Check size={14} /> {notice}</p>}
-          {token && <div className="chat-connection"><span className={connected ? 'chat-online' : 'chat-offline'} />{connected ? 'Verbonden met Leon' : 'Status wordt gecontroleerd'}<button type="button" onClick={() => { setToken(''); setTokenDraft(''); setConnected(false); setConversations([]); setMessages([]); setSelectedId(''); selectedRef.current = ''; }}>Verbreek</button></div>}
+          {token && <div className="chat-connection"><span className={connected ? 'chat-online' : 'chat-offline'} />{connected ? 'Verbonden met Leon' : 'Status wordt gecontroleerd'}</div>}
           <div className="chat-messages" aria-live="polite">
             {!messages.length && hasConversation && <p className="chat-empty">Dit gesprek is nog leeg. Schrijf onderaan wat je wilt onderzoeken.</p>}
             {!hasConversation && connected && <p className="chat-empty">Kies een gesprek of begin onderaan met een nieuwe gedachte.</p>}
             {messages.map(message => <article className={`chat-message chat-message-${message.role}`} key={message.id}><span className="chat-message-label">{message.role === 'user' ? 'Per' : 'Gaia'}</span><p>{message.content}</p>{messageStatus(message) && <small className={message.status === 'error' || message.status === 'unknown' ? 'chat-message-warning' : ''}>{messageStatus(message)}</small>}</article>)}
           </div>
-          {activeReview && <section className="chat-review" aria-label="Tekst en kosten goedkeuren"><div className="chat-review-heading"><span><ShieldCheck size={16} /> Tekst en context controleren</span><button type="button" aria-label="Preview sluiten" onClick={() => { setReview(null); setApproved(false); }}><X size={15} /></button></div><p className="chat-review-meta">{activeReview.preview.model} · {includedCount(activeReview.preview.included_messages)} eerdere berichten · revisie {activeReview.preview.conversation_revision}</p><blockquote>{activeReview.preview.prompt}</blockquote><p>Reservering: ${(activeReview.preview.reserved_microusd / 1e6).toFixed(6)} USD. Er is nog niets naar een model verstuurd.</p><label className="model-approval"><input type="checkbox" checked={approved} disabled={busy} onChange={event => setApproved(event.target.checked)} />Ik keur precies deze tekst, context en kostenlimiet goed.</label><button type="button" className="trace-action" disabled={!approved || busy} onClick={() => void submitApproved()}>Goedkeuren en in wachtrij zetten</button></section>}
+          {activeReview && <section className="chat-review" aria-label="Tekst en uitvoering goedkeuren"><div className="chat-review-heading"><span><ShieldCheck size={16} /> Tekst en context controleren</span><button type="button" aria-label="Preview sluiten" onClick={() => { setReview(null); setApproved(false); }}><X size={15} /></button></div><p className="chat-review-meta">{activeReview.preview.provider === 'ollama' ? 'Lokale M40' : 'OpenAI'} · {activeReview.preview.model} · {includedCount(activeReview.preview.included_messages)} eerdere berichten · revisie {activeReview.preview.conversation_revision}</p><blockquote>{activeReview.preview.prompt}</blockquote><p>{activeReview.preview.provider === 'ollama' ? 'Lokale uitvoering zonder API-kosten.' : `Reservering: $${(activeReview.preview.reserved_microusd / 1e6).toFixed(6)} USD.`} Er is nog niets naar een model verstuurd.</p><label className="model-approval"><input type="checkbox" checked={approved} disabled={busy} onChange={event => setApproved(event.target.checked)} />Ik keur precies deze tekst, context en uitvoeringslimiet goed.</label><button type="button" className="trace-action" disabled={!approved || busy} onClick={() => void submitApproved()}>Goedkeuren en in wachtrij zetten</button></section>}
           {pending?.conversation_id === selectedId && <section className="chat-pending" aria-label="Onzekere verzending"><strong>Verzending nog niet bevestigd</strong><p>Gaia maakt geen nieuwe aanvraag. Controleer dezelfde aanvraag-id of probeer exact die id opnieuw.</p><div><button type="button" className="secondary-control" disabled={busy} onClick={() => void recoverPending()}>Controleer status</button><button type="button" className="trace-action" disabled={busy} onClick={() => void retryPending()}>Herstel met dezelfde id</button></div></section>}
           <form className="chat-composer" onSubmit={event => { event.preventDefault(); if (draft.trim()) onSubmitRequest(draft); }}><label className="sr-only" htmlFor="connected-chat-prompt">Vraag Gaia iets</label><textarea id="connected-chat-prompt" rows={2} value={draft} onChange={event => updateDraft(event.target.value)} placeholder="Schrijf een gedachte voor Gaia…" disabled={busy} /><button type="submit" aria-label="Bekijk tekst en kosten" disabled={busy || !draft.trim()}><ArrowUp size={17} /></button></form>
           <p className="chat-footnote">Preview toont de exacte tekst en gesprekscontext. Goedkeuring staat nooit vooraf aan; wijzigen maakt de preview ongeldig.</p>

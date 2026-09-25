@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+if ! nvidia-smi --query-gpu=name --format=csv,noheader 2>/dev/null | grep -Fq 'Tesla M40'; then
+  echo "Tesla M40 is not visible; coding-agent setup stopped." >&2
+  exit 2
+fi
+command -v npm >/dev/null || { echo "Node/npm is required." >&2; exit 2; }
+command -v ollama >/dev/null || { echo "Ollama is required." >&2; exit 2; }
+
+npm install --prefix "$HOME/.local/share/leon-opencode" opencode-ai@1.18.31 --no-audit --no-fund
+ollama pull gpt-oss:20b
+cd "$repo_root"
+"$HOME/.local/share/leon-opencode/node_modules/.bin/opencode" models ollama | grep -Fx 'ollama/gpt-oss:20b'
+echo "M40 coding agent ready. Run: ./scripts/leon-m40-coding-agent"

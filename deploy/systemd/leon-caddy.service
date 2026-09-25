@@ -1,0 +1,17 @@
+[Unit]
+Description=Leon public HTTPS reverse proxy
+After=network-online.target leon-web.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=%h/leon-ai-assistant
+Environment=XDG_DATA_HOME=%h/.local/share
+ExecStart=%h/.local/bin/caddy run --config %h/leon-ai-assistant/deploy/Caddyfile --adapter caddyfile
+Restart=always
+RestartSec=5
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=default.target

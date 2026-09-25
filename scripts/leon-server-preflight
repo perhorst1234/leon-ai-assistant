@@ -21,7 +21,7 @@ import time
 from typing import Any
 
 
-DEFAULT_TIMEOUT = 2.0
+DEFAULT_TIMEOUT = 5.0
 MAX_TIMEOUT = 30.0
 MAX_COMMAND_OUTPUT = 128 * 1024
 REDACTED = "<redacted>"

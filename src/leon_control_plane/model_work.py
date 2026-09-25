@@ -11,6 +11,10 @@ import json
 from leon_control_plane.openai_text import (
     ModelPreflightError, OpenAIConfig, parse_response, positive_int, request_payload, reservation, send_response,
 )
+from leon_control_plane.local_model import (
+    LocalModelConfig, parse_response as parse_local_response, request_payload as local_request_payload,
+    send_response as send_local_response,
+)
 from leon_control_plane.secret_scanner import assert_no_secrets
 from leon_control_plane import model_receipts
 
@@ -25,16 +29,24 @@ def initialize(conn):
     model_receipts.initialize(conn)
 
 
-def prepare(details):
+def _route(prompt, max_output_tokens, local_config=None):
+    local_config = local_config if local_config is not None else LocalModelConfig.from_env()
+    if local_config.enabled:
+        return local_request_payload(prompt, max_output_tokens, local_config), 0
+    payload = request_payload(prompt, max_output_tokens)
+    return payload, reservation(payload)
+
+
+def prepare(details, *, local_config=None):
     if not isinstance(details, dict) or set(details) != {
         "prompt", "max_output_tokens", "max_cost_microusd", "approve_external_text",
     }:
         raise ValueError("Expected exact shared text, output limit, cost cap and explicit approval")
     if details["approve_external_text"] is not True:
         raise ValueError("Explicit external-text and cost approval is required")
-    payload = request_payload(details["prompt"], details["max_output_tokens"])
+    payload, hold = _route(details["prompt"], details["max_output_tokens"], local_config)
     cap = positive_int(details["max_cost_microusd"], "per-call cost cap", 1_000_000)
-    if reservation(payload) > cap:
+    if hold > cap:
         raise ValueError("Approved cost cap is below the conservative reservation")
     return json.dumps({"payload": payload, "max_cost_microusd": cap}, sort_keys=True)
 
@@ -49,7 +61,9 @@ def preview(details):
     if not isinstance(details, dict) or set(details) != {"prompt", "max_output_tokens", "max_cost_microusd"}:
         raise ValueError("Expected shared text, output limit and cost cap")
     approved = json.loads(prepare({**details, "approve_external_text": True}))
-    return {"model": approved["payload"]["model"], "reserved_microusd": reservation(approved["payload"]),
+    payload = approved["payload"]
+    hold = 0 if payload.get("provider") == "ollama" else reservation(payload)
+    return {"model": payload["model"], "provider": payload.get("provider", "openai"), "reserved_microusd": hold,
             "max_cost_microusd": approved["max_cost_microusd"], "provider_calls_made": False,
             "prompt_bytes": len(details["prompt"].encode("utf-8")), "execution_allowed": False}
 
@@ -63,9 +77,11 @@ def view(conn, job_id):
     row = conn.execute("SELECT * FROM model_work WHERE job_id=?", (job_id,)).fetchone()
     if row is None:
         return {"provider_calls_made": None, "model_state": "missing_request"}
+    approved = json.loads(row["approved_json"])
     return {"provider_calls_made": None if row["state"] in {"sending", "unknown"} else row["sent_at"] is not None,
             "model_state": row["state"], "reserved_microusd": row["held_microusd"],
-            "accounted_microusd": row["charged_microusd"], "approval_sha256": row["digest"]}
+            "accounted_microusd": row["charged_microusd"], "approval_sha256": row["digest"],
+            "provider": approved["payload"].get("provider", "openai"), "model": approved["payload"]["model"]}
 
 
 def _eligible(queue, conn, job):
@@ -79,10 +95,12 @@ def _unknown():
 
 
 class ModelExecutor:
-    def __init__(self, queue, *, config=None, transport=send_response):
+    def __init__(self, queue, *, config=None, transport=send_response, local_config=None, local_transport=send_local_response):
         self.queue = queue
         self.config = config if config is not None else OpenAIConfig.from_env()
         self.transport = transport
+        self.local_config = local_config if local_config is not None else LocalModelConfig.from_env()
+        self.local_transport = local_transport
 
     def _begin(self, claim):
         queue = self.queue
@@ -94,34 +112,40 @@ class ModelExecutor:
             row = conn.execute("SELECT * FROM model_work WHERE job_id=?", (job["id"],)).fetchone()
             if row is None:
                 raise ValueError("Missing approved model request")
-            # Stored evidence is safe to reuse even when the provider is disabled.
+            # Stored evidence is safe to reuse even when a provider is disabled.
             if row["result_json"] is not None:
                 return None, json.loads(row["result_json"])
-            if row["state"] in {"sending", "unknown"}:
-                conn.execute("UPDATE model_work SET state='unknown' WHERE job_id=?", (job["id"],))
-                queue._event(conn, job, "model_unknown")
-                return None, _unknown()
-            self.config.validate()
-            if not _eligible(queue, conn, job):
-                raise ValueError("Model execution requires an eligible low-risk task")
             if hashlib.sha256(row["approved_json"].encode()).hexdigest() != row["digest"]:
                 raise ValueError("Approved request integrity mismatch")
             approved = json.loads(row["approved_json"])
             payload = approved["payload"]
+            is_local = payload.get("provider") == "ollama"
+            if row["state"] in {"sending", "unknown"} and not is_local:
+                conn.execute("UPDATE model_work SET state='unknown' WHERE job_id=?", (job["id"],))
+                queue._event(conn, job, "model_unknown")
+                return None, _unknown()
+            if is_local:
+                self.local_config.validate()
+            else:
+                self.config.validate()
+            if not _eligible(queue, conn, job):
+                raise ValueError("Model execution requires an eligible low-risk task")
             # Revalidate the complete wire request, including the current model route.
-            if payload != request_payload(payload["input"], payload["max_output_tokens"]):
+            expected = (local_request_payload(payload["input"], payload["max_output_tokens"], self.local_config)
+                        if is_local else request_payload(payload["input"], payload["max_output_tokens"]))
+            if payload != expected:
                 raise ValueError("Approved request no longer matches the execution contract")
-            hold = reservation(payload)
+            hold = 0 if is_local else reservation(payload)
             if hold > approved["max_cost_microusd"]:
                 raise ValueError("Approved reservation exceeded")
-            if conn.execute("SELECT 1 FROM model_work WHERE state='unknown' LIMIT 1").fetchone():
+            if not is_local and conn.execute("SELECT 1 FROM model_work WHERE state='unknown' LIMIT 1").fetchone():
                 raise ModelPreflightError("openai_reconciliation_required")
             day_start = int(now // 86400) * 86400  # UTC budget days, explicit in docs.
             total, daily = conn.execute("""SELECT
                 COALESCE(SUM(held_microusd+charged_microusd),0),
                 COALESCE(SUM(held_microusd+CASE WHEN sent_at>=? THEN charged_microusd ELSE 0 END),0)
                 FROM model_work""", (day_start,)).fetchone()
-            if total + hold > self.config.total_microusd or daily + hold > self.config.daily_microusd:
+            if not is_local and (total + hold > self.config.total_microusd or daily + hold > self.config.daily_microusd):
                 raise ModelPreflightError("openai_budget_exhausted")
             conn.execute("UPDATE model_work SET state='sending',held_microusd=?,sent_at=? WHERE job_id=?",
                          (hold, now, job["id"]))
@@ -133,16 +157,23 @@ class ModelExecutor:
         if cached is not None:
             return cached
         try:
-            observed = self.transport(payload, self.config.api_key)
-            # Persist validated usage before answer parsing can fail or the process dies.
-            # Never store raw output, response bodies or credentials in this receipt.
-            model_receipts.record(self.queue, claim["id"], payload, observed)
-            result = parse_response(observed, payload)
+            is_local = payload.get("provider") == "ollama"
+            if is_local:
+                observed = self.local_transport(payload, self.local_config)
+                result = parse_local_response(observed, payload)
+            else:
+                observed = self.transport(payload, self.config.api_key)
+                # Persist validated usage before answer parsing can fail or the process dies.
+                # Never store raw output, response bodies or credentials in this receipt.
+                model_receipts.record(self.queue, claim["id"], payload, observed)
+                result = parse_response(observed, payload)
             assert_no_secrets("Model result", result)
         except Exception:
             # HTTP status, parse, usage and transport errors can all be ambiguous.
             # No raw provider body, exception or credential in SQLite/audit/output.
-            result = _unknown()
+            result = ({"ok": False, "step": "model", "reason": "local_model_unavailable",
+                       "provider": "ollama", "provider_calls_made": False, "retry_allowed": True,
+                       "accounted_microusd": 0} if payload.get("provider") == "ollama" else _unknown())
         encoded = json.dumps(result, sort_keys=True)
         with self.queue._transaction() as conn:
             row = self.queue._job(conn, claim["id"])
@@ -153,6 +184,11 @@ class ModelExecutor:
             if result["provider_calls_made"] is True:
                 conn.execute("UPDATE model_work SET state='settled',held_microusd=0,charged_microusd=?,result_json=? WHERE job_id=?",
                              (result["accounted_microusd"], encoded, claim["id"]))
+            elif payload.get("provider") == "ollama":
+                # A loopback-only generation has no paid or external side effect.
+                # Leave it retryable so the durable queue can survive a local
+                # model service restart without caching a transient failure.
+                conn.execute("UPDATE model_work SET state='approved',held_microusd=0,result_json=NULL WHERE job_id=?", (claim["id"],))
             else:
                 conn.execute("UPDATE model_work SET state='unknown',result_json=? WHERE job_id=?", (encoded, claim["id"]))
             # Billing evidence survives cancellation/lease expiry. Queue checkpoint

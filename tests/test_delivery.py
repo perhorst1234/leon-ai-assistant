@@ -40,7 +40,7 @@ def test_setup_installs_pinned_python_project_once_per_pyproject(tmp_path, monke
     assert calls == [
         [str(python), "-m", "ensurepip", "--upgrade"],
         [str(python), "-m", "pip", "install", "--disable-pip-version-check", "--no-input", "--require-hashes", "-r", "requirements.lock"],
-        [str(python), "-m", "pip", "install", "--disable-pip-version-check", "--no-input", "--no-deps", "--no-build-isolation", "-e", "."],
+        [str(python), "-m", "pip", "install", "--disable-pip-version-check", "--no-input", "--no-deps", "-e", "."],
     ]
     calls.clear()
     setup(item)
@@ -81,6 +81,7 @@ def test_start_passes_one_database_to_backend_and_worker(tmp_path, monkeypatch):
     monkeypatch.setattr(delivery.subprocess, "Popen", fake_popen)
     monkeypatch.setattr(delivery.shutil, "which", lambda name: "/usr/bin/" + name)
     monkeypatch.setattr(delivery, "_wait_for_port", lambda process, port: None)
+    monkeypatch.setattr(delivery, "_port_available", lambda port: True)
     delivery.start(item)
     backend, worker = calls[:2]
     assert str(item.db) in backend[0] and str(item.db) in worker[0]

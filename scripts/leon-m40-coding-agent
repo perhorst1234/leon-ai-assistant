@@ -1,0 +1,51 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+export OLLAMA_HOST="${OLLAMA_HOST:-127.0.0.1:11434}"
+opencode_bin="$HOME/.local/share/leon-opencode/node_modules/.bin/opencode"
+if [[ ! -x "$opencode_bin" ]]; then
+  echo "Install OpenCode in ~/.local/share/leon-opencode before using this coding agent." >&2
+  exit 2
+fi
+model="${LEON_CODING_MODEL_NAME:-gpt-oss:20b}"
+if [[ ! "$model" =~ ^[A-Za-z0-9._:-]+$ ]]; then
+  echo "LEON_CODING_MODEL_NAME must be an Ollama model name" >&2
+  exit 2
+fi
+max_temp="${LEON_M40_CODING_MAX_TEMP_C:-89}"
+if [[ ! "$max_temp" =~ ^[0-9]+$ ]] || (( max_temp < 65 || max_temp > 89 )); then
+  echo "LEON_M40_CODING_MAX_TEMP_C must be an integer from 65 through 89" >&2
+  exit 2
+fi
+
+cd "$repo_root"
+peak_temp=0
+setsid "$opencode_bin" --pure --model "ollama/$model" "$@" &
+agent_pid=$!
+trap 'kill -TERM -- "-$agent_pid" 2>/dev/null || true' INT TERM
+stop_hot_agent() {
+  kill -TERM -- "-$agent_pid" 2>/dev/null || true
+  if ! timeout 3s ollama stop "$model" >/dev/null 2>&1; then
+    # If Ollama cannot unload the model promptly, stop the local GPU service.
+    systemctl --user stop leon-ollama >/dev/null 2>&1 || true
+  fi
+  wait "$agent_pid" || true
+}
+while kill -0 "$agent_pid" 2>/dev/null; do
+  temperature="$(nvidia-smi --query-gpu=name,temperature.gpu --format=csv,noheader,nounits 2>/dev/null | awk -F, '/Tesla M40/ {gsub(/ /, "", $2); print $2}')"
+  if [[ ! "$temperature" =~ ^[0-9]+$ ]]; then
+    stop_hot_agent
+    echo "M40 coding agent stopped: GPU temperature could not be read safely." >&2
+    exit 75
+  fi
+  if (( temperature > peak_temp )); then peak_temp=$temperature; fi
+  if (( temperature >= max_temp )); then
+    stop_hot_agent
+    echo "M40 coding agent stopped at ${temperature}C (limit ${max_temp}C). Check the Proxmox host fancontrol and GPU cooling before another sustained run." >&2
+    exit 75
+  fi
+  sleep 1
+done
+wait "$agent_pid"
+printf 'M40 coding agent peak sampled temperature: %sC\n' "$peak_temp" >&2

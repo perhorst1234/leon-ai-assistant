@@ -1854,8 +1854,9 @@ def test_client_state_adds_tool_scores_without_secret_values(tmp_path: Path, mon
     assert "score" in tool["candidate_score"]
     assert state["model_policy"]["cost_policy"]["currency"] == "USD"
     local_gpu = state["model_policy"]["local_gpu"]
-    assert local_gpu["enabled"] is False
-    assert local_gpu["validation"]["route_allowed"] is False
+    assert local_gpu["enabled"] is True
+    assert local_gpu["validation"]["route_allowed"] is True
+    assert local_gpu["readiness_status"] == "validated"
     assert {
         "hardware_detection",
         "driver_cuda_readiness",

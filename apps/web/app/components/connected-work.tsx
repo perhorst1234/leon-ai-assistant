@@ -13,7 +13,8 @@ import type { CostProposal } from '../../lib/model-reconciliation';
 type Task = { id: string; title: string };
 type Result = { ok: boolean; step: string; text?: string; source_sha256?: string; files_checked?: number; reason?: string; failures?: { path: string; line: number | null }[] };
 type Job = {
-  kind: string; request_id: string; model_state?: string; reserved_microusd?: number; accounted_microusd?: number;
+  kind: string; request_id: string; execution_kind?: string; provider?: 'ollama' | 'openai'; model?: string;
+  model_state?: string; reserved_microusd?: number; accounted_microusd?: number;
   id: string; task_id: string; status: 'queued' | 'running' | 'paused' | 'succeeded' | 'failed' | 'cancelled';
   completed_steps: number; total_steps: number; results: Result[]; updated_at: number; error: string;
 };
@@ -39,8 +40,7 @@ async function api(resource: string, token: string, body?: unknown, signal?: Abo
 
 export default function ConnectedWork({ demo }: { demo: ReactNode }) {
   const [showDemo, setShowDemo] = useState(false);
-  const [draftToken, setDraftToken] = useState('');
-  const [token, setToken] = useState('');
+  const token = 'session';
   const [jobs, setJobs] = useState<Job[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [taskId, setTaskId] = useState('');
@@ -106,23 +106,17 @@ export default function ConnectedWork({ demo }: { demo: ReactNode }) {
         <header className="work-header"><div><h1>Werk dat bewaard blijft.</h1><p>Echte uitvoering met opgeslagen voortgang. Geen gesimuleerde agents.</p></div></header>
         <div className="work-layout">
           <section className="mission-console" aria-label="Echte taakvoortgang">
-            <div className="console-status"><span>{connected ? 'Verbonden met Leon' : 'Niet verbonden — status niet live'}</span><span>{job?.kind === 'openai_text' ? 'OpenAI · expliciet goedgekeurde tekst' : 'Lokale CPU · geen API-kosten'}</span></div>
-            {!token && <form className="work-connect" onSubmit={event => { event.preventDefault(); setToken(draftToken.trim()); setDraftToken(''); }}>
-              <label htmlFor="work-token">Leon-dashboardtoken</label>
-              <input id="work-token" type="password" autoComplete="off" value={draftToken} onChange={event => setDraftToken(event.target.value)} required />
-              <button className="pause-control" type="submit"><LockKeyhole size={15} /> Verbind</button>
-              <p>Niet je OpenAI-sleutel. Het token blijft alleen in het geheugen van deze weergave.</p>
-            </form>}
+            <div className="console-status"><span>{connected ? 'Verbonden met Leon' : 'Niet verbonden — status niet live'}</span><span>{job?.kind === 'openai_text' ? (job.provider === 'ollama' ? 'Lokale M40 · geen API-kosten' : 'OpenAI · begrensde fallback') : 'Lokale CPU · geen API-kosten'}</span></div>
             {error && <p className="work-error" role="alert">{error}</p>}
             {connectionError && <p className="work-error" role="alert">{connectionError}</p>}
-            {token && <div className="work-actions"><button className="secondary-control" type="button" onClick={() => void refresh()} disabled={busy}><RefreshCw size={15} /> Ververs</button><button className="secondary-control" type="button" onClick={() => { refreshController.current?.abort(); setToken(''); setJobs([]); setTasks([]); setConnected(false); setError(''); }}>Verbreek verbinding</button></div>}
-            <div className="console-goal"><div><h2>{job?.kind === 'openai_text' ? 'Begrensde modeluitvoering' : 'Python-projectcontrole'}</h2><p>{job?.kind === 'openai_text' ? 'Alleen de goedgekeurde tekst naar OpenAI. Geen tools of bronwijzigingen.' : 'Leg bestandshashes vast, controleer de syntax en bewaar het gemeten resultaat. Dit wijzigt geen broncode.'}</p></div><span className="console-eta"><small>verwachte duur</small><strong>—</strong><em>nog niet gemeten</em></span></div>
+            {token && <div className="work-actions"><button className="secondary-control" type="button" onClick={() => void refresh()} disabled={busy}><RefreshCw size={15} /> Ververs</button></div>}
+            <div className="console-goal"><div><h2>{job?.kind === 'openai_text' ? 'Begrensde modeluitvoering' : 'Python-projectcontrole'}</h2><p>{job?.kind === 'openai_text' ? (job.provider === 'ollama' ? `Goedgekeurde tekst wordt lokaal verwerkt door ${job.model ?? 'de M40'}.` : 'Alleen de goedgekeurde tekst gaat naar de begrensde externe fallback.') : 'Leg bestandshashes vast, controleer de syntax en bewaar het gemeten resultaat. Dit wijzigt geen broncode.'}</p></div><span className="console-eta"><small>verwachte duur</small><strong>—</strong><em>nog niet gemeten</em></span></div>
             {job ? <>
               <label className="work-field">Opgeslagen controle<select value={job.id} onChange={event => { setSelectedId(event.target.value); setDetailJob(null); }}>{jobs.map(item => <option key={item.id} value={item.id}>{labels[item.status]} · {item.id.slice(-8)}</option>)}</select></label>
               <p className="work-current-status" role="status">{labels[job.status]}{!connected && ' · laatst bekende status'}</p>
               <div className="console-progress-row"><span><strong>{job.completed_steps}/{job.total_steps}</strong><small>checkpoints</small></span><progress max={job.total_steps} value={job.completed_steps} aria-label="Voltooide checkpoints" /></div>
               <ol className="mission-timeline">{(job.kind === 'openai_text' ? ['Modelantwoord en verbruik vastleggen'] : stepNames).map((name, index) => <li key={name} data-state={index < job.completed_steps ? 'done' : 'planned'}><span className="timeline-marker">{index < job.completed_steps ? <Check size={14} /> : index + 1}</span><span><strong>{name}</strong><small>{job.results[index]?.ok ? 'Resultaat opgeslagen' : job.results[index] ? 'Afwijking gevonden' : 'Nog niet uitgevoerd'}</small></span></li>)}</ol>
-              {job.kind === 'openai_text' && <p className="work-hint">Gereserveerd: ${((job.reserved_microusd ?? 0) / 1e6).toFixed(6)} · Verbruik omgerekend: ${((job.accounted_microusd ?? 0) / 1e6).toFixed(6)} USD (geen factuur). {job.model_state === 'unknown' ? 'Uitkomst onzeker. Geen automatische herhaling; nieuwe modelcalls wachten op controle.' : 'Annuleren kan een al verzonden aanvraag niet terugdraaien.'}</p>}
+              {job.kind === 'openai_text' && <p className="work-hint">{job.provider === 'ollama' ? 'Lokale M40-uitvoering · API-kosten $0.000000.' : `Gereserveerd: $${((job.reserved_microusd ?? 0) / 1e6).toFixed(6)} · verbruik: $${((job.accounted_microusd ?? 0) / 1e6).toFixed(6)} USD.`} {job.model_state === 'unknown' ? 'Uitkomst onzeker. Geen automatische betaalde herhaling; nieuwe externe modelcalls wachten op controle.' : 'Annuleren kan een al gestarte aanvraag niet terugdraaien.'}</p>}
               <div className="work-actions">
                 {['queued', 'running', 'paused'].includes(job.status) && <><button type="button" className="pause-control" disabled={controlsDisabled} onClick={() => void mutate(async () => { await api('control', token, { id: job.id, action: job.status === 'paused' ? 'resume' : 'pause' }); })}>{job.status === 'paused' ? <Play size={15} /> : <Pause size={15} />}{job.status === 'paused' ? 'Hervat' : 'Pauzeer'}</button><button type="button" className="secondary-control" disabled={controlsDisabled} onClick={() => void mutate(async () => { await api('control', token, { id: job.id, action: 'cancel' }); })}><X size={15} /> Annuleer</button></>}
               </div>

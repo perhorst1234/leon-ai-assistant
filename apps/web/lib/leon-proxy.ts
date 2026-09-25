@@ -1,6 +1,7 @@
 import { timingSafeEqual } from 'node:crypto';
+import { authConfigured, hasSession, sameOrigin, webAuthConfig, type WebAuthConfig } from './web-auth.ts';
 
-type Config = { url?: string; token?: string };
+type Config = { url?: string; token?: string; webAuth?: WebAuthConfig };
 const routes: Record<string, Partial<Record<string, string>>> = {
   jobs: { GET: '/api/work/jobs', POST: '/api/work/jobs' },
   control: { POST: '/api/work/control' },
@@ -43,13 +44,18 @@ export async function forwardLeon(request: Request, config: Config, fetcher: typ
     return json({ error: 'De backend moet een lokaal HTTP-adres zijn.' }, 503);
   }
   const authorization = request.headers.get('authorization') ?? '';
-  const supplied = Buffer.from(authorization);
-  const expected = Buffer.from(`Bearer ${config.token}`);
-  if (supplied.length !== expected.length || !timingSafeEqual(supplied, expected)) {
-    return json({ error: 'Verbind met je Leon-dashboardtoken, niet je OpenAI-sleutel.' }, 401);
+  const webAuth = config.webAuth ?? webAuthConfig();
+  if (authConfigured(webAuth)) {
+    if (!await hasSession(request, webAuth)) return json({ error: 'Log in om Leon te gebruiken.' }, 401);
+  } else {
+    const supplied = Buffer.from(authorization);
+    const expected = Buffer.from(`Bearer ${config.token}`);
+    if (supplied.length !== expected.length || !timingSafeEqual(supplied, expected)) {
+      return json({ error: 'Verbind met je Leon-dashboardtoken, niet je OpenAI-sleutel.' }, 401);
+    }
   }
   const url = new URL(request.url);
-  if (request.method === 'POST' && request.headers.get('origin') !== url.origin) {
+  if (request.method === 'POST' && !sameOrigin(request)) {
     return json({ error: 'Cross-origin wijzigingen zijn geblokkeerd.' }, 403);
   }
   const resource = url.searchParams.get('resource') ?? '';
@@ -95,7 +101,7 @@ export async function forwardLeon(request: Request, config: Config, fetcher: typ
   try {
     const response = await fetcher(upstream, {
       method: request.method, body, redirect: 'error', signal: AbortSignal.timeout(10000),
-      headers: { Authorization: authorization, 'Content-Type': 'application/json' },
+      headers: { Authorization: `Bearer ${config.token}`, 'Content-Type': 'application/json' },
     });
     if (!response.headers.get('content-type')?.includes('application/json')) throw new Error();
     return json(await response.json(), response.status);

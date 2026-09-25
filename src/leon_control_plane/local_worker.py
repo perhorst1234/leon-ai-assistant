@@ -13,6 +13,7 @@ from leon_control_plane.secret_scanner import assert_no_secrets
 from leon_control_plane.work_queue import STEPS, JOB_STEPS, MODEL_KIND, WorkQueue
 from leon_control_plane.model_work import ModelExecutor
 from leon_control_plane.openai_text import ModelPreflightError, OpenAIConfig
+from leon_control_plane.local_model import LocalModelConfig
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 MAX_FILE_BYTES = 1024 * 1024
@@ -106,14 +107,15 @@ def main(argv=None) -> int:
     parser.add_argument("--once", action="store_true", help="Process at most one checkpoint, then exit")
     parser.add_argument("--db", type=Path, default=REPO_ROOT / "state" / "control-plane.sqlite")
     parser.add_argument("--seed", type=Path, default=REPO_ROOT / "state" / "control-plane.seed.json")
-    parser.add_argument("--env-file", type=Path, help="Explicit private env file; only OpenAI settings are read, never executed")
+    parser.add_argument("--env-file", type=Path, help="Explicit private env file; only known model settings are read, never executed")
     args = parser.parse_args(argv)
     try:
         model_config = OpenAIConfig.from_env(env_file=args.env_file)
+        local_model_config = LocalModelConfig.from_env(env_file=args.env_file)
     except ModelPreflightError as exc:
         parser.error(str(exc))
     queue = WorkQueue(ControlPlaneStore(args.db, args.seed))
-    worker = LocalWorker(queue, model_executor=ModelExecutor(queue, config=model_config))
+    worker = LocalWorker(queue, model_executor=ModelExecutor(queue, config=model_config, local_config=local_model_config))
     try:
         while True:
             processed = worker.run_once()

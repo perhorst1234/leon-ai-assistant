@@ -7,8 +7,9 @@ Type=simple
 WorkingDirectory=%h/leon-ai-assistant/apps/web
 EnvironmentFile=%h/leon-ai-assistant/.env.local
 Environment=LEON_BACKEND_URL=http://127.0.0.1:8765
-ExecStart=/usr/bin/npm run dev -- --host 127.0.0.1 --port 3000
-Restart=on-failure
+Environment=PATH=%h/.local/bin:/usr/bin:/bin
+ExecStart=%h/.local/bin/npm run start -- --hostname 0.0.0.0 --port 3000
+Restart=always
 RestartSec=3
 NoNewPrivileges=true
 PrivateTmp=true

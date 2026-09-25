@@ -1,0 +1,146 @@
+#!/usr/bin/env python3
+"""Keep the owner's router mapping and DuckDNS A record pointed at Leon."""
+
+from __future__ import annotations
+
+import ipaddress
+import socket
+import sys
+import urllib.error
+import urllib.parse
+import urllib.request
+import xml.etree.ElementTree as ET
+from pathlib import Path
+
+
+GATEWAY = "192.168.178.1"
+SERVICE = "urn:schemas-upnp-org:service:WANIPConnection:1"
+MAPPINGS = ((80, 8080), (443, 8443))
+TOKEN_FILE = Path.home() / "leon-ai-assistant/.runtime/duckdns-token"
+
+
+def local_ip() -> str:
+    with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
+        sock.connect((GATEWAY, 80))
+        return sock.getsockname()[0]
+
+
+def discover_control_url() -> str:
+    message = (
+        "M-SEARCH * HTTP/1.1\r\nHOST:239.255.255.250:1900\r\n"
+        'MAN:"ssdp:discover"\r\nMX:2\r\n'
+        "ST:urn:schemas-upnp-org:device:InternetGatewayDevice:1\r\n\r\n"
+    ).encode()
+    with socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP) as sock:
+        sock.settimeout(4)
+        sock.sendto(message, ("239.255.255.250", 1900))
+        while True:
+            try:
+                response, sender = sock.recvfrom(8192)
+            except socket.timeout as exc:
+                raise RuntimeError("Router UPnP discovery unavailable") from exc
+            if sender[0] != GATEWAY:
+                continue
+            headers = {}
+            for line in response.decode("ascii", "replace").splitlines()[1:]:
+                if ":" in line:
+                    key, value = line.split(":", 1)
+                    headers[key.lower().strip()] = value.strip()
+            location = headers.get("location", "")
+            parsed = urllib.parse.urlsplit(location)
+            if parsed.hostname == GATEWAY and parsed.scheme == "http":
+                break
+    with urllib.request.urlopen(location, timeout=5) as response:
+        device = ET.fromstring(response.read(65536))
+    for element in device.iter():
+        if element.tag.rsplit("}", 1)[-1] != "service":
+            continue
+        fields = {child.tag.rsplit("}", 1)[-1]: child.text for child in element}
+        if fields.get("serviceType") == SERVICE:
+            control = urllib.parse.urljoin(location, fields["controlURL"])
+            if urllib.parse.urlsplit(control).hostname != GATEWAY:
+                raise RuntimeError("Router supplied nonlocal control URL")
+            return control
+    raise RuntimeError("Router WANIPConnection service unavailable")
+
+
+def soap(control: str, action: str, fields: dict[str, str]) -> dict[str, str]:
+    values = "".join(f"<{key}>{value}</{key}>" for key, value in fields.items())
+    envelope = (
+        '<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" '
+        's:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">'
+        f'<s:Body><u:{action} xmlns:u="{SERVICE}">{values}</u:{action}></s:Body></s:Envelope>'
+    )
+    request = urllib.request.Request(
+        control, envelope.encode(),
+        {"Content-Type": 'text/xml; charset="utf-8"', "SOAPAction": f'"{SERVICE}#{action}"'},
+    )
+    try:
+        with urllib.request.urlopen(request, timeout=5) as response:
+            document = response.read(16384)
+    except urllib.error.HTTPError as exc:
+        document = exc.read(16384)
+    root = ET.fromstring(document)
+    result = {item.tag.rsplit("}", 1)[-1]: item.text or "" for item in root.iter()}
+    if "errorCode" in result:
+        raise RuntimeError(f"Router UPnP error {result['errorCode']} on {action}")
+    return result
+
+
+def update_duckdns(wan_ip: str) -> None:
+    if not TOKEN_FILE.exists():
+        raise RuntimeError("Private DuckDNS token file missing")
+    token = TOKEN_FILE.read_text().strip()
+    if not token:
+        raise RuntimeError("Private DuckDNS token file empty")
+    query = urllib.parse.urlencode({"domains": "leon-ai-assistant", "token": token, "ip": wan_ip})
+    try:
+        with urllib.request.urlopen("https://www.duckdns.org/update?" + query, timeout=10) as response:
+            result = response.read(32).strip()
+    except Exception as exc:
+        raise RuntimeError("DuckDNS update failed") from exc
+    if result != b"OK":
+        raise RuntimeError("DuckDNS rejected update")
+
+
+def main() -> None:
+    client = local_ip()
+    if not ipaddress.ip_address(client).is_private:
+        raise RuntimeError("Expected private VM address")
+    control = discover_control_url()
+    for external, internal in MAPPINGS:
+        fields = {
+            "NewRemoteHost": "", "NewExternalPort": str(external), "NewProtocol": "TCP",
+            "NewInternalPort": str(internal), "NewInternalClient": client,
+            "NewEnabled": "1", "NewPortMappingDescription": "Leon AI Assistant HTTPS",
+            "NewLeaseDuration": "3600",
+        }
+        try:
+            current = soap(control, "GetSpecificPortMappingEntry", {
+                "NewRemoteHost": "", "NewExternalPort": str(external), "NewProtocol": "TCP",
+            })
+        except RuntimeError as exc:
+            if "error 714 " not in str(exc):
+                raise
+        else:
+            if current.get("NewInternalClient") != client or current.get("NewInternalPort") != str(internal):
+                raise RuntimeError(f"Port {external} belongs to another mapping")
+        soap(control, "AddPortMapping", fields)
+        checked = soap(control, "GetSpecificPortMappingEntry", {
+            "NewRemoteHost": "", "NewExternalPort": str(external), "NewProtocol": "TCP",
+        })
+        if checked.get("NewInternalClient") != client or checked.get("NewInternalPort") != str(internal):
+            raise RuntimeError(f"Port {external} mapping did not stick")
+    wan_ip = soap(control, "GetExternalIPAddress", {}).get("NewExternalIPAddress", "")
+    if not wan_ip or not ipaddress.ip_address(wan_ip).is_global:
+        raise RuntimeError("Router has no public IPv4 address")
+    update_duckdns(wan_ip)
+    print("Leon HTTP/HTTPS router mappings verified; DuckDNS A record refreshed.")
+
+
+if __name__ == "__main__":
+    try:
+        main()
+    except Exception as error:
+        print(f"Leon public route failed: {error}", file=sys.stderr)
+        raise SystemExit(1)

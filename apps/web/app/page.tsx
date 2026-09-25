@@ -6,6 +6,7 @@ import ConnectedWork from './components/connected-work';
 import ConnectedChat from './components/connected-chat';
 import ConnectedToday from './components/connected-today';
 import ConnectedMemory from './components/connected-memory';
+import AuthGate from './components/auth-gate';
 import type { ChatRequest } from './components/connected-chat';
 import { AnimatePresence, MotionConfig, motion } from 'motion/react';
 import {
@@ -1144,7 +1145,7 @@ function CommandDock({ active, onOpenChat }: { active: SpaceId; onOpenChat: () =
   );
 }
 
-export default function HomePage() {
+function Dashboard({ onLogout }: { onLogout: () => void }) {
   const shellRef = useRef<HTMLElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const timersRef = useRef<number[]>([]);
@@ -1296,6 +1297,7 @@ export default function HomePage() {
         <CircleUserRound size={19} strokeWidth={1.6} />
         <span>Per</span>
       </button>
+      <button className="logout-button" type="button" onClick={onLogout}>Uitloggen</button>
 
       <AnimatePresence mode="wait" initial={false}>
         <motion.div
@@ -1424,4 +1426,8 @@ export default function HomePage() {
     </main>
     </MotionConfig>
   );
+}
+
+export default function HomePage() {
+  return <AuthGate>{logout => <Dashboard onLogout={logout} />}</AuthGate>;
 }

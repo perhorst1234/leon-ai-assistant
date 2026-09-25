@@ -1,5 +1,5 @@
 export type ModelDraft = { task_id: string; prompt: string; max_output_tokens: number; max_cost_microusd: number };
-export type ModelPreview = { model: string; reserved_microusd: number; max_cost_microusd: number; prompt_bytes: number; execution_allowed: false; provider_calls_made: false };
+export type ModelPreview = { provider: 'ollama' | 'openai'; model: string; reserved_microusd: number; max_cost_microusd: number; prompt_bytes: number; execution_allowed: false; provider_calls_made: false };
 export type ModelReply = { job?: { id: string; request_id: string } | null; preview?: ModelPreview };
 export type ModelRequest = (resource: string, body?: unknown, requestId?: string) => Promise<ModelReply>;
 type Storage = Pick<globalThis.Storage, 'getItem' | 'setItem' | 'removeItem'>;

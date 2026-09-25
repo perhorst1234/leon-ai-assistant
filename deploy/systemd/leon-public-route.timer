@@ -1,0 +1,11 @@
+[Unit]
+Description=Keep Leon public route online
+
+[Timer]
+OnBootSec=30s
+OnUnitActiveSec=30min
+Persistent=true
+Unit=leon-public-route.service
+
+[Install]
+WantedBy=timers.target

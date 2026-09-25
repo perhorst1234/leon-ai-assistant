@@ -1,6 +1,7 @@
 [Unit]
 Description=Leon local worker
-After=leon-backend.service
+After=leon-backend.service leon-ollama.service
+Wants=leon-backend.service leon-ollama.service
 
 [Service]
 Type=simple
@@ -8,7 +9,7 @@ WorkingDirectory=%h/leon-ai-assistant
 EnvironmentFile=%h/leon-ai-assistant/.env.local
 Environment=LEON_DB_PATH=%h/leon-ai-assistant/.runtime/control-plane.sqlite
 ExecStart=%h/leon-ai-assistant/.venv/bin/python -m leon_control_plane.local_worker --db %h/leon-ai-assistant/.runtime/control-plane.sqlite --seed %h/leon-ai-assistant/state/control-plane.seed.json --env-file %h/leon-ai-assistant/.env.local
-Restart=on-failure
+Restart=always
 RestartSec=3
 NoNewPrivileges=true
 PrivateTmp=true

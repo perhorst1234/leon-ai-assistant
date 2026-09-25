@@ -1,0 +1,11 @@
+[Unit]
+Description=Refresh Leon router mapping and DuckDNS record
+After=network-online.target leon-caddy.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=%h/leon-ai-assistant
+ExecStart=%h/leon-ai-assistant/scripts/leon-public-route
+NoNewPrivileges=true
+PrivateTmp=true

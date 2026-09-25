@@ -77,13 +77,14 @@ class WorkQueue:
         )]
 
     def _view(self, conn, row):
+        model_details = model_work.view(conn, row["id"]) if row["kind"] == MODEL_KIND else {"provider_calls_made": False}
         return {key: row[key] for key in (
             "id", "request_id", "task_id", "kind", "status", "attempts", "error", "created_at", "updated_at",
         )} | {
             "completed_steps": row["next_step"], "total_steps": len(JOB_STEPS[row["kind"]]),
             "results": self._results(conn, row["id"]),
-            "execution_kind": "approved_external_text" if row["kind"] == MODEL_KIND else "local_read_only",
-            **(model_work.view(conn, row["id"]) if row["kind"] == MODEL_KIND else {"provider_calls_made": False}),
+            "execution_kind": ("local_gpu_text" if model_details.get("provider") == "ollama" else "approved_external_text") if row["kind"] == MODEL_KIND else "local_read_only",
+            **model_details,
         }
 
     def get(self, job_id):
@@ -199,6 +200,14 @@ class WorkQueue:
                 conn.execute("UPDATE work_jobs SET status='paused',error='parent_task_ineligible',lease_token=NULL,lease_until=NULL,updated_at=? WHERE id=?", (now, row["id"]))
                 self._event(conn, row, "paused", {"reason": "parent_task_ineligible"})
                 return False
+            if (row["kind"] == MODEL_KIND and result.get("retry_allowed") is True
+                    and result.get("provider_calls_made") is False):
+                conn.execute(
+                    "UPDATE work_jobs SET status='queued',lease_token=NULL,lease_until=NULL,error='local_model_retry',updated_at=? WHERE id=?",
+                    (now, row["id"]),
+                )
+                self._event(conn, row, "retry_queued", {"step": row["next_step"], "attempt": row["attempts"]})
+                return True
             conn.execute("INSERT INTO work_checkpoints VALUES(?,?,?,?)", (row["id"], row["next_step"], encoded, now))
             next_step = row["next_step"] + int(result["ok"])
             status = ("succeeded" if next_step == len(JOB_STEPS[row["kind"]]) else "queued") if result["ok"] else "failed"

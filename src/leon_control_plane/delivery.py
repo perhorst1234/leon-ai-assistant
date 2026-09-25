@@ -214,7 +214,7 @@ def setup(config: DeliveryConfig, *, install: bool = True) -> list[str]:
             )
             subprocess.run(
                 [str(venv_python), "-m", "pip", "install", "--disable-pip-version-check", "--no-input",
-                 "--no-deps", "--no-build-isolation", "-e", "."],
+                 "--no-deps", "-e", "."],
                 cwd=config.repo,
                 check=True,
             )

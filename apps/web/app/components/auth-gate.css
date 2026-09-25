@@ -1,0 +1,14 @@
+.auth-screen{min-height:100vh;display:grid;place-items:center;padding:24px;background:radial-gradient(circle at 50% 24%,#20204a 0%,#080a17 52%,#05070e 100%);color:#f5f3ff;font-family:Arial,sans-serif}
+.auth-panel{width:min(100%,440px);padding:40px;border:1px solid #ffffff25;border-radius:28px;background:#111325e8;box-shadow:0 22px 80px #0009}
+.auth-mark{display:grid;place-items:center;width:48px;height:48px;border-radius:16px;background:#7258d9;color:white;font-size:25px}
+.auth-eyebrow{margin:24px 0 6px;color:#afa8ed;font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase}
+.auth-panel h1{margin:0;font-size:32px;line-height:1.15}
+.auth-intro{color:#bbb9cf;line-height:1.55;margin:14px 0 28px}
+.auth-panel form{display:grid;gap:18px}
+.auth-panel label{display:grid;gap:8px;color:#ebe8ff;font-size:14px;font-weight:600}
+.auth-panel input{width:100%;padding:13px 15px;border:1px solid #ffffff35;border-radius:12px;background:#090b18;color:#fff;font:inherit;outline:none}
+.auth-panel input:focus{border-color:#a998ff;box-shadow:0 0 0 3px #a998ff30}
+.auth-panel button{padding:14px;border:0;border-radius:12px;background:#a998ff;color:#11101c;font-weight:700;cursor:pointer}
+.auth-panel button:disabled{opacity:.6;cursor:wait}
+.auth-error{color:#ffadad;margin:0;font-size:14px}
+.logout-button{position:fixed;right:24px;bottom:20px;z-index:60;border:1px solid #ffffff35;border-radius:999px;background:#15172de8;color:#f5f3ff;padding:10px 16px;cursor:pointer}
