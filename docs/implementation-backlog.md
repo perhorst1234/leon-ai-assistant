@@ -8,7 +8,7 @@ Open-Meteo-call voor vast Amsterdam. Host, locatie, velden en drie dagen staan
 server-side vast; antwoord is maximaal 64 KiB, wordt dubbel gevalideerd, tien
 minuten gecachet en volledig via de connectoraudit gevolgd. Bron en CC BY 4.0
 staan in de kaart. Echte call plus cache-hit en geldige auditketen zijn op de
-doel-VM bewezen. Volledige stand: 446 backendtests, 51 webtests, TypeScript,
+doel-VM bewezen. Volledige stand: 448 backendtests, 51 webtests, TypeScript,
 productiebuild en lint met nul errors/vijf bestaande warnings. Zie
 [weerconnector](weather-readonly.md). Google/Firecrawl-credentials en de
 self-improvement-doelcontainer blijven open.

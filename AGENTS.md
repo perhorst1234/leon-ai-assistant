@@ -5,7 +5,7 @@
   read-only HTTPS naar één host, 64 KiB antwoordlimiet, tien minuten cache,
   dubbele contractvalidatie, zichtbare bron/licentie en connectoraudit. Echte
   providerproef op de doel-VM, cache-hit en geldige auditketen bewezen. Volledige
-  stand: 446 backendtests, 51 webtests, typecheck/build/lint; lint nul errors en
+  stand: 448 backendtests, 51 webtests, typecheck/build/lint; lint nul errors en
   vijf bestaande warnings. Zie `docs/weather-readonly.md`.
 
 - 25 september, chat-UX: echte verbonden chat toont niet langer de demo-toast
