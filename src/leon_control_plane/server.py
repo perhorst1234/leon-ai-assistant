@@ -40,6 +40,7 @@ from leon_control_plane.work_api import work_request
 from leon_control_plane.work_queue import WorkQueue
 from leon_control_plane.overview_api import overview_request
 from leon_control_plane.server_monitor import server_status_request
+from leon_control_plane.weather_readonly import WeatherReadonlyError, weather_request
 from leon_control_plane.google_api import google_request
 from leon_control_plane.google_readonly import GoogleReadonlyError
 from leon_control_plane.research_executor import ResearchExecutorError, research_request
@@ -3589,6 +3590,11 @@ class Handler(BaseHTTPRequestHandler):
             if not token or not hmac.compare_digest(self.headers.get("authorization", ""), f"Bearer {token}"):
                 self._send_json({"error": "Explicit dashboard bearer authorization required"}, HTTPStatus.UNAUTHORIZED)
                 return
+        if self.path.startswith("/api/weather/"):
+            token = dashboard_token()
+            if not token or not hmac.compare_digest(self.headers.get("authorization", ""), f"Bearer {token}"):
+                self._send_json({"error": "Explicit dashboard bearer authorization required"}, HTTPStatus.UNAUTHORIZED)
+                return
         if self.path.startswith("/api/chat"):
             token = dashboard_token()
             if not token or not hmac.compare_digest(self.headers.get("authorization", ""), f"Bearer {token}"):
@@ -3601,6 +3607,16 @@ class Handler(BaseHTTPRequestHandler):
             return
         if work_response is not None:
             self._send_json(work_response)
+            return
+        try:
+            weather_response = weather_request(STORE, method="GET", path=self.path)
+        except WeatherReadonlyError as exc:
+            code = str(exc)
+            status = HTTPStatus.BAD_GATEWAY if code.startswith(("weather_transport", "weather_http_status", "weather_response", "weather_invalid")) else HTTPStatus.BAD_REQUEST
+            self._send_json({"error": code}, status)
+            return
+        if weather_response is not None:
+            self._send_json(weather_response)
             return
         try:
             if self.path == "/api/server/status":

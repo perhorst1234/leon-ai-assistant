@@ -1,5 +1,15 @@
 # Leon / Gaia — uitvoeringsbacklog
 
+**25 september, live weer:** Gaia Vandaag gebruikt nu een echte alleen-lezen
+Open-Meteo-call voor vast Amsterdam. Host, locatie, velden en drie dagen staan
+server-side vast; antwoord is maximaal 64 KiB, wordt dubbel gevalideerd, tien
+minuten gecachet en volledig via de connectoraudit gevolgd. Bron en CC BY 4.0
+staan in de kaart. Echte call plus cache-hit en geldige auditketen zijn op de
+doel-VM bewezen. Volledige stand: 445 backendtests, 51 webtests, TypeScript,
+productiebuild en lint met nul errors/vijf bestaande warnings. Zie
+[weerconnector](weather-readonly.md). Google/Firecrawl-credentials en de
+self-improvement-doelcontainer blijven open.
+
 **25 september, publieke website:** `https://leon-ai-assistant.duckdns.org`
 heeft een geldig certificaat en extern HTTP 200. De webapp vraagt bij eerste
 gebruik om een eenmalige instelcode en een zelfgekozen wachtwoord, daarna om
@@ -7,7 +17,7 @@ alleen het wachtwoord. Het productieaccount is geregistreerd. Routerlease,
 DuckDNS en TLS worden door user-systemd onderhouden. Geïsoleerde registratie-
 en loginflow, API-toegang en browserweergave zijn getest; zie
 [publieke toegang](public-access.md). LAN NAT-loopback ontbreekt vermoedelijk;
-de tijdelijke tunnel is beschikbaar als fallback. Connectoraccounts en de
+de tijdelijke tunnel is beschikbaar als fallback. Google/Firecrawl-accounts en de
 self-improvement-doelcontainer blijven de eerstvolgende productstappen.
 
 **21 september, doelserver:** vijf lokale user-systemd-units draaien. Chat via

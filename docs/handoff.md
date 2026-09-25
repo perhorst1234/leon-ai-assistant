@@ -2,6 +2,20 @@
 
 Stand: **25 september 2026**. De gebruiker wil vooral coderen; houd deze overdracht kort.
 
+## Nieuwste wijziging
+
+Gaia Vandaag heeft een live alleen-lezen weerkaart voor vast Amsterdam via
+Open-Meteo. Backend en web valideren een begrensd contract; alleen één vaste
+HTTPS-host, 64 KiB antwoord, drie dagen en tien minuten cache zijn toegestaan.
+Bron/licentie zijn zichtbaar en iedere poging wordt geaudit. Een echte call op
+de doel-VM, daaropvolgende cache-hit en geldige auditketen zijn bewezen. De
+volledige stand is 445 backendtests, 51 webtests, TypeScript, productiebuild en
+lint met nul errors/vijf bestaande warnings. Zie [weerconnector](weather-readonly.md).
+
+Tijdens de volledige suite bleek de bestaande preflight te kunnen crashen als
+`nvidia-smi` zelfs na SIGKILL ononderbreekbaar bleef. Die tweede timeout wordt
+nu begrensd als probe-fout gerapporteerd; de gerichte regressieset slaagt.
+
 ## Doelserver nu
 
 Leon draait lokaal als user-systemd-services: Ollama, backend, worker, web,
@@ -24,7 +38,7 @@ text-only `local_ollama`-run op de M40. Een geïsoleerde productie-equivalente
 proef eindigde in `waiting_for_review`, met nul providerkosten, geldige
 auditketen en 71C piek. Cold-startleases, dubbele apply en herstel tussen
 assignment/apply en queue-insert hebben regressietests. Stand: 440 backendtests,
-48 webtests, typecheck en productiebuild. Open: live connectoraccounts en
+51 webtests, typecheck en productiebuild. Open: Google/Firecrawl-accounts en
 self-improvement-testcontainer ontbreken, plus brede productacceptatie en
 publicatie van deze serverwijzigingen. Nieuwe wijzigingen eerst testen,
 draaiende services herstarten en veilige bron naar GitHub synchroniseren.

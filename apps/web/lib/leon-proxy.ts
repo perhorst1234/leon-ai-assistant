@@ -26,6 +26,7 @@ const routes: Record<string, Partial<Record<string, string>>> = {
   'research-preview': { POST: '/api/research/preview' },
   'research-run': { POST: '/api/research/run' },
   'server-status': { GET: '/api/server/status' },
+  'weather-current': { GET: '/api/weather/current' },
   'self-improvement-preview': { POST: '/api/self-improvement/preview' },
   'self-improvement-approve': { POST: '/api/self-improvement/approve' },
   'self-improvement-run': { POST: '/api/self-improvement/run' },

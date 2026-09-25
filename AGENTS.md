@@ -1,18 +1,27 @@
 # Werken aan Leon / Gaia
 
+- 25 september, live weerconnector: Gaia Vandaag toont actueel weer en drie
+  voorspeldagen voor een server-side vast Amsterdam via Open-Meteo. Alleen
+  read-only HTTPS naar één host, 64 KiB antwoordlimiet, tien minuten cache,
+  dubbele contractvalidatie, zichtbare bron/licentie en connectoraudit. Echte
+  providerproef op de doel-VM, cache-hit en geldige auditketen bewezen. Volledige
+  stand: 445 backendtests, 51 webtests, typecheck/build/lint; lint nul errors en
+  vijf bestaande warnings. Zie `docs/weather-readonly.md`.
+
 - 21 september, publieke toegang: Caddy met Let's Encrypt voor
   `leon-ai-assistant.duckdns.org`, UPnP-routerleases en DuckDNS-timer draaien op
   de doel-VM. Externe HTTPS-meetpunten bevestigen HTTP 200. De webapp heeft
   eenmalige registratie met zelfgekozen wachtwoord en een server-side sessie;
-  productieaccount is nog leeg tot de eigenaar registreert. De backendtoken
-  blijft op de server. Zie `docs/public-access.md`. Quick Tunnel is alleen
+  productieaccount is geregistreerd. De backendtoken blijft op de server en is
+  geen inloggegeven. Zie `docs/public-access.md`. Quick Tunnel is alleen
   tijdelijke fallback voor LAN zonder NAT-loopback.
 
 - 21 september, doelserver: lokale Ollama/Qwen-chat en OpenCode/GPT-OSS
   coding-agent op Tesla M40 zijn werkelijk beproefd. Coding-agent gebruikte
   `glob/read/edit/read` op een tijdelijk bestand; piek 80C. De gebruiker koos
   89C als stopgrens. Proxmox beheert de fysieke fan; RPM is in de VM niet te
-  zien. De algemene agent-run-API blijft mock. Zie
+  zien. De algemene agent-run-API voert geautoriseerde text-only opdrachten via
+  de duurzame lokale Ollama-wachtrij uit. Zie
   `docs/m40-deployment-evidence.md` voor bewijs en open grenzen.
 
 - 14 september, `codex/complete-leon`: fail-closed rootless Podman-contract voor

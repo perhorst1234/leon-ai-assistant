@@ -1,4 +1,4 @@
-# Leon afronden — 12 september 2026
+# Leon afronden — bijgewerkt 25 september 2026
 
 Doel: de bestaande productvisie afmaken met aantoonbare werking. Geen demo,
 mocktest of onbereikbare hardware als afgeronde integratie tellen.
@@ -32,8 +32,10 @@ Stand 25 september: stappen 1–2 lokaal geïmplementeerd en met offline tests p
 echte browserinteractie tegen een nepmodel gecontroleerd. Stap 3 heeft lokale
 scripts en Ubuntu-unitvoorbeelden; doelserveracceptatie blijft open. Stap 4 is
 lokaal geïmplementeerd en via browser tegen tijdelijke SQLite gecontroleerd.
-Stap 5 heeft client, serverroutes en Gaia-UI offline plus in de browser getest;
-accountverbinding en live acceptatie blijven open. Stap 6 heeft begrensde
+Stap 5 is voor de accountloze Open-Meteo-weerbron live voltooid: vaste
+Amsterdam-scope, bronvermelding, fouttests, cache en audit zijn op de doel-VM
+bewezen. Google Agenda/Gmail blijft apart geblokkeerd op private OAuth-
+credentials. Stap 6 heeft begrensde
 autonomiestatus, ochtendbrief, optionele dagelijkse lokale bronscan en een
 config-gated Firecrawl search-only executor. Researchcontract en disabled-state
 zijn offline/browser-getest; live provideracceptatie en self-improvement blijven
@@ -44,7 +46,7 @@ HTTPS-fallback zijn end-to-end beproefd. Stappen 7–8 blijven open.
 Bewijs en actuele aantallen: `handoff.md`,
 `chat-browser-evidence.md`, `memory-today-browser-evidence.md`,
 `google-browser-evidence.md`, `autonomy-browser-evidence.md`,
-`research-browser-evidence.md` en `web-validation.md`.
+`research-browser-evidence.md`, `weather-readonly.md` en `web-validation.md`.
 
 Elke afgeronde stap krijgt relevante regressietests, onafhankelijke review en
 een korte handoff. Geen betaalde providercall zonder gekozen budget en concrete

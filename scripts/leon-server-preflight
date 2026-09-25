@@ -81,8 +81,16 @@ def _run(command: list[str], timeout: float) -> dict[str, Any]:
         returncode = process.wait(timeout=max(0.1, deadline - time.monotonic()) if not error else 1.0)
     except subprocess.TimeoutExpired:
         error = "TimeoutExpired"
-        process.kill()
-        returncode = process.wait(timeout=1.0)
+        try:
+            process.kill()
+        except OSError:
+            pass
+        try:
+            returncode = process.wait(timeout=1.0)
+        except subprocess.TimeoutExpired:
+            # A kernel/driver call can remain uninterruptible even after SIGKILL.
+            # Report the bounded probe as failed instead of crashing preflight.
+            returncode = process.poll()
     finally:
         selector.close()
         process.stdout.close()

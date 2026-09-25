@@ -9,10 +9,11 @@ publieke IPv4-adres. Caddy beheert het Let's Encrypt-certificaat automatisch.
 en het DuckDNS A-record. De privé DuckDNS-sleutel staat alleen in
 `.runtime/duckdns-token`; geen sleutel staat in Git.
 
-Open **https://leon-ai-assistant.duckdns.org**. Het eerste scherm vraagt om de
-eenmalige instelcode uit `.runtime/leon-web-setup-code`. Kies vervolgens zelf een
-wachtwoord van minimaal 12 tekens en bevestig het. Daarna is het account
-geregistreerd en volstaat het wachtwoord. Er kan via de website geen tweede
+Open **https://leon-ai-assistant.duckdns.org**. Het productieaccount is al
+geregistreerd; vul op het inlogscherm het eerder gekozen wachtwoord in. Bij een
+volledig nieuwe installatie vraagt het eerste scherm eenmalig om de instelcode
+uit `.runtime/leon-web-setup-code` en een zelfgekozen wachtwoord van minimaal
+12 tekens. Er kan via de website geen tweede
 account worden gemaakt. Het wachtwoord wordt met scrypt en een unieke salt in
 `.runtime/leon-web-account.json` opgeslagen. De browser krijgt alleen een
 HTTP-only, Secure, SameSite=Lax-sessiecookie; de backendtoken blijft op de
@@ -45,6 +46,5 @@ curl -fsS http://127.0.0.1:3000/api/auth
 Het publieke adres en de certificaatuitgifte zijn op 21 september 2026 van
 buitenaf geverifieerd. Registratie, fout wachtwoord, login, sessiecookie,
 afgeschermde API en logout zijn tegen een geïsoleerde webinstantie getest;
-het echte productieaccount is nog leeg, zodat de eigenaar het wachtwoord zelf
-kan kiezen. De tijdelijke link is alleen een fallback en geen onderdeel van
+het echte productieaccount is geregistreerd. De tijdelijke link is alleen een fallback en geen onderdeel van
 de permanente beschikbaarheidsgarantie.

@@ -15,6 +15,22 @@ ENV_KEY_RE = re.compile(r"^[A-Z][A-Z0-9_]{1,80}$")
 
 DEFAULT_CONNECTOR_MANIFESTS: list[dict[str, Any]] = [
     {
+        "connector_id": "weather-open-meteo",
+        "name": "Amsterdam weather via Open-Meteo",
+        "connector_type": "browser_research",
+        "status": "approved_readonly",
+        "purpose": "Fixed-location current conditions and three-day forecast for the private Today dashboard.",
+        "read_scopes": ["weather:current_read"],
+        "write_scopes": [],
+        "external_system": True,
+        "external_effects": ["weather_api_read"],
+        "required_env_keys": [],
+        "approval_required_for": ["write", "external_write", "connect"],
+        "allowed_without_approval": ["read"],
+        "forbidden_actions": ["read_raw_secret", "read_secret_value", "location_override", "external_write"],
+        "notes": "No account or API key. Fixed Amsterdam coordinates, bounded response, ten-minute cache and CC BY 4.0 attribution.",
+    },
+    {
         "connector_id": "server-monitor",
         "name": "Local server monitor",
         "connector_type": "files",

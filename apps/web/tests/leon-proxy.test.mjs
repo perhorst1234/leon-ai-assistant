@@ -164,6 +164,16 @@ test('Server status uses only fixed local read route', async () => {
   assert.equal((await forwardLeon(request('server-status&id=x'), config, forbiddenFetch)).status, 404);
 });
 
+test('Weather uses only the fixed local read route', async () => {
+  const response = await forwardLeon(request('weather-current'), config, async url => {
+    assert.equal(String(url), 'http://127.0.0.1:8765/api/weather/current');
+    return Response.json({ status: 'available' });
+  });
+  assert.equal(response.status, 200);
+  assert.equal((await forwardLeon(request('weather-current', { method: 'POST', body: '{}' }), config, forbiddenFetch)).status, 404);
+  assert.equal((await forwardLeon(request('weather-current&id=x'), config, forbiddenFetch)).status, 404);
+});
+
 test('self-improvement routes use exact local POST paths and reject query parameters', async () => {
   for (const [resource, path] of [['self-improvement-preview', '/api/self-improvement/preview'], ['self-improvement-approve', '/api/self-improvement/approve'], ['self-improvement-run', '/api/self-improvement/run']]) {
     const response = await forwardLeon(request(resource, { method: 'POST', body: '{}' }), config, async url => {

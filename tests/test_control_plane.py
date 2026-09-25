@@ -1603,7 +1603,7 @@ def test_default_connector_manifests_declare_separate_read_and_write_scopes() ->
     assert by_id["server-monitor"]["write_scopes"] == []
     for manifest in manifests:
         assert manifest["read_scopes"]
-        if manifest["connector_id"] != "server-monitor":
+        if manifest["connector_id"] not in {"server-monitor", "weather-open-meteo"}:
             assert manifest["write_scopes"]
         assert set(manifest["read_scopes"]).isdisjoint(set(manifest["write_scopes"]))
         assert manifest["secret_handling"]["raw_secret_values_visible"] is False
