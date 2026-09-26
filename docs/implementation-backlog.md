@@ -1,5 +1,11 @@
 # Leon / Gaia — uitvoeringsbacklog
 
+**26 september, owner-shoppercorrecties:** 64GB-contact op pauze zonder
+antwoord/afwijzing; 128GB prioriteit voor 21 dagen, daarna 64GB reserve. Eerste
+nieuwe zoekronde: 28 advertenties, geen passend 128GB-aanbod. Openingsbiedingen
+volgen gewenste hoeveelheid + korting: EUR45 voor vijf → EUR30 voor vier;
+volledige set van vier voor EUR45 → EUR35. Informele korte berichten.
+
 **26 september, shopper:** eigen Leon-worker, M40-selectie, duurzame wekelijkse
 watch en `/shopper`-bediening gedeployd. Eerste DDR3 ECC-watch live gezocht en
 lokaal door Qwen beoordeeld. Contact via zichtbare Marktplaats-dialoog aangesloten;

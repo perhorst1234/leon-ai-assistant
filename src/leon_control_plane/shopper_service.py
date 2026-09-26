@@ -188,7 +188,7 @@ class ShopperService:
                     run["result"] = json.loads(run["result"]) if run["result"] else None
                 replies = [dict(item) for item in connection.execute(
                     "SELECT replies.status,replies.due_at,replies.conversation_url FROM replies JOIN contacts ON contacts.url=replies.contact_url WHERE contacts.watch_id=? ORDER BY replies.received_at DESC LIMIT 8", (row["id"],))]
-                watches.append({"id": row["id"], **json.loads(row["spec"]), "enabled": bool(row["enabled"]), "next_run": row["next_run"], "latest_run": run, "replies": replies})
+                watches.append({"id": row["id"], **json.loads(row["spec"]), "enabled": bool(row["enabled"]), "next_run": row["next_run"], "latest_run": run, "replies": replies, "held_contacts": connection.execute("SELECT COUNT(*) FROM contacts WHERE watch_id=? AND status='on_hold'", (row["id"],)).fetchone()[0]})
         try:
             with urllib.request.urlopen("http://127.0.0.1:9223/json/version", timeout=1) as response:
                 connected = response.status == 200
@@ -244,10 +244,13 @@ class ShopperService:
                 result = {"reason": "Page not recognized, consent or login may be needed", "matches": []}
                 status = "needs_owner"
             else:
-                result = {"matches": shortlist(page["items"], spec), "listings_checked": len(page["items"]), "source": spec["platform"], "scope": "First 40 rendered listings; asking prices, not confirmed total prices"}
+                effective = dict(spec)
+                if self.clock() >= spec.get("fallback_after", float("inf")):
+                    effective["min_ram_gb"] = spec.get("fallback_min_ram_gb", spec["min_ram_gb"])
+                result = {"matches": shortlist(page["items"], effective), "listings_checked": len(page["items"]), "source": spec["platform"], "scope": "First 40 rendered listings; asking prices, not confirmed total prices"}
                 status = "complete"
                 if spec.get("automatic_messages") and result["matches"]:
-                    result["agent"] = self.autonomous_contact(watch_id, spec, result["matches"])
+                    result["agent"] = self.autonomous_contact(watch_id, effective, result["matches"])
         except Exception:
             status, result = "disconnected", {"reason": "Browser unavailable or busy; check Chrome and the SSH tunnel", "matches": []}
         with self.connect() as connection:

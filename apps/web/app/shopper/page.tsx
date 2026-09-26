@@ -7,7 +7,7 @@ import './shopper.css';
 
 type Match = { url: string; title: string; asking_price_cents: number | null; capacity_gb: number | null; notes: string[] };
 type Run = { status: string; started_at: number; finished_at: number | null; result: { matches: Match[]; reason?: string; listings_checked?: number; agent?: { status: string; reason?: string; model?: string; offer_cents?: number; conversation_url?: string } } | null };
-type Watch = { id: string; platform: string; query: string; max_total_cents: number; enabled: boolean; next_run: number; latest_run: Run | null; replies?: { status: string; due_at: number; conversation_url: string }[] };
+type Watch = { id: string; platform: string; query: string; max_total_cents: number; enabled: boolean; next_run: number; latest_run: Run | null; held_contacts?: number; min_ram_gb?: number; fallback_after?: number; fallback_min_ram_gb?: number; replies?: { status: string; due_at: number; conversation_url: string }[] };
 type ShopperState = { browser_connected: boolean; watches: Watch[] };
 const money = (cents: number) => new Intl.NumberFormat('nl-NL', { style: 'currency', currency: 'EUR' }).format(cents / 100);
 const date = (seconds: number) => new Date(seconds * 1000).toLocaleString('nl-NL');
@@ -30,7 +30,7 @@ export default function ShopperPage() {
   const [query, setQuery] = useState('DDR3 RAM');
   const [platform, setPlatform] = useState('marktplaats');
   const [budget, setBudget] = useState('49.99');
-  const [minimum, setMinimum] = useState('64');
+  const [minimum, setMinimum] = useState('128');
   const [preferred, setPreferred] = useState('128');
   const [slots, setSlots] = useState('4');
   const [automaticMessages, setAutomaticMessages] = useState(true);
@@ -84,6 +84,8 @@ export default function ShopperPage() {
       <p>{watch.latest_run ? labels[watch.latest_run.status] || watch.latest_run.status : 'Nog geen zoekronde'}{watch.latest_run?.finished_at ? ` · ${date(watch.latest_run.finished_at)}` : ''}</p>
       {watch.enabled && <p className="shopper-muted">Volgende controle: {date(watch.next_run)}</p>}
       <div className="shopper-actions"><button disabled={busy || !watch.enabled || watch.latest_run?.status === 'running'} onClick={() => void mutate('shopper-run', { watch_id: watch.id })}>Nu zoeken</button><button disabled={busy} onClick={() => void mutate('shopper-control', { watch_id: watch.id, enabled: !watch.enabled })}>{watch.enabled ? 'Pauzeren' : 'Hervatten'}</button></div>
+      {!!watch.held_contacts && <p>Reserveoptie: {watch.held_contacts} gesprek op pauze. Leon reageert daar niet automatisch op.</p>}
+      {!!watch.fallback_after && <p>Tot {date(watch.fallback_after)} zoeken naar {watch.min_ram_gb} GB. Daarna mag {watch.fallback_min_ram_gb} GB als reserveoptie meewegen.</p>}
       {watch.replies?.map(reply => <p key={reply.conversation_url + reply.due_at}>{reply.status === 'ready_for_owner' ? 'Aanbod klaar om zelf te beoordelen en te kopen' : reply.status === 'pending' ? `Reactie gepland: ${date(reply.due_at)}` : reply.status === 'attempted' || reply.status === 'unknown' ? 'Verzendstatus onzeker; Leon stuurt niet opnieuw' : reply.status === 'clicked' ? 'Reactie verstuurd; bezorging nog niet bevestigd' : 'Gesprek bijgewerkt'} · <a href={reply.conversation_url} target="_blank" rel="noreferrer">Bekijk gesprek</a></p>)}
       {watch.latest_run?.result?.reason && <p>{watch.latest_run.result.reason}</p>}
       {watch.latest_run?.result?.agent && <div className="shopper-connection"><strong>Leon shopper: {watch.latest_run.result.agent.status === 'confirmed' ? 'Bericht bevestigd' : watch.latest_run.result.agent.status === 'clicked' ? 'Verzenden aangeklikt, bevestiging ontbreekt' : watch.latest_run.result.agent.status === 'needs_owner' ? 'Koppeling vereist aandacht' : 'Wachten'}</strong><p>{watch.latest_run.result.agent.reason}</p>{watch.latest_run.result.agent.model && <small>M40 · {watch.latest_run.result.agent.model}</small>}{watch.latest_run.result.agent.conversation_url && <p><a href={watch.latest_run.result.agent.conversation_url} target="_blank" rel="noreferrer">Bekijk gesprek</a></p>}</div>}

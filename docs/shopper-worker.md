@@ -82,3 +82,14 @@ Messages are short and informal (Hoi, heb je ze nog?, incl. verzenden); formal
 phrases and sign-offs were removed. The already sent EUR45 message stays as-is.
 Four pricing regressions pass, including an LLM proposing the asking price and
 the runtime enforcing the owner’s lower opening instead.
+
+## Owner correction: wait for 128GB
+
+The existing 64GB contact is now `on_hold`. Incoming messages from this contact
+are not read or answered automatically, pending replies are held, and the listing
+is not contacted again. No rejection or claim about another purchase was sent.
+The active owner watch prioritizes a minimum 128GB for 21 days under EUR50;
+thereafter 64GB may qualify as a fallback. The existing conversation stays held
+until the owner releases it. The latest real search read 28 rendered adverts
+and found no qualifying 128GB set. Fallback timing and held-contact suppression
+have regression tests. The dashboard shows the priority deadline and held count.

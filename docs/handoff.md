@@ -4,6 +4,13 @@ Stand: **25 september 2026**. De gebruiker wil vooral coderen; houd deze overdra
 
 ## Nieuwste wijziging
 
+26 september, voorkeur 128GB: bestaande 64GB-conversatie `on_hold`; geen
+antwoord/afwijzing verstuurd. Wekelijkse watch blijft actief, nu minimaal 128GB
+voor 21 dagen, daarna 64GB als reserve. Dit bestaande gesprek blijft ook daarna
+op pauze tot nieuwe owner-instructie. Nieuwe echte zoekronde: 28 advertenties,
+geen passende 128GB-set. Dashboard toont de deadline en het gepauzeerde gesprek;
+regressies bewijzen uitstel van fallback en geen reply aan held-contact.
+
 26 september, correctie eigenaar: nieuwe openingsbiedingen worden verplicht
 onder de vraagprijs gezet, met verhouding voor alleen de gewenste modules.
 EUR45 voor vijf wordt EUR30 voor vier; EUR45 voor vier wordt EUR35. Merk tussen

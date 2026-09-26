@@ -1,5 +1,10 @@
 # Werken aan Leon / Gaia
 
+- 26 september, eigenaarcorrecties shopper: 64GB-contact op `on_hold`, niet
+  beantwoorden/afwijzen. 128GB prioriteit voor 21 dagen, daarna 64GB reserve;
+  bestaand gesprek blijft gepauzeerd. Openingsbod op gewenste hoeveelheid met
+  korting: EUR45 voor vijf wordt EUR30 voor vier. Kortere informele berichten.
+
 - 26 september, shopper: eigen Leon-watch en M40-selectie zijn gedeployd met
   `/shopper`. Server-headless Chrome/CDP 9223 vervangt de Mac-tunnel; private
   marketplace-sessies overgezet en Marktplaats-login bewezen. Eerste echte
