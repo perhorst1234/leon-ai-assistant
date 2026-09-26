@@ -108,7 +108,7 @@ def describe(result):
         message = 'Servercontrole afgerond: Leon-services actief en voldoende vrije schijfruimte.'
     if result['gpu_temp_c'] is not None:
         message += f" M40: {result['gpu_temp_c']} °C."
-    if result['recovery_attempts']:
+    if result.get('recovery_attempts'):
         message += ' Herstart geprobeerd voor: '+', '.join(result['recovery_attempts'])+'. De status is daarna opnieuw gecontroleerd.'
     return message
 

@@ -18,6 +18,8 @@ uitgeschakeld. Eerste gezonde wekelijkse run uitgevoerd, volgende zondag
 27 september 10:00 Amsterdam. Browser bevestigde twee afgeronde serverkaarten
 met Leon Server, werkelijk resultaat en temperatuur. 521 backendtests,
 typecheck/build geslaagd; lint nul errors/zeven bestaande warnings.
+De chatstatus-proef vond ontbrekende recovery-metadata bij read-only status;
+describe accepteert nu beide vormen en heeft een extra regressietest.
 
 
 **26 september, geïntegreerde webresearch:** expliciet onderzoek vanuit chat

@@ -3,6 +3,7 @@ import json
 from unittest.mock import patch
 
 from leon_control_plane.server_routine import SERVICES, inspect
+from leon_control_plane.server_routine import snapshot, describe
 from leon_control_plane.owner_updates import publish
 from leon_control_plane.chat_api import ChatService
 from test_control_plane import make_store
@@ -22,6 +23,12 @@ class Host:
         if args[2]=='restart' and self.recovers:
             self.states[args[3]]='active'
         return ''
+
+
+def test_read_only_status_is_described_without_recovery_metadata(tmp_path):
+    result=snapshot(tmp_path,Host())
+    assert 'M40: 42' in describe(result)
+    assert 'actief' in describe(result)
 
 
 def test_healthy_inspection_tracks_real_completion_without_chat_noise(tmp_path):
