@@ -48,7 +48,7 @@ def test_protocol_hides_write_tool_without_authorization(tmp_path):
             status = await client.call_tool("marketplace_capabilities")
             return {item.name for item in listed.tools}, status.structured_content
     names, status = asyncio.run(check())
-    assert names == {"marketplace_capabilities", "marketplace_open", "marketplace_read_page", "marktplaats_read_own_messages"}
+    assert names == {"marketplace_capabilities", "marketplace_open", "marketplace_read_page", "marktplaats_read_own_messages", "marketplace_search"}
     assert not status["messages_enabled"]
 
 
@@ -106,3 +106,37 @@ def test_stdio_entrypoint_exposes_authorized_tools_without_browser_login(tmp_pat
     assert "marketplace_send_message" in tools
     assert not tools["marketplace_send_message"]
     assert tools["marketplace_read_page"]
+
+
+def test_public_hardware_listing_path_is_not_redacted(tmp_path):
+    instance, _ = bridge(tmp_path)
+    url = 'https://www.marktplaats.nl/v/ram/m1-5x-sk-hynix-16gb-ddr3-ecc-registered-ram-64gb-totaal'
+    instance.run = lambda *args: URL if args == ('get', 'url') else json.dumps(json.dumps({
+        'items': [{'url': url, 'title': '4x16GB DDR3 ECC', 'text': '64GB €45'}],
+        'empty': False, 'challenge': False,
+    })) if args[0] == 'eval' else ''
+    assert instance.search('marktplaats', 'DDR3 ECC')['items'][0]['url'] == url
+
+
+def test_first_contact_dialog_send_label(tmp_path, monkeypatch):
+    instance, calls = bridge(tmp_path)
+    monkeypatch.setattr('leon_control_plane.marketplace_browser_mcp.time.time', lambda: 1000)
+    original = instance.run
+    instance.run = lambda *args: '- textbox "Bericht" [required, ref=e1]\n- button "Stuur bericht" [ref=e2]' if args == ('snapshot', '-i') else original(*args)
+    assert instance.send('marktplaats', '@e1', '@e2', 'Hoi', URL)['status'] == 'clicked'
+    assert sum(call[0] == 'click' for call in calls) == 1
+
+
+def test_server_bridge_connects_once_and_keeps_dedicated_worker_tab(tmp_path, monkeypatch):
+    from types import SimpleNamespace
+    calls = []
+    def subprocess_run(command, **kwargs):
+        calls.append(command)
+        return SimpleNamespace(returncode=0, stdout=URL)
+    monkeypatch.setattr('leon_control_plane.marketplace_browser_mcp.subprocess.run', subprocess_run)
+    instance = BrowserBridge(Path('/unused'), 'http://127.0.0.1:9223', tmp_path / 'audit')
+    instance.run('get', 'url')
+    instance.run('snapshot', '-i')
+    assert sum('connect' in call for call in calls) == 1
+    assert any(call[-2:] == ['tab', 'leon-shopper-worker'] for call in calls)
+    assert not any('--cdp' in call for call in calls)

@@ -271,6 +271,7 @@ function SpaceSwitcher({
             </button>
           );
         })}
+        <a className="switcher-tab" href="/shopper" aria-label="Shopper openen"><ShoppingBag size={15}/><span>Shopper</span></a>
       </div>
       <button className="switcher-icon" type="button" aria-label="Instellingen openen" onClick={onSettings}>
         <Settings2 size={17} strokeWidth={1.7} />

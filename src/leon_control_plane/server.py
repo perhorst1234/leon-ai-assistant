@@ -45,6 +45,7 @@ from leon_control_plane.google_api import google_request
 from leon_control_plane.google_readonly import GoogleReadonlyError
 from leon_control_plane.research_executor import ResearchExecutorError, research_request
 from leon_control_plane.chat_api import chat_request
+from leon_control_plane.shopper_service import shopper_request
 from leon_control_plane.self_improvement_api import self_improvement_request
 from leon_control_plane.ui_composition import (
     UI_POLICY_PATH,
@@ -3575,6 +3576,16 @@ class Handler(BaseHTTPRequestHandler):
             return
         if not self._require_auth():
             return
+        if self.path.startswith("/api/shopper/"):
+            token = dashboard_token()
+            if not token or not hmac.compare_digest(self.headers.get("authorization", ""), f"Bearer {token}"):
+                self._send_json({"error": "Explicit dashboard bearer authorization required"}, HTTPStatus.UNAUTHORIZED)
+                return
+            try:
+                self._send_json(shopper_request("GET", self.path))
+            except ValueError as exc:
+                self._send_json({"error": str(exc)}, HTTPStatus.BAD_REQUEST)
+            return
         if self.path.startswith("/api/google/"):
             token = dashboard_token()
             if not token or not hmac.compare_digest(self.headers.get("authorization", ""), f"Bearer {token}"):
@@ -3681,6 +3692,13 @@ class Handler(BaseHTTPRequestHandler):
                 self._handle_login()
                 return
             if not self._require_auth():
+                return
+            if self.path.startswith("/api/shopper/"):
+                token = dashboard_token()
+                if not token or not hmac.compare_digest(self.headers.get("authorization", ""), f"Bearer {token}"):
+                    self._send_json({"error": "Explicit dashboard bearer authorization required"}, HTTPStatus.UNAUTHORIZED)
+                    return
+                self._send_json(shopper_request("POST", self.path, self._read_body()))
                 return
             if self.path.startswith("/api/self-improvement/"):
                 token = dashboard_token()

@@ -92,7 +92,7 @@ On 26 September the owner connected Chrome on macOS over the loopback SSH
 tunnel. CDP and the logged-in Marktplaats page were verified; 24 owner messages
 from four purchase conversations were read. Only a compact tone/strategy
 profile was saved in private local state, outside this public repository.
-No external message or purchase was performed. Vinted, TicketSwap and
+At that initial acceptance no external message or purchase was performed. Vinted, TicketSwap and
 Ticketmaster login status was not verified. The live Marktplaats composer
 uses the exact label `Sturen`, now supported by the send guard. Interactive
 snapshots are used for send refs; output is capped before returning it.
@@ -108,3 +108,20 @@ Do not use Chrome manually during a send: CDP cannot atomically prevent the
 owner changing tabs during a browser operation. Website DOM/labels may change;
 unsupported labels fail instead of selecting a generic button. Host checks
 apply to top-level tool navigation, not every request made by the browser.
+
+Leon now calls this bridge through its own durable shopper worker rather than
+requiring Codex to operate searches. The Marktplaats first-contact dialog uses
+`Stuur bericht`; delayed UI readiness is handled before the one-shot send.
+See [shopper worker](shopper-worker.md) for the runtime, scheduling and limits.
+
+The deployed Leon worker now uses the server's persistent headless Chrome on
+loopback port 9223, not the Mac tunnel. Marketplace sessions were transferred
+privately; no cookie values/Google credentials enter source or logs. A separate
+server DOM inbox listener provides event-driven delayed replies. The CLI connects
+once per bridge and retains a labelled worker tab instead of selecting a fresh
+CDP page on every operation. Manual MCP access may still use the Mac port 9222.
+
+A first real autonomous Leon contact was subsequently sent on Marktplaats from
+the server browser. The exact owner message was read back in the new
+conversation; this is confirmed delivery, not merely a successful click. No
+acceptance, reservation, checkout or payment occurred.

@@ -1,5 +1,16 @@
 # Werken aan Leon / Gaia
 
+- 26 september, shopper: eigen Leon-watch en M40-selectie zijn gedeployd met
+  `/shopper`. Server-headless Chrome/CDP 9223 vervangt de Mac-tunnel; private
+  marketplace-sessies overgezet en Marktplaats-login bewezen. Eerste echte
+  Leon-contactbezorging bevestigd door exact eigen bericht terug te lezen.
+  DOM-inbox-eventlistener + duurzame 15–45 minuten replyplanning, 08:00–23:00
+  Amsterdam, counteroffers/vragen/beleefd afwijzen/owner-ready aangesloten.
+  Geen vijfminutenpoll, geen aankopen. Full backend 483 tests; nieuwste 33
+  shopperregressies, 51 webtests, typecheck/build, lint nul errors/vijf warnings.
+  Echte inkomende melding + vertraagd antwoord nog niet live bewezen; Vinted-
+  berichten en TicketSwap-monitor open. Zie `docs/shopper-worker.md`.
+
 - 25 september, live weerconnector: Gaia Vandaag toont actueel weer en drie
   voorspeldagen voor een server-side vast Amsterdam via Open-Meteo. Alleen
   read-only HTTPS naar één host, 64 KiB antwoordlimiet, tien minuten cache,

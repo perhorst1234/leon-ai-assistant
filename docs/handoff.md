@@ -4,15 +4,25 @@ Stand: **25 september 2026**. De gebruiker wil vooral coderen; houd deze overdra
 
 ## Nieuwste wijziging
 
-26 september: browser-MCP voor eigen Marktplaats/Vinted/TicketSwap/Ticketmaster-
-accounts toegevoegd. Eigen Chrome-login via lokale CDP/SSH-tunnel, zichtbare
-pagina/gesprekslezing, optionele gebruikersgrant voor berichten; duurzame
-no-retry-claims en metadatalaudit. Mac-tunnel en Marktplaats-login inmiddels
-live bevestigd; 24 eigen berichten uit vier aankoopgesprekken gelezen.
-Compact stijlprofiel privé lokaal bewaard, geen transcript in Git. Geen
-bericht, bieding of aankoop uitgevoerd; andere accounts nog niet gecontroleerd.
-Text-only Leon-runtime nog niet met deze tools verbonden. Zie
-[browser-MCP](marketplace-browser-mcp.md).
+26 september: Leon heeft nu een eigen shopper-worker op de M40, duurzame
+wekelijkse zoekopdrachten en een geauthenticeerde `/shopper`-pagina. De eerste
+DDR3 ECC-watch (64–128GB, vier slots, totaal < EUR50) doorzocht live Marktplaats;
+Qwen koos zelfstandig een 64GB-kandidaat en een totaalbod. User-systemd timer
+actief; backend/web gedeployd. Eerste contact via het vertraagde advertentiedialoog is live bevestigd: Leon
+verstuurde zelf een bericht en las exact dat eigen bericht terug in het nieuwe
+gesprek. Geen aankoop/acceptatie gedaan.
+483 backendtests en 51 webtests; 33 nieuwste shopperregressies geslaagd; typecheck/build geslaagd, lint
+nul errors/vijf bestaande warnings. Nieuwe gerichte regressies slagen.
+Server-headless Chrome op CDP 9223 vervangt de Mac; eigen Marktplaats-login
+bevestigd na private overdracht van uitsluitend marketplace-sessies. De gebruiker
+kan de Mac-browser/tunnel sluiten. DOM-inboxlistener draait als systemd-service;
+geen vijfminutenpoll. Reacties gepland met 15–45 minuten vertraging binnen
+08:00–23:00 Europe/Amsterdam; nachtberichten wachten tot ochtend. Counteroffers,
+vragen, vriendelijk afwijzen en owner-ready status zijn aangesloten voor
+bevestigde gesprekken. Duurzame claims, superseding en owner-cancel getest.
+Eerste-contactbezorging bevestigd; echte inkomende meldingsbezorging nog onbewezen;
+Vinted-berichten/ticketmonitor open. Compact toonprofiel blijft privé.
+Zie [shopper-worker](shopper-worker.md) en [browser-MCP](marketplace-browser-mcp.md).
 
 Gaia Vandaag heeft een live alleen-lezen weerkaart voor vast Amsterdam via
 Open-Meteo. Backend en web valideren een begrensd contract; alleen één vaste

@@ -1,0 +1,15 @@
+[Unit]
+Description=Leon marketplace inbox event listener
+After=leon-shopper-browser.service
+Requires=leon-shopper-browser.service
+
+[Service]
+WorkingDirectory=%h/leon-ai-assistant
+ExecStart=%h/.local/bin/node %h/leon-ai-assistant/scripts/leon-shopper-events.cjs
+Restart=on-failure
+RestartSec=30
+UMask=0077
+NoNewPrivileges=true
+
+[Install]
+WantedBy=default.target

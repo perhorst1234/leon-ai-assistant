@@ -1,0 +1,11 @@
+[Unit]
+Description=Check due Leon shopper watches hourly
+
+[Timer]
+OnCalendar=hourly
+Persistent=true
+RandomizedDelaySec=120
+Unit=leon-shopper-watch.service
+
+[Install]
+WantedBy=timers.target

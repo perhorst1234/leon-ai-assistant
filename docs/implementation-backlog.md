@@ -1,11 +1,14 @@
 # Leon / Gaia — uitvoeringsbacklog
 
-**26 september, shopper:** lokale browser-MCP aanwezig met optionele
-berichtbevoegdheid. Mac-tunnel en Marktplaats-read-only accountacceptatie
-geslaagd; compact stijlprofiel afgeleid uit 24 eigen berichten in vier
-gesprekken. Volgende: andere accounts controleren, runtime/wekelijkse watcher
-aansluiten en daarna een passende echte berichtflow testen. Biedingen,
-likes en aankoopflow nog open. Zie `docs/marketplace-browser-mcp.md`.
+**26 september, shopper:** eigen Leon-worker, M40-selectie, duurzame wekelijkse
+watch en `/shopper`-bediening gedeployd. Eerste DDR3 ECC-watch live gezocht en
+lokaal door Qwen beoordeeld. Contact via zichtbare Marktplaats-dialoog aangesloten;
+geen aankoopflow. Serverbrowser en private Marktplaats-sessie live bevestigd; Mac niet meer nodig.
+DOM-meldingstrigger + duurzame vertraagde replies aanwezig (15–45 minuten,
+08:00–23:00 Amsterdam), lokale counteroffers/vragen/afwijzing en owner-ready
+status. Eerste echte Leon-contactbezorging via de serverbrowser bevestigd door
+teruglezen van het eigen bericht. Volgende: echte inkomende notificatie en
+vertraagd antwoord end-to-end bewijzen; daarna Vinted-berichten en TicketSwap-eventmonitor. Zie `docs/shopper-worker.md`.
 
 **25 september, chat en live weer:** Gaia's verbonden chat toont na verzenden
 zichtbaar de reviewkaart en scrollt daar automatisch naartoe; de demo-toast wordt

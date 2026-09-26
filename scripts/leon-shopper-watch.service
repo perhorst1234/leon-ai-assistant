@@ -1,0 +1,12 @@
+[Unit]
+Description=Leon weekly marketplace watch runner
+After=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=%h/leon-ai-assistant
+Environment=PATH=%h/.local/bin:/usr/bin:/bin
+ExecStart=%h/leon-ai-assistant/.venv/bin/python -m leon_control_plane.shopper_service
+NoNewPrivileges=true
+UMask=0077
+TimeoutStartSec=300

@@ -1,0 +1,13 @@
+[Unit]
+Description=Leon server-side headless marketplace browser
+After=network-online.target
+
+[Service]
+ExecStart=%h/.local/bin/leon-chrome --headless=new --restore-last-session --no-sandbox --disable-dev-shm-usage --remote-debugging-address=127.0.0.1 --remote-debugging-port=9223 --user-data-dir=%h/.local/state/leon/shopper-chrome about:blank
+Restart=on-failure
+RestartSec=10
+UMask=0077
+NoNewPrivileges=true
+
+[Install]
+WantedBy=default.target

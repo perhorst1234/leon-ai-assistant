@@ -7,12 +7,13 @@ import json
 import os
 from pathlib import Path
 import re
+import shutil
 import sqlite3
 import subprocess
 import threading
 import time
 from typing import Any
-from urllib.parse import urlsplit
+from urllib.parse import quote, urlencode, urlsplit
 
 from mcp.server import MCPServer
 from mcp.types import ToolAnnotations
@@ -49,13 +50,36 @@ class BrowserBridge:
             raise ValueError("Invalid local CDP endpoint")
         self.executable = executable
         self.cdp = cdp
+        self.session = "leon-shopper-server" if parsed.port == 9223 else "leon-shopper"
         self.audit_path = audit_path
         self.allow_messages = allow_messages
+        self.connected = False
         self.lock = threading.RLock()
 
     def run(self, *args: str) -> str:
+        executable = self.executable.resolve()
+        command = [str(self.executable)]
+        if executable.suffix == ".js":
+            # User-systemd has a smaller PATH than the interactive shell.
+            local_node = Path.home() / ".local/bin/node"
+            node = str(local_node) if local_node.is_file() else shutil.which("node")
+            if not node:
+                raise RuntimeError("Browser Node runtime unavailable")
+            command = [node, str(executable)]
+        base = [*command, "--session", self.session, "--max-output", "60000"]
+        if not self.connected:
+            connection = subprocess.run([*base, "connect", self.cdp], capture_output=True, text=True, timeout=30)
+            if connection.returncode:
+                raise RuntimeError("Browser connection unavailable")
+            if self.session == "leon-shopper-server":
+                selected = subprocess.run([*base, "tab", "leon-shopper-worker"], capture_output=True, text=True, timeout=30)
+                if selected.returncode:
+                    created = subprocess.run([*base, "tab", "new", "--label", "leon-shopper-worker", "about:blank"], capture_output=True, text=True, timeout=30)
+                    if created.returncode:
+                        raise RuntimeError("Worker browser tab unavailable")
+            self.connected = True
         result = subprocess.run(
-            [str(self.executable), "--session", "leon-shopper", "--cdp", self.cdp, "--max-output", "60000", *args],
+            [*base, *args],
             capture_output=True, text=True, timeout=30, check=False,
         )
         if result.returncode:
@@ -124,6 +148,56 @@ class BrowserBridge:
         return {"platform": "marktplaats", "count": len(messages), "messages": redact_value(messages),
                 "untrusted_page_content": True, "scope": "current_conversation_owner_only"}
 
+    def search(self, platform: str, query: str) -> dict:
+        if not isinstance(query, str) or not 1 <= len(query.strip()) <= 160:
+            raise ValueError("query must contain 1–160 characters")
+        if platform == "marktplaats":
+            url = "https://www.marktplaats.nl/q/" + quote(query.strip(), safe="") + "/"
+            selector = 'a[href*="/v/"]'
+            container = "li"
+        elif platform == "vinted":
+            url = "https://www.vinted.nl/catalog?" + urlencode({"search_text": query.strip()})
+            selector = 'a[href*="/items/"]'
+            container = '[data-testid="grid-item"], .feed-grid__item'
+        else:
+            raise ValueError("Listing search supports Marktplaats and Vinted; tickets need an event link")
+        self.run("open", validate_url(platform, url))
+        self.current(platform)
+        self.run("wait", "1200")
+        # Extract rendered listings only; strip tracking parameters and deduplicate
+        # before truncating (Marktplaats uses several anchors for one advert).
+        expression = (
+            "JSON.stringify({items:Array.from(new Map(Array.from(document.querySelectorAll("
+            + json.dumps(selector) + ")).filter(e=>e.innerText.trim().length>5).map(e=>{"
+            "const u=new URL(e.href);const p=e.closest(" + json.dumps(container) + ")||e.parentElement;"
+            "return [u.origin+u.pathname,{url:u.origin+u.pathname,"
+            "title:(p.querySelector('[class*=\"Listing-title\"],h3,h2')?.innerText||e.innerText.split('\\n').filter(t=>t&&!/favorieten/i.test(t))[0]||e.innerText).slice(0,200),"
+            "text:p.innerText.slice(0,1000)}]})).values()).slice(0,40),"
+            "empty:/geen (resultaten|advertenties)|no results/i.test(document.body.innerText),"
+            "challenge:/verify you are human|captcha|access denied/i.test(document.body.innerText)})"
+        )
+        raw = json.loads(self.run("eval", expression))
+        result = json.loads(raw) if isinstance(raw, str) else raw
+        if not isinstance(result, dict) or set(result) != {"items", "empty", "challenge"} or not isinstance(result["items"], list) or len(result["items"]) > 40:
+            raise RuntimeError("Unexpected search page format")
+        for item in result["items"]:
+            if not isinstance(item, dict) or set(item) != {"url", "title", "text"}:
+                raise RuntimeError("Unexpected listing format")
+            validate_url(platform, item["url"])
+            if not isinstance(item["title"], str) or not isinstance(item["text"], str) or len(item["title"]) > 200 or len(item["text"]) > 1000:
+                raise RuntimeError("Listing exceeds limits")
+        self.audit(platform, "search", "challenge" if result["challenge"] else "complete")
+        safe = redact_value(result)
+        # Public listing paths sometimes contain long hardware part numbers.
+        # The generic secret scanner must not corrupt the actual destination.
+        # These URLs have already been host-validated and stripped of query data.
+        for original, item in zip(result["items"], safe["items"]):
+            parsed_url = urlsplit(original["url"])
+            if parsed_url.query or parsed_url.fragment or len(original["url"]) > 2000:
+                raise RuntimeError("Unexpected listing URL")
+            item["url"] = original["url"]
+        return {"platform": platform, "query": query, **safe}
+
     def send(self, platform: str, textbox_ref: str, send_ref: str, message: str, expected_url: str) -> dict:
         if not self.allow_messages or platform not in {"marktplaats", "vinted"}:
             raise ValueError("Messages are not enabled for this server/platform")
@@ -136,11 +210,11 @@ class BrowserBridge:
             raise ValueError("Conversation changed; inspect the current page")
         snapshot = self.run("snapshot", "-i")
         fields = snapshot.splitlines()
-        textbox = [line for line in fields if f"[ref={textbox_ref[1:]}]" in line]
-        button = [line for line in fields if f"[ref={send_ref[1:]}]" in line]
+        textbox = [line for line in fields if re.search(r"\[[^\]]*\bref=" + re.escape(textbox_ref[1:]) + r"\]", line)]
+        button = [line for line in fields if re.search(r"\[[^\]]*\bref=" + re.escape(send_ref[1:]) + r"\]", line)]
         if len(textbox) != 1 or not re.search(r'textbox .*?(bericht|message)', textbox[0], re.I) or re.search(r'password|wachtwoord|email|e-mail', textbox[0], re.I):
             raise ValueError("Ref must identify the message textbox")
-        if len(button) != 1 or not re.search(r'button "(?:Sturen|Versturen|Verzenden|Send|Send message|Bericht versturen)"', button[0], re.I):
+        if len(button) != 1 or not re.search(r'button "(?:Sturen|Versturen|Verzenden|Send|Send message|Bericht versturen|Stuur bericht)"', button[0], re.I):
             raise ValueError("Ref must identify an explicit Send message button")
         fingerprint = hashlib.sha256(f"{platform}\n{current}\n{message}".encode()).hexdigest()
         self.run("fill", textbox_ref, message)
@@ -188,6 +262,12 @@ def build_server(bridge: BrowserBridge) -> MCPServer:
         """Read up to 50 owner-written messages in the current conversation for local tone analysis."""
         with bridge.lock:
             return bridge.own_messages(limit)
+
+    @server.tool(annotations=READ, structured_output=True)
+    def marketplace_search(platform: str, query: str) -> dict[str, Any]:
+        """Search rendered marketplace listings; no private endpoints or account changes."""
+        with bridge.lock:
+            return bridge.search(platform, query)
 
     if bridge.allow_messages:
         @server.tool(annotations=WRITE, structured_output=True)
