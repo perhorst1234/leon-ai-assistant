@@ -17,6 +17,8 @@ blijft alleen lezen. Vandaag toont de browser-bewezen knop “Afspraken beheren
 inschakelen”; aanvullend Google-consent is bij de eigenaar gevraagd. Echte writes
 zijn dus nog niet live bewezen. Agenda/Gmail-readprobes na deployment: HTTP200,
 0 events en 5 metadata-items (geen persoonlijke inhoud opgeslagen in docs/logs).
+Echte M40-routerproef herkende calendar.create en leverde de gevraagde
+28 september 14:00–15:00 met +02:00; alleen routing, geen afspraak aangemaakt.
 547 backendtests, 56 webtests, typecheck/build geslaagd; lint nul errors/zeven
 bestaande warnings. Backend/web/worker herstartten idle en staan active.
 
