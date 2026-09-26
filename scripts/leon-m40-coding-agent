@@ -20,6 +20,13 @@ if [[ ! "$max_temp" =~ ^[0-9]+$ ]] || (( max_temp < 65 || max_temp > 89 )); then
 fi
 
 cd "$repo_root"
+mkdir -p "$HOME/.local/state/leon"
+exec 9> "$HOME/.local/state/leon/m40.lock"
+chmod 600 "$HOME/.local/state/leon/m40.lock"
+if ! flock -n 9; then
+  echo "M40 is currently serving another Leon request; retry the coding task later." >&2
+  exit 75
+fi
 peak_temp=0
 setsid "$opencode_bin" --pure --model "ollama/$model" "$@" &
 agent_pid=$!

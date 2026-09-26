@@ -104,6 +104,13 @@ def request_payload(prompt: str, max_output_tokens: int, config: LocalModelConfi
 
 
 def send_response(payload: dict, config: LocalModelConfig) -> dict:
+    config.validate()
+    from leon_control_plane.gpu_lease import acquire
+    with acquire(config.timeout_seconds):
+        return _send_response(payload,config)
+
+
+def _send_response(payload: dict, config: LocalModelConfig) -> dict:
     """Send one bounded request to the loopback Ollama service."""
     config.validate()
     wire = {
@@ -134,6 +141,9 @@ def is_busy(config: LocalModelConfig) -> bool:
     if not config.enabled:
         return False
     config.validate()
+    from leon_control_plane.gpu_lease import busy
+    if busy():
+        return True
     conn = http.client.HTTPConnection(config.host, config.port, timeout=0.5)
     try:
         conn.request("GET", "/api/ps")
@@ -143,7 +153,12 @@ def is_busy(config: LocalModelConfig) -> bool:
             return True
         data = json.loads(raw)
         models = data.get("models") if isinstance(data, dict) else None
-        return isinstance(models, list) and bool(models)
+        # /api/ps lists resident models, not current generation requests.
+        # A cached Qwen model can serve the next turn immediately. A different
+        # resident model indicates a GPU workload outside our shared lease.
+        if not isinstance(models,list):
+            return True
+        return any(not isinstance(model,dict) or model.get('name',model.get('model')) != config.model for model in models)
     except Exception:
         return True
     finally:

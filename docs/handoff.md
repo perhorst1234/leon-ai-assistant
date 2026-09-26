@@ -1,5 +1,21 @@
 # Overdracht — Leon / Gaia
 
+**26 september, gedeelde GPU-beurt en zuinigere routing:** gewone chat telt
+een gecachet eigen Qwen-model niet langer als bezet. /api/ps toont residentie,
+geen generatie; daadwerkelijk gebruik wordt door een gedeelde flock bewaakt.
+Alle lokale transportcalls (chat/router/shopper/tasks) delen één lease; de M40-
+coding-wrapper gebruikt dezelfde inode en weigert starten bij bezetting. Een
+bezet slot wordt begrensd afgewacht; fouten geven de lease altijd vrij. Een
+ander resident model of onleesbare status blijft conservatief bezet. Bestaande
+Ollama heeft al NUM_PARALLEL=1 en MAX_LOADED_MODELS=1.
+
+Echte warme chatpreview: local_busy=false, provider=ollama, reservering=0.
+Echte wrapperproef met gehouden Python-lease: exit75, coding niet gestart;
+lease na afloop vrij. 529 backendchecks; bash-syntaxcontrole geslaagd. De
+89C-codingguard blijft behouden. Gezamenlijke prioritering en een globale
+thermische watchdog voor alle lokale calls blijven nog open.
+
+
 **26 september, echte serveragent:** wekelijkse zondagcontrole om 10:00
 Europe/Amsterdam actief via leon-server-watch.timer. Vaste OS-probes controleren
 Leon backend/web/worker/Ollama, vrije schijf en M40-temperatuur. Alleen eigen
