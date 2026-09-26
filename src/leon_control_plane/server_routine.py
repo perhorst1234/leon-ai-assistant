@@ -4,6 +4,7 @@ from datetime import datetime
 from pathlib import Path
 import argparse
 import json
+import os
 import subprocess
 import time
 from zoneinfo import ZoneInfo
@@ -27,6 +28,8 @@ def command(args):
 def snapshot(root, run=command):
     health = server_status(paths=(('Leon', Path(root)),))
     states = {name: run(['systemctl','--user','is-active',name]) for name in SERVICES}
+    if os.environ.get('LEON_M40_THERMAL_GUARD_ENABLED')=='1':
+        states['leon-m40-guard']=run(['systemctl','--user','is-active','leon-m40-guard'])
     raw = run(['nvidia-smi','--query-gpu=temperature.gpu','--format=csv,noheader,nounits'])
     try:
         temp = int(raw.splitlines()[0])

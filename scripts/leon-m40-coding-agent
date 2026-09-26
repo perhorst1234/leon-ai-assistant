@@ -28,6 +28,7 @@ if ! flock -n 9; then
   exit 75
 fi
 peak_temp=0
+"$repo_root/.venv/bin/python" -m leon_control_plane.thermal_guard --check
 setsid "$opencode_bin" --pure --model "ollama/$model" "$@" &
 agent_pid=$!
 trap 'kill -TERM -- "-$agent_pid" 2>/dev/null || true' INT TERM

@@ -1,0 +1,16 @@
+[Unit]
+Description=Leon M40 temperature cutoff and cooling recovery
+After=leon-ollama.service
+
+[Service]
+Type=simple
+WorkingDirectory=%h/leon-ai-assistant
+EnvironmentFile=%h/leon-ai-assistant/.env.local
+ExecStart=%h/leon-ai-assistant/.venv/bin/python -m leon_control_plane.thermal_guard
+Restart=always
+RestartSec=3
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=default.target

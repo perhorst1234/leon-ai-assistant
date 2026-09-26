@@ -18,8 +18,8 @@ beproeven en deployen voordat het volgende onderdeel wordt uitgebreid.
 | Planner / Google | PKCE OAuth, live Agenda/Gmail-metadata, vrije momenten en writer vanuit chat/Werk | Aanvullend write-consent en echte writeproef; multi-tool-planning; Gmail alleen metadata |
 | Shopper | Wekelijkse MP/Vinted-zoekopdrachten, echte MP-berichten, delayed replies | Echte inkomende replyketen bewijzen, Vinted-onderhandelingen, TicketSwap-eventwatch en alerts |
 | Server Manager | Status, wekelijkse echte inspectie, chatmeldingen en beperkte serviceherstarts | Ruimere diagnose/backups en geverifieerde herstelacties voor andere storingen |
-| Model Scheduler | Lokale Qwen/M40, sensitive-local routing, gedeelde GPU-lease en correcte cacherouting | Gezamenlijke prioritering en globale thermische regeling |
-| M40 Code Worker | OpenCode/GPT-OSS read/edit/readback eerder live bewezen | Vanuit Leon starten met eigen workspace, daadwerkelijke checks en deployment terugkoppelen |
+| Model Scheduler | Lokale M40, sensitive-local routing, GPU-lease, cacherouting en globale 89C-guard met cooling-aware queue | Gezamenlijke prioritering |
+| M40 Code Worker | OpenCode/GPT-OSS read/edit/readback eerder bewezen; laatste Qwen-review timeout zonder verdict | Vanuit Leon starten met eigen workspace, daadwerkelijke checks en deployment terugkoppelen |
 | Value / Opportunity / Curiosity | Scores, observaties, policies en queue-algoritmes | Relevante echte bronnen, herhaling in eigen gebruik herkennen en bruikbare verbeteringen uitvoeren |
 | Night Cycle / Feedback | Dagelijkse veilige bronindex en ochtendbrief | Echte gesprek-/foutreflectie, memory-updates, laag-risicotaken en leerresultaten |
 | Zelfverbetering / Genome | Patchvalidator, rollbackcontract, configuratie/journal | Werkende doelhost-uitvoering, tests, succesvolle update en automatische rollback |

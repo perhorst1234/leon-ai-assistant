@@ -1,5 +1,40 @@
 # Leon / Gaia — uitvoeringsbacklog
 
+**26 september, globale M40-temperatuurbewaking gedeployd:**
+leon-m40-guard.service is enabled/active met een doorlopend nvidia-smi/NVML-
+meetproces voor GPU0 (op deze VM geverifieerd Tesla M40 24GB). Losse NVML-
+initialisatieprobes konden hier langer dan acht seconden vastlopen; het vaste
+meetproces levert nu iedere seconde een verse meting. Bij >=89C of ontbrekende
+metingen stopt alleen Leons eigen Ollama-service; bij <=80C gedurende 30 seconden
+kan de bewaker uitsluitend zijn eigen stop hervatten. Monotone tijd voorkomt
+verkorten van de afkoelperiode door een klokcorrectie. Een handmatige service-
+stop wordt niet automatisch ongedaan gemaakt. Proxmox houdt de fysieke fan.
+
+Backend/worker starten na de bewaker via M40-specifieke systemd-drop-ins. Alle
+lokale generatiepaden en de coding-wrapper vereisen een verse passende status.
+Bij afkoeling blijft lokaal wachtrijwerk staan zonder retries te verbruiken;
+andere lokale checks kunnen door. Queuebereiding gebruikt nu werkelijk zijn
+meegegeven LocalModelConfig. Incidenten/resultaat in verenigd Werk (Leon Server)
+en gededupliceerde chatmeldingen; onveranderde gezonde metingen blijven stil.
+Meldingspoging wordt bewaard en na daemonherstart opnieuw bezorgd.
+
+Echte gecontroleerde foutproef: een onleesbare meting werd gesimuleerd bij een
+koele idle GPU; eigen Ollama-stop bevestigd. Eerste herstelproef faalde door
+NVML-initialisatiehangs; na wijziging naar continu meten bevestigde de productie-
+bewaker de afkoelperiode en eigen serviceherstart. Geen fysieke 89C-stressproef.
+Daarna echte chatpreview provider=ollama/reservering0, chatantwoord “Leon werkt
+lokaal”, job succeeded/charged0. Guard/Ollama/backend/worker active; verse
+metingen onder de grens. 573 backendtests en bash/systemd-controles geslaagd.
+Fake-modeltests gebruiken een eigen GPU-lock zodat productie-coding ze niet
+blokkeert. Frontend ongewijzigd; eerdere 56 webtests/typecheck/build blijven geldig.
+
+OpenCode/Qwen op de M40 kreeg één kleine read-only review van thermal_guard.py,
+met maximaal 120 seconden. De procesgrens werd bereikt na step_start, zonder
+verdict of wijziging; dit is geen geslaagde codereview. Lease vrij en GPU idle
+na afloop. Niet herhalen zonder de OpenCode-context-/prefillkosten te verbeteren.
+Code Worker vanuit chat, schedulerprioriteiten en gezamenlijke nachtverbetering
+blijven open. Google write-consent en Docker-groepstoegang blijven eigenaarstappen.
+
 **26 september, echte vrije-momentenplanner:** calendar.find_slots is vanuit
 chat aangesloten op volledige Google-events van de primaire agenda. Bestaande
 planner-gapberekening wordt hergebruikt zonder sampledata. Overlap, all-day,

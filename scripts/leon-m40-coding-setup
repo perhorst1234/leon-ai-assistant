@@ -8,9 +8,18 @@ if ! nvidia-smi --query-gpu=name --format=csv,noheader 2>/dev/null | grep -Fq 'T
 fi
 command -v npm >/dev/null || { echo "Node/npm is required." >&2; exit 2; }
 command -v ollama >/dev/null || { echo "Ollama is required." >&2; exit 2; }
+[[ -x "$repo_root/.venv/bin/python" && -f "$repo_root/.env.local" ]] || { echo "Run Leon setup before installing the M40 coding agent." >&2; exit 2; }
 
 npm install --prefix "$HOME/.local/share/leon-opencode" opencode-ai@1.18.31 --no-audit --no-fund
 ollama pull gpt-oss:20b
 cd "$repo_root"
 "$HOME/.local/share/leon-opencode/node_modules/.bin/opencode" models ollama | grep -Fx 'ollama/gpt-oss:20b'
+mkdir -p "$HOME/.config/systemd/user"
+install -m 644 "$repo_root/scripts/leon-m40-guard.service" "$HOME/.config/systemd/user/leon-m40-guard.service"
+for leon_service in leon-backend leon-worker; do
+  mkdir -p "$HOME/.config/systemd/user/$leon_service.service.d"
+  install -m 644 "$repo_root/scripts/leon-m40-guard-order.conf" "$HOME/.config/systemd/user/$leon_service.service.d/m40-guard.conf"
+done
+systemctl --user daemon-reload
+systemctl --user enable --now leon-m40-guard.service
 echo "M40 coding agent ready. Run: ./scripts/leon-m40-coding-agent"

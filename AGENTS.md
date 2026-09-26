@@ -1,5 +1,12 @@
 # Werken aan Leon / Gaia
 
+- Nieuwste 26 september: globale M40-guard active/enabled, cutoff89C en
+  eigen-Ollama-herstel pas na 30s <=80C. Continu NVML-proces voorkomt bewezen
+  meetinitialisatiehangs. Verse guardstatus vóór model/coding; cooling bewaart
+  queuepogingen. Echte stop/herstel en lokale chat/charged0 bewezen; 573 tests.
+  OpenCode/Qwen-review120s timeout zonder verdict; niet als review-success tellen.
+  Zie docs/handoff.md.
+
 - Nieuwste 26 september: vrije-momentenplanner op echte primaire Google-agenda
   vanuit chat live bewezen, inclusief tweede bericht. Afgekapt resultaat is
   geen bewijs van vrije tijd; all-day/overlap/DST afgedekt. Writegrant nog false;

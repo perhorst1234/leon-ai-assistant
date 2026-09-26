@@ -4,6 +4,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import json
 import threading
 import uuid
+import pytest
 
 from leon_control_plane.local_model import LocalModelConfig
 from leon_control_plane.agent_assignment import build_agent_assignment_proposal
@@ -13,6 +14,16 @@ from leon_control_plane.model_work import ModelExecutor, preview
 from leon_control_plane.openai_text import OpenAIConfig
 from leon_control_plane.work_queue import MODEL_KIND, WorkQueue
 from test_control_plane import make_store
+
+
+@pytest.fixture(autouse=True)
+def isolated_gpu_lease(tmp_path,monkeypatch):
+    # Fake HTTP servers must not compete with the owner's real M40 jobs.
+    from leon_control_plane import gpu_lease
+    acquire,busy=gpu_lease.acquire,gpu_lease.busy
+    path=tmp_path/'m40-test.lock'
+    monkeypatch.setattr(gpu_lease,'acquire',lambda timeout_seconds=180:acquire(timeout_seconds,path=path))
+    monkeypatch.setattr(gpu_lease,'busy',lambda:busy(path))
 
 
 def _config(port=11434):

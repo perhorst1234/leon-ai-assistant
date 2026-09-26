@@ -21,6 +21,7 @@ def _env_values(env_file: Path | None) -> dict[str, str]:
     keys = {
         "LEON_LOCAL_MODEL_ENABLED", "LEON_LOCAL_MODEL_HOST", "LEON_LOCAL_MODEL_PORT",
         "LEON_LOCAL_MODEL_NAME", "LEON_LOCAL_MODEL_NUM_CTX", "LEON_LOCAL_MODEL_TIMEOUT_SECONDS",
+        "LEON_M40_THERMAL_GUARD_ENABLED", "LEON_M40_MAX_TEMP_C",
     }
     values: dict[str, str] = {}
     if env_file is not None:
@@ -53,6 +54,8 @@ class LocalModelConfig:
     model: str = DEFAULT_MODEL
     num_ctx: int = 4096
     timeout_seconds: int = 180
+    thermal_guard_enabled: bool = False
+    max_temp_c: int = 89
 
     @classmethod
     def from_env(cls, *, env_file: Path | None = None):
@@ -71,6 +74,8 @@ class LocalModelConfig:
             model=values.get("LEON_LOCAL_MODEL_NAME", DEFAULT_MODEL),
             num_ctx=number("LEON_LOCAL_MODEL_NUM_CTX", 4096),
             timeout_seconds=number("LEON_LOCAL_MODEL_TIMEOUT_SECONDS", 180),
+            thermal_guard_enabled=values.get('LEON_M40_THERMAL_GUARD_ENABLED')=='1',
+            max_temp_c=number('LEON_M40_MAX_TEMP_C',89),
         )
 
     def validate(self):
@@ -86,6 +91,8 @@ class LocalModelConfig:
             raise ModelPreflightError("local_model_context_invalid")
         if type(self.timeout_seconds) is not int or not 10 <= self.timeout_seconds <= 600:
             raise ModelPreflightError("local_model_timeout_invalid")
+        if type(self.max_temp_c) is not int or not 65<=self.max_temp_c<=89:
+            raise ModelPreflightError('local_gpu_temperature_limit_invalid')
 
 
 def request_payload(prompt: str, max_output_tokens: int, config: LocalModelConfig) -> dict:
@@ -107,6 +114,9 @@ def send_response(payload: dict, config: LocalModelConfig) -> dict:
     config.validate()
     from leon_control_plane.gpu_lease import acquire
     with acquire(config.timeout_seconds):
+        if config.thermal_guard_enabled:
+            from leon_control_plane.thermal_guard import check
+            check(config.max_temp_c)
         return _send_response(payload,config)
 
 
@@ -141,6 +151,9 @@ def is_busy(config: LocalModelConfig) -> bool:
     if not config.enabled:
         return False
     config.validate()
+    if config.thermal_guard_enabled:
+        from leon_control_plane.thermal_guard import available
+        if not available(config.max_temp_c):return True
     from leon_control_plane.gpu_lease import busy
     if busy():
         return True

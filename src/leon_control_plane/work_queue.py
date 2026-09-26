@@ -118,7 +118,7 @@ class WorkQueue:
     def enqueue(self, *, task_id: str, request_id: str, kind: str = KIND, model_request=None):
         if kind not in JOB_STEPS or (kind != MODEL_KIND and model_request is not None):
             raise ValueError("Unsupported work kind or model request")
-        approved = model_work.prepare(model_request) if kind == MODEL_KIND else None
+        approved = model_work.prepare(model_request,local_config=self.local_model_config) if kind == MODEL_KIND else None
         try:
             request_id = str(uuid.UUID(request_id))
         except (ValueError, TypeError, AttributeError):
@@ -342,12 +342,14 @@ class WorkQueue:
             self._event(conn, row, target)
             return self._view(conn, self._job(conn, job_id))
 
-    def claim(self):
+    def claim(self, *, local_ready=True):
         with self._transaction() as conn:
             now = self.clock()
             row = conn.execute(
-                "SELECT * FROM work_jobs WHERE status='queued' OR (status='running' AND lease_until<=?) "
-                "ORDER BY created_at,id LIMIT 1", (now,),
+                "SELECT * FROM work_jobs WHERE (status='queued' OR (status='running' AND lease_until<=?)) "
+                "AND (? OR NOT EXISTS (SELECT 1 FROM model_work m WHERE m.job_id=work_jobs.id "
+                "AND json_extract(m.approved_json,'$.payload.provider')='ollama')) "
+                "ORDER BY created_at,id LIMIT 1", (now,bool(local_ready)),
             ).fetchone()
             if row is None:
                 return None

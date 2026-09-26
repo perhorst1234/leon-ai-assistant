@@ -91,7 +91,12 @@ class LocalWorker:
         reconcile(self.queue)
         self.queue.recover_agent_run_jobs()
         self.queue.reconcile_agent_runs()
-        claim = self.queue.claim()
+        local_ready=True
+        config=getattr(self.model_executor,'local_config',None)
+        if config and config.thermal_guard_enabled:
+            from leon_control_plane.thermal_guard import available
+            local_ready=available(config.max_temp_c)
+        claim = self.queue.claim(local_ready=local_ready)
         if claim is None:
             return False
         try:
