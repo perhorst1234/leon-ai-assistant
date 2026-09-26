@@ -25,7 +25,31 @@ and Google/2FA must be completed by the owner, never bypassed. Account/site
 compatibility needs a live acceptance test after the owner signs in. A passing
 DOM test is not evidence that an account is connected.
 
-## Owner login on Windows, browser connection to the VM
+## Owner login on macOS, browser connection to the VM
+
+On the owner's Mac, run this in Terminal to open a separate Chrome profile:
+
+```sh
+open -na "Google Chrome" --args --remote-debugging-port=9222 --user-data-dir="$HOME/Library/Application Support/LeonShopperChrome"
+```
+
+Log into Marktplaats, Vinted, TicketSwap and Ticketmaster in that window.
+In another Terminal tab, create the loopback-only SSH tunnel to the Leon VM:
+
+```sh
+ssh -N -o ExitOnForwardFailure=yes -o ServerAliveInterval=30 -o ServerAliveCountMax=3 -R 127.0.0.1:9222:127.0.0.1:9222 per@192.168.178.177
+```
+
+SSH may ask for the VM user's password and first-time host-key verification.
+An idle Terminal after login is expected: it keeps the tunnel open. Keep that
+tab and the separate Chrome window open. Closing the tunnel disconnects the
+MCP server's browser access. This requires Google Chrome; Safari cannot expose
+the Chrome DevTools Protocol endpoint used by this connector.
+
+The server address was checked on the VM as `192.168.178.177`. Chrome login
+and the tunnel still require acceptance from the owner's Mac.
+
+## Windows alternative
 
 Start a **separate** Chrome profile on the Windows computer (PowerShell):
 
