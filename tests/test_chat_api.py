@@ -171,3 +171,50 @@ def test_http_chat_requires_explicit_bearer_for_read_and_write(tmp_path, monkeyp
         request = Request(base + f"/api/chat/conversations/{conversation['id']}", headers={"Authorization": f"Bearer {token}"})
         with urlopen(request, timeout=5) as response:
             assert json.load(response)["conversation"]["id"] == conversation["id"]
+
+
+def test_chat_uses_active_memory_locally_and_changed_memory_invalidates_quote(tmp_path, monkeypatch):
+    monkeypatch.setenv('LEON_LOCAL_MODEL_ENABLED', '1')
+    service = ChatService(make_store(tmp_path))
+    conversation = service.create_conversation({'request_id': request_id()})
+    mid = service.store.create_memory_item({'content': 'Mijn voorkeur is kort informeel Nederlands.',
+        'memory_type': 'preference', 'status': 'active', 'source': 'owner-chat'})
+    preview = quote(service, conversation['id'], 'Hallo Leon')
+    assert 'kort informeel Nederlands' in preview['prompt']
+    assert preview['provider'] == 'ollama'
+    with closing(service.store.connect()) as conn, conn:
+        conn.execute("UPDATE memory_items SET content='Mijn voorkeur is uitgebreide uitleg.' WHERE id=?", (mid,))
+    with pytest.raises(ValueError, match='stale'):
+        submit(service, conversation['id'], 'Hallo Leon', preview=preview)
+    fresh = quote(service, conversation['id'], 'Hallo Leon')
+    assert 'uitgebreide uitleg' in fresh['prompt']
+    payload = {'request_id': request_id(), 'content': 'Hallo Leon', 'max_output_tokens':128,
+        'max_cost_microusd':2000, 'approve_external_text':True, 'provider':'openai', 'preview_sha256':fresh['prompt_sha256']}
+    with pytest.raises(ValueError, match='local model'):
+        service.submit(conversation['id'], payload)
+
+
+def test_memory_context_excludes_inactive_expired_conflicted_unrelated_items(tmp_path, monkeypatch):
+    from leon_control_plane.chat_api import MEMORY_HEADER
+    monkeypatch.setenv('LEON_LOCAL_MODEL_ENABLED', '1')
+    service = ChatService(make_store(tmp_path))
+    c = service.create_conversation({'request_id': request_id()})
+    for text, status, expiry in [('RAM candidate', 'candidate', None), ('RAM expired', 'active', '2000-01-01T00:00:00Z'), ('Unrelated bicycles', 'active', None)]:
+        service.store.create_memory_item({'content':text,'status':status,'source':'owner-chat','expires_at':expiry})
+    assert MEMORY_HEADER not in quote(service, c['id'], 'Vertel over RAM geheugen')['prompt']
+    mid = service.store.create_memory_item({'content':'Geheugen DDR3 ECC past alleen bij passende processor.','status':'active','source':'owner-chat'})
+    with closing(service.store.connect()) as conn, conn:
+        conn.execute("UPDATE memory_items SET conflict_status='unresolved' WHERE id=?", (mid,))
+    assert MEMORY_HEADER not in quote(service, c['id'], 'Vertel over DDR3 geheugen')['prompt']
+
+
+def test_memory_keeps_complete_message_within_model_budget(tmp_path, monkeypatch):
+    monkeypatch.setenv('LEON_LOCAL_MODEL_ENABLED', '1')
+    service = ChatService(make_store(tmp_path))
+    c = service.create_conversation({'request_id':request_id()})
+    for _ in range(4):
+        service.store.create_memory_item({'content':'Voorkeur ' + 'é'*900,'memory_type':'preference','status':'active','source':'owner-chat'})
+    content = 'é'*1000
+    preview = quote(service, c['id'], content)
+    assert len(preview['prompt'].encode()) <= 4096
+    assert preview['included_messages'][-1]['content'] == content

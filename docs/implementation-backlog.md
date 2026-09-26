@@ -1,5 +1,14 @@
 # Leon / Gaia — uitvoeringsbacklog
 
+**26 september, automatisch geheugen in gewone chat:** relevante actieve
+geheugenitems en maximaal drie voorkeuren gaan nu mee in de begrensde prompt.
+Verwijderde, verlopen, kandidaat- en conflicterende items worden uitgesloten.
+De selectie gebeurt in dezelfde SQLite-transactie, zonder tweede schrijf-lock.
+Persoonlijke geheugencontext blijft verplicht op de lokale M40; veranderde
+context maakt een oude preview ongeldig. Drie regressies + bestaande chat/task-
+checks: 27 geslaagd. Geen automatische opslag van alle gesprekken toegevoegd.
+
+
 **26 september, persoonlijke achtergrondtaken en researchbudget:** gewone
 schrijf-, plan- en analysetaken vanuit chat draaien daadwerkelijk via de M40-
 wachtrij. Resultaten worden eenmaal terugbezorgd in het oorspronkelijke gesprek
