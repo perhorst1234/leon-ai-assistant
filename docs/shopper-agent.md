@@ -6,19 +6,21 @@ filter hard constraints, rank the remaining deals, learn only coarse style
 signals from user supplied message examples, and produce a weekly watch plus a
 reviewable offer proposal.
 
-The shopper is read-only by default. A proposal contains the exact listing,
-offer amount and message, and always carries `approval_required=true` before an
-external message or bid can be sent. Likes, account changes, purchases and
-payments use the same gate. No password, cookie, CAPTCHA bypass, proxy rotation
-or private endpoint is accepted.
+The original planner is read-only by default. A proposal contains the exact
+listing, offer amount and message and carries `approval_required=true`.
+On 26 September the owner explicitly requested autonomous ordinary messages;
+the separate [browser MCP](marketplace-browser-mcp.md) now supports an explicit
+startup grant for that capability, without per-message proposals. The original
+planner does not execute it. Bids, purchases and payments remain unavailable.
 
 The current Marktplaats and Vinted MCP entries are disabled candidates until
 their source, network boundary and account scopes are attested. The official
 Marktplaats API documentation is the route for a real OAuth connector. Vinted's
 official documentation covers allowlisted Pro integrations; consumer messaging,
 bidding and likes are not enabled by the current adapter. The supplied third
-party repositories can be audited as read-only research inputs, but they do not
-change those gates.
+party repositories can be audited as research inputs. The new browser connector
+does not require Pro access or OAuth: the owner signs in themselves in a
+dedicated browser. It has not yet been tested on live accounts.
 
 To personalize the writing style, provide a small set of your own sent
 messages or an approved export. The agent stores a compact style profile, not a

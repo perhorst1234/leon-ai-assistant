@@ -4,6 +4,13 @@ Stand: **25 september 2026**. De gebruiker wil vooral coderen; houd deze overdra
 
 ## Nieuwste wijziging
 
+26 september: browser-MCP voor eigen Marktplaats/Vinted/TicketSwap/Ticketmaster-
+accounts toegevoegd. Eigen Chrome-login via lokale CDP/SSH-tunnel, zichtbare
+pagina/gesprekslezing, optionele gebruikersgrant voor berichten; duurzame
+no-retry-claims en metadatalaudit. Geen echte accountlogin, bieding of aankoop
+bewezen; text-only Leon-runtime nog niet met deze tools verbonden. Zie
+[browser-MCP](marketplace-browser-mcp.md).
+
 Gaia Vandaag heeft een live alleen-lezen weerkaart voor vast Amsterdam via
 Open-Meteo. Backend en web valideren een begrensd contract; alleen één vaste
 HTTPS-host, 64 KiB antwoord, drie dagen en tien minuten cache zijn toegestaan.

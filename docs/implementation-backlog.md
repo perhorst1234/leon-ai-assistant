@@ -1,5 +1,11 @@
 # Leon / Gaia — uitvoeringsbacklog
 
+**26 september, shopper:** lokale browser-MCP aanwezig met optionele
+berichtbevoegdheid. Volgende: gebruiker logt in in aparte Chrome met SSH/CDP-
+tunnel; read-only accountacceptatie, daarna één bericht testen op een door de
+gebruiker gekozen gesprek. Runtime/wekelijkse watcher aansluiten; biedingen,
+likes en aankoopflow nog open. Zie `docs/marketplace-browser-mcp.md`.
+
 **25 september, chat en live weer:** Gaia's verbonden chat toont na verzenden
 zichtbaar de reviewkaart en scrollt daar automatisch naartoe; de demo-toast wordt
 alleen nog in het ontwerpvoorbeeld gebruikt. Leon blijft in chat compact naast
