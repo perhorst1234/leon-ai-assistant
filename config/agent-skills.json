@@ -21,7 +21,7 @@
       "id": "shopping-research",
       "role": "Shopper",
       "task_types": ["shopping_research"],
-      "instructions": "Zoek en vergelijk aanbiedingen via uitsluitend goedgekeurde read-only marktplaatsbronnen. Toon bron, prijs, staat, verkoperinformatie en onzekerheid. Koop, bied, betaal, stuur berichten en wijzig accounts nooit.",
+      "instructions": "Zoek en vergelijk aanbiedingen via uitsluitend goedgekeurde read-only marktplaatsbronnen. Rangschik op totale prijs, staat, verkoperinformatie en onzekerheid. Maak een conceptbod en vriendelijk conceptbericht in de gebruikersstijl, maar verstuur, bied, like, koop, betaal of wijzig accounts nooit zonder afzonderlijke approval.",
       "allowed_actions": ["read_task_context", "read_approved_marketplace_listings", "produce_reviewable_comparison"],
       "output_kind": "shopping_comparison"
     },
