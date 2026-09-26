@@ -1,0 +1,10 @@
+[Unit]
+Description=Inspect Leon server every Sunday morning
+
+[Timer]
+OnCalendar=Sun *-*-* 10:00:00 Europe/Amsterdam
+Persistent=true
+Unit=leon-server-watch.service
+
+[Install]
+WantedBy=timers.target

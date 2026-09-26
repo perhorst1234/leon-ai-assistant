@@ -1,5 +1,25 @@
 # Overdracht — Leon / Gaia
 
+**26 september, echte serveragent:** wekelijkse zondagcontrole om 10:00
+Europe/Amsterdam actief via leon-server-watch.timer. Vaste OS-probes controleren
+Leon backend/web/worker/Ollama, vrije schijf en M40-temperatuur. Alleen eigen
+backend/web/worker kunnen gericht herstarten, maximaal één poging per service
+per zes uur; herprobe bewijst de eindstatus. Ollama wordt niet automatisch
+herstart, en een hete/onleesbare GPU verhindert automatische workerherstart.
+Geen algemene shelltool vanuit chat. server.status/check zijn aangesloten op
+het vaste lokale toolpad.
+
+Routine-uitvoering verschijnt met eigenaar/resultaat in verenigd Werk. Alleen
+nieuwe problemen, herstel of een herstelpoging maken een duurzaam gededupliceerd
+bericht in Leon updates; stabiele checks sturen geen chatmelding. De echte
+herstelproef stopte de idle worker, waarna de serveragent hem aantoonbaar
+herstartte: alle vier services active, M40 36C, taak done. Proefmeldingen waren
+uitgeschakeld. Eerste gezonde wekelijkse run uitgevoerd, volgende zondag
+27 september 10:00 Amsterdam. Browser bevestigde twee afgeronde serverkaarten
+met Leon Server, werkelijk resultaat en temperatuur. 521 backendtests,
+typecheck/build geslaagd; lint nul errors/zeven bestaande warnings.
+
+
 **26 september, geïntegreerde webresearch:** expliciet onderzoek vanuit chat
 roept de bestaande Firecrawl search-only connector aan en zet de brongegevens
 op de lokale M40-wachtrij. Geen OpenAI-synthese. Resultaat krijgt de daadwerkelijk

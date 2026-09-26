@@ -99,3 +99,9 @@ def test_sensitive_research_never_calls_firecrawl(tmp_path):
         text=apply(make_store(tmp_path),str(uuid.uuid4()),{'action':'research.search','args':{'query':'sensuele verhalen'}},None,owner_content='Onderzoek sensuele verhalen')
     assert 'M40' in text
     search.assert_not_called()
+
+
+def test_server_recovery_requires_current_command():
+    d={'action':'server.check','args':{}}
+    assert validate_authority(d,'Hoe gaat het met de server?')['action']=='server.status'
+    assert validate_authority(d,'Controleer de server en herstel Leon')['action']=='server.check'

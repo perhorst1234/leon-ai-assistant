@@ -17,7 +17,7 @@ beproeven en deployen voordat het volgende onderdeel wordt uitgebreid.
 | Research Agent | Chat → Firecrawl → M40-synthese → bronnen in chat/Werk, max10 credits/dag | Dieper lezen binnen budget en periodieke research |
 | Planner / Google | PKCE OAuth, alleen-lezen Agenda/Gmail-adapters | Echte accountconsent, live Agenda, planning en agenda-writes; Gmail is nu metadata, geen volledige mailbox |
 | Shopper | Wekelijkse MP/Vinted-zoekopdrachten, echte MP-berichten, delayed replies | Echte inkomende replyketen bewijzen, Vinted-onderhandelingen, TicketSwap-eventwatch en alerts |
-| Server Manager | Echt statusoverzicht | Wekelijkse inspectie, foutmeldingen en gerichte herstelacties |
+| Server Manager | Status, wekelijkse echte inspectie, chatmeldingen en beperkte serviceherstarts | Ruimere diagnose/backups en geverifieerde herstelacties voor andere storingen |
 | Model Scheduler | Lokale Qwen/M40, sensitive-local routing, goedkope externe route | Gezamenlijke prioritering, thermische/backpressure-regeling voor alle workers |
 | M40 Code Worker | OpenCode/GPT-OSS read/edit/readback eerder live bewezen | Vanuit Leon starten met eigen workspace, daadwerkelijke checks en deployment terugkoppelen |
 | Value / Opportunity / Curiosity | Scores, observaties, policies en queue-algoritmes | Relevante echte bronnen, herhaling in eigen gebruik herkennen en bruikbare verbeteringen uitvoeren |

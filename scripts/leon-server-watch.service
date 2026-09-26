@@ -1,0 +1,10 @@
+[Unit]
+Description=Leon weekly server inspection and bounded service recovery
+After=local-fs.target leon-backend.service leon-web.service leon-worker.service leon-ollama.service
+
+[Service]
+Type=oneshot
+WorkingDirectory=%h/leon-ai-assistant
+EnvironmentFile=-%h/leon-ai-assistant/.env.local
+ExecStart=%h/leon-ai-assistant/.venv/bin/python -m leon_control_plane.server_routine
+TimeoutStartSec=300

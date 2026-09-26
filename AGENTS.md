@@ -1,5 +1,10 @@
 # Werken aan Leon / Gaia
 
+- 26 september: serveragent zondag 10:00 Amsterdam, vaste serviceprobes en
+  bounded herstart backend/web/worker (6h cooldown). Herstel live bewezen;
+  stabiele checks melden niets, veranderingen in Leon updates en resultaat
+  in Werk. Zie docs/completion-plan.md; 521 backendchecks.
+
 - 26 september: chat-achtergrondtaken draaien lokaal en bezorgen resultaten
   automatisch in chat/Werk. Firecrawl hard max10 bestaande credits/dag, geen
   bijkoop, duurzame reservering ook bij fouten. Zie docs/completion-plan.md.

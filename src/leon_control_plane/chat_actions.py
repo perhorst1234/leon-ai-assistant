@@ -9,7 +9,7 @@ from zoneinfo import ZoneInfo
 
 _ACTIONS = {'shopper.create', 'shopper.update', 'shopper.pause', 'shopper.resume', 'shopper.search',
             'shopper.hold', 'shopper.status', 'calendar.read', 'mail.read', 'memory.save', 'memory.search',
-            'tasks.create', 'tasks.execute', 'tasks.pause', 'tasks.resume', 'tasks.cancel', 'tasks.status', 'research.search', 'clarify'}
+            'tasks.create', 'tasks.execute', 'tasks.pause', 'tasks.resume', 'tasks.cancel', 'tasks.status', 'research.search', 'server.status', 'server.check', 'clarify'}
 
 
 def may_be_action(content: str) -> bool:
@@ -18,7 +18,7 @@ def may_be_action(content: str) -> bool:
     commands = bool(re.search(r'\b(zoek|zoeken|volg|regelen?|vind|pauze|pauzeer|stop|hervat|reageer|budget|status|hoe|update|verander|wacht|alleen|liever|voorkeur)\b', text))
     work = bool(re.search(r'\b(maak|schrijf|stel|analyseer|vergelijk|vat|werk|pauzeer|hervat)\b', text) and re.search(r'\b(opdracht|achtergrond|plan|rapport|analyse|samenvatting|tekst|checklist|taak)\b', text))
     return work or (shopping and commands) or bool(re.search(r'\b(onderzoek|webresearch|zoek op internet|zoek online|zoek bronnen)\b',text)) or bool(re.search(
-        r'\b(agenda|afspraken|gmail|mail|geheugen)\b|\b(onthoud|bewaar|taken|opdrachten)\b', text))
+        r'\b(server|m40|agenda|afspraken|gmail|mail|geheugen)\b|\b(onthoud|bewaar|taken|opdrachten)\b', text))
 
 
 def calendar_time(value: dict) -> str:
@@ -32,6 +32,8 @@ def validate_authority(decision: dict, content: str) -> dict:
     """Writes require the current owner command; a model cannot invent a budget."""
     action, args = decision['action'], decision['args']
     text = content.casefold()
+    if action == 'server.check' and not re.search(r'\b(controleer|check|herstel|repareer|herstart)\b', text):
+        return {'action':'server.status','args':{}}
     if action == 'research.search' and not re.search(r'\b(onderzoek|zoek|zoeken|check|vergelijk|research)\b', text):
         return {'action':'clarify','args':{'question':'Wat wil je dat ik op internet onderzoek?'}}
     if action == 'tasks.create' and not re.search(r'\b(later|alleen bewaren|nog niet uitvoeren|niet starten)\b', text):
@@ -84,6 +86,7 @@ def route(content: str, history: list[str], state: dict) -> dict:
         'Maak een opdracht/checklist in de achtergrond betekent tasks.execute. tasks.pause/resume/cancel:task_id. '
         'tasks.status:{} of task_id. Gebruik bekende IDs; bij twijfel clarify(question). '
         'research.search:query voor publiek webonderzoek, bronnen zoeken en online feiten checken. '
+        'server.status:{} voor server/M40-status. server.check:{} voor expliciete servercontrole/herstel. '
         'Geen research voor Marktplaats-advertenties: gebruik shopper. Ontbrekende tools: clarify. '
         'Budget EUR50=5000, verzin nooit budget. Geen RAM: RAM-velden 0.\n'
     )
@@ -113,6 +116,13 @@ def apply(store, request_id: str, decision: dict, shopper, *, owner_content='') 
         if set(args) - {'question'} or not isinstance(question, str) or len(question) > 400:
             raise ValueError('Invalid clarification')
         return question
+    if action in {'server.status','server.check'}:
+        from leon_control_plane.server_routine import snapshot, inspect, describe
+        from leon_control_plane.server import REPO_ROOT
+        if args:
+            raise ValueError('Server command takes no free arguments')
+        result = inspect(store,REPO_ROOT,key='server-chat:'+request_id) if action == 'server.check' else snapshot(REPO_ROOT)
+        return describe(result)
     if action == 'research.search':
         from leon_control_plane import research_executor, personal_tasks
         from leon_control_plane.secret_scanner import assert_no_secrets
