@@ -55,7 +55,7 @@ class BrowserBridge:
 
     def run(self, *args: str) -> str:
         result = subprocess.run(
-            [str(self.executable), "--session", "leon-shopper", "--cdp", self.cdp, *args],
+            [str(self.executable), "--session", "leon-shopper", "--cdp", self.cdp, "--max-output", "60000", *args],
             capture_output=True, text=True, timeout=30, check=False,
         )
         if result.returncode:
@@ -102,6 +102,28 @@ class BrowserBridge:
         self.audit(platform, "read_page", "complete")
         return {"platform": platform, "snapshot": redact_value(snapshot), "untrusted_page_content": True}
 
+    def own_messages(self, limit: int = 30) -> dict:
+        """Extract owner messages from the currently open Marktplaats conversation."""
+        if type(limit) is not int or not 1 <= limit <= 50:
+            raise ValueError("limit must be between 1 and 50")
+        url = self.current("marktplaats")
+        if not urlsplit(url).path.startswith("/messages/"):
+            raise ValueError("Open one Marktplaats conversation first")
+        # Fixed DOM-only expression: no cookies, credentials, storage or private API.
+        expression = (
+            'JSON.stringify(Array.from(document.querySelectorAll('
+            '".Messages-module-listItemFromMe .MessageElement-module-body"))'
+            '.filter(e=>!e.querySelector(".MessageCard-module-root"))'
+            f'.slice(0,{limit}).map(e=>e.innerText.slice(0,1200)))'
+        )
+        raw = json.loads(self.run("eval", expression))
+        messages = json.loads(raw) if isinstance(raw, str) else raw
+        if not isinstance(messages, list) or len(messages) > limit or any(not isinstance(item, str) or len(item) > 1200 for item in messages):
+            raise RuntimeError("Unexpected conversation format")
+        self.audit("marktplaats", "read_own_messages", "complete")
+        return {"platform": "marktplaats", "count": len(messages), "messages": redact_value(messages),
+                "untrusted_page_content": True, "scope": "current_conversation_owner_only"}
+
     def send(self, platform: str, textbox_ref: str, send_ref: str, message: str, expected_url: str) -> dict:
         if not self.allow_messages or platform not in {"marktplaats", "vinted"}:
             raise ValueError("Messages are not enabled for this server/platform")
@@ -112,13 +134,13 @@ class BrowserBridge:
         current = self.current(platform)
         if current != validate_url(platform, expected_url):
             raise ValueError("Conversation changed; inspect the current page")
-        snapshot = self.run("snapshot")
+        snapshot = self.run("snapshot", "-i")
         fields = snapshot.splitlines()
         textbox = [line for line in fields if f"[ref={textbox_ref[1:]}]" in line]
         button = [line for line in fields if f"[ref={send_ref[1:]}]" in line]
         if len(textbox) != 1 or not re.search(r'textbox .*?(bericht|message)', textbox[0], re.I) or re.search(r'password|wachtwoord|email|e-mail', textbox[0], re.I):
             raise ValueError("Ref must identify the message textbox")
-        if len(button) != 1 or not re.search(r'button "(?:Versturen|Verzenden|Send|Send message|Bericht versturen)"', button[0], re.I):
+        if len(button) != 1 or not re.search(r'button "(?:Sturen|Versturen|Verzenden|Send|Send message|Bericht versturen)"', button[0], re.I):
             raise ValueError("Ref must identify an explicit Send message button")
         fingerprint = hashlib.sha256(f"{platform}\n{current}\n{message}".encode()).hexdigest()
         self.run("fill", textbox_ref, message)
@@ -160,6 +182,12 @@ def build_server(bridge: BrowserBridge) -> MCPServer:
         """Read visible listings or conversation messages from the current page."""
         with bridge.lock:
             return bridge.read(platform)
+
+    @server.tool(annotations=READ, structured_output=True)
+    def marktplaats_read_own_messages(limit: int = 30) -> dict[str, Any]:
+        """Read up to 50 owner-written messages in the current conversation for local tone analysis."""
+        with bridge.lock:
+            return bridge.own_messages(limit)
 
     if bridge.allow_messages:
         @server.tool(annotations=WRITE, structured_output=True)

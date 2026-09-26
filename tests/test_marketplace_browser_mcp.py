@@ -1,4 +1,5 @@
 import asyncio
+import json
 from pathlib import Path
 
 import pytest
@@ -18,8 +19,10 @@ def bridge(tmp_path, *, allow=True, fail_click=False):
         calls.append(args)
         if args == ("get", "url"):
             return URL
-        if args == ("snapshot",):
+        if args in (("snapshot",), ("snapshot", "-i")):
             return SNAPSHOT
+        if args[0] == "eval":
+            return json.dumps(json.dumps(["Hoi, is dit beschikbaar?"]))
         if args[0] == "click" and fail_click:
             raise RuntimeError("ambiguous")
         return ""
@@ -45,7 +48,7 @@ def test_protocol_hides_write_tool_without_authorization(tmp_path):
             status = await client.call_tool("marketplace_capabilities")
             return {item.name for item in listed.tools}, status.structured_content
     names, status = asyncio.run(check())
-    assert names == {"marketplace_capabilities", "marketplace_open", "marketplace_read_page"}
+    assert names == {"marketplace_capabilities", "marketplace_open", "marketplace_read_page", "marktplaats_read_own_messages"}
     assert not status["messages_enabled"]
 
 
@@ -75,6 +78,16 @@ def test_ref_and_conversation_checks_prevent_click(tmp_path, field_ref, button_r
 def test_cdp_is_loopback_only(tmp_path):
     with pytest.raises(ValueError):
         BrowserBridge(Path("/unused"), "http://192.168.1.1:9222", tmp_path / "audit")
+
+
+def test_own_messages_is_bounded_and_not_audited_as_raw_content(tmp_path):
+    instance, calls = bridge(tmp_path)
+    result = instance.own_messages(5)
+    assert result["count"] == 1 and result["messages"] == ["Hoi, is dit beschikbaar?"]
+    assert ".slice(0,5)" in calls[-1][1]
+    assert "Hoi" not in (tmp_path / "audit.jsonl").read_text()
+    with pytest.raises(ValueError):
+        instance.own_messages(51)
 
 
 def test_stdio_entrypoint_exposes_authorized_tools_without_browser_login(tmp_path):

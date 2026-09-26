@@ -11,6 +11,8 @@ This is a browser connector, not OAuth and not a public marketplace API.
 - `marketplace_capabilities`: configuration status, no cookies or tokens.
 - `marketplace_open`: supported HTTPS listings/conversations, no checkout URLs.
 - `marketplace_read_page`: visible page snapshot, including conversation text.
+- `marktplaats_read_own_messages`: bounded owner messages from the currently
+  open conversation, excluding payment cards; fixed DOM-only extraction.
 - `marketplace_send_message`: Marktplaats/Vinted only, enabled by startup grant;
   exact current conversation URL, message textbox and explicit Send button.
 
@@ -82,9 +84,18 @@ conversation/ref checks and durable duplicate/uncertain-send blocking are tested
 A real disposable Chromium/CDP test on the VM read textbox and Send-button refs
 and filled/clicked a message on a local test page. Twenty focused tests pass,
 including MCP stdio negotiation for the message-enabled server.
-No real marketplace account was logged in or messaged. That smoke had a
+Initially no real marketplace account was logged in or messaged. That smoke had a
 temporary-profile cleanup race and a fixture quoting issue; the corrected test
 with process-tree cleanup passed.
+
+On 26 September the owner connected Chrome on macOS over the loopback SSH
+tunnel. CDP and the logged-in Marktplaats page were verified; 24 owner messages
+from four purchase conversations were read. Only a compact tone/strategy
+profile was saved in private local state, outside this public repository.
+No external message or purchase was performed. Vinted, TicketSwap and
+Ticketmaster login status was not verified. The live Marktplaats composer
+uses the exact label `Sturen`, now supported by the send guard. Interactive
+snapshots are used for send refs; output is capped before returning it.
 
 Send attempts are hashed and persisted before clicking, with a 60-second global
 rate limit. Metadata audit stores no message text or conversation URL. A click

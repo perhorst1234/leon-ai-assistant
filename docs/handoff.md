@@ -7,8 +7,11 @@ Stand: **25 september 2026**. De gebruiker wil vooral coderen; houd deze overdra
 26 september: browser-MCP voor eigen Marktplaats/Vinted/TicketSwap/Ticketmaster-
 accounts toegevoegd. Eigen Chrome-login via lokale CDP/SSH-tunnel, zichtbare
 pagina/gesprekslezing, optionele gebruikersgrant voor berichten; duurzame
-no-retry-claims en metadatalaudit. Geen echte accountlogin, bieding of aankoop
-bewezen; text-only Leon-runtime nog niet met deze tools verbonden. Zie
+no-retry-claims en metadatalaudit. Mac-tunnel en Marktplaats-login inmiddels
+live bevestigd; 24 eigen berichten uit vier aankoopgesprekken gelezen.
+Compact stijlprofiel privé lokaal bewaard, geen transcript in Git. Geen
+bericht, bieding of aankoop uitgevoerd; andere accounts nog niet gecontroleerd.
+Text-only Leon-runtime nog niet met deze tools verbonden. Zie
 [browser-MCP](marketplace-browser-mcp.md).
 
 Gaia Vandaag heeft een live alleen-lezen weerkaart voor vast Amsterdam via
