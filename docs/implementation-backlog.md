@@ -11,8 +11,9 @@ research-API; budget op/fout geeft een concrete melding zonder automatische retr
 Echte chat → router → Firecrawl → M40 → done-task → terugbezorging bewezen:
 1015 tekens en drie echte bronlinks. Twee live searchproeven samen vier credits,
 vandaag nog zes beschikbaar. Backend 515 tests, web 55 tests geslaagd;
-productiebuild/typecheck eerder deze wijzigingsronde geslaagd. M40-coding-review
-loopt als begrensde read-only controle. Google-consent en Docker-toegang zijn
+productiebuild/typecheck eerder deze wijzigingsronde geslaagd. Extra GPT-OSS/M40 read-only codecontrole
+stopte na 180 seconden zonder reviewresultaat (alleen glob); model daarna
+ongeladen voor normale chat. Niet als geslaagde coding-review meetellen. Google-consent en Docker-toegang zijn
 nog eigenaarstappen; daarop wachten houdt andere onderdelen niet tegen.
 
 
