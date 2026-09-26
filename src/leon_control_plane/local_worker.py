@@ -85,6 +85,8 @@ class LocalWorker:
         self.model_executor = model_executor if model_executor is not None else ModelExecutor(queue)
 
     def run_once(self) -> bool:
+        from leon_control_plane.personal_tasks import reconcile
+        reconcile(self.queue)
         self.queue.recover_agent_run_jobs()
         self.queue.reconcile_agent_runs()
         claim = self.queue.claim()
@@ -101,6 +103,7 @@ class LocalWorker:
             # Private file contents/paths from unexpected exceptions stay out of receipts.
             result = {"ok": False, "step": JOB_STEPS[claim["kind"]][claim["step"]], "reason": "execution_error"}
         self.queue.checkpoint(claim, result)
+        reconcile(self.queue)
         self.queue.reconcile_agent_runs()
         return True
 

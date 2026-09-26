@@ -62,3 +62,20 @@ def test_work_projection_includes_real_status_and_read_only_unapproved_tasks(tmp
     eligible=work_request(store,method='GET',path='/api/work/tasks')['tasks']
     assert not any(t['id']==task for t in eligible)
     with pytest.raises(ValueError):work_request(store,method='POST',path='/api/work/status',body={})
+
+
+def test_background_task_runs_unless_owner_explicitly_defers():
+    d = {'action': 'tasks.create', 'args': {'title': 'Checklist', 'goal': 'Maak checklist'}}
+    assert validate_authority(d, 'Maak in de achtergrond een checklist')['action'] == 'tasks.execute'
+    assert validate_authority(d, 'Maak deze taak voor later')['action'] == 'tasks.create'
+    assert validate_authority(d, 'Maak deze taak maar nog niet uitvoeren')['action'] == 'tasks.create'
+
+
+def test_router_preserves_complete_owner_command_when_history_exceeds_budget():
+    from leon_control_plane.chat_actions import route
+    content = 'Maak een checklist ' + 'a' * 1800 + ' EINDE EIGENAAR'
+    with patch('leon_control_plane.shopper_runtime.model_json', return_value=({'action':'tasks.execute','args':{'title':'Checklist','goal':'Checklist'}}, {})) as model:
+        route(content, ['old ' * 1500], {'watches': [], 'tasks': []})
+    prompt = model.call_args.args[0]
+    assert len(prompt.encode()) <= 4096
+    assert json.loads(prompt[prompt.index('{"watches"'):])['current_owner_command'] == content

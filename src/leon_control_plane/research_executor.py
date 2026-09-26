@@ -13,6 +13,8 @@ import socket
 import urllib.error
 import urllib.parse
 import urllib.request
+from contextlib import closing
+from zoneinfo import ZoneInfo
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Any, Protocol
@@ -28,6 +30,28 @@ MAX_TIMEOUT_SECONDS = 15
 MAX_RESPONSE_BYTES = 256_000
 PREVIEW_TTL_SECONDS = 900
 FIRECRAWL_SEARCH_URL = "https://api.firecrawl.dev/v2/search"
+SEARCH_CREDITS = 2  # Search-only, <=10 web results; no scrapeOptions.
+
+
+def _budget(store: Any, values: dict[str, str], *, claim: str | None = None) -> dict[str, Any]:
+    try:
+        cap = min(10, max(0, int(values.get("RESEARCH_DAILY_CREDIT_LIMIT", "0"))))
+    except (ValueError, TypeError):
+        cap = 0
+    day = datetime.now(ZoneInfo("Europe/Amsterdam")).date().isoformat()
+    with closing(store.connect()) as conn, conn:
+        conn.execute("CREATE TABLE IF NOT EXISTS research_credit_reservations (claim TEXT PRIMARY KEY, day TEXT NOT NULL, credits INTEGER NOT NULL)")
+        conn.execute("BEGIN IMMEDIATE")
+        used = conn.execute("SELECT COALESCE(SUM(credits),0) FROM research_credit_reservations WHERE day=?", (day,)).fetchone()[0]
+        if claim:
+            if conn.execute("SELECT 1 FROM research_credit_reservations WHERE claim=?", (claim,)).fetchone():
+                raise ResearchExecutorError("research_request_already_attempted")
+            if used + SEARCH_CREDITS > cap:
+                raise ResearchExecutorError("research_daily_credit_limit")
+            conn.execute("INSERT INTO research_credit_reservations VALUES(?,?,?)", (claim, day, SEARCH_CREDITS))
+            used += SEARCH_CREDITS
+    return {"day": day, "timezone": "Europe/Amsterdam", "daily_limit": cap,
+            "reserved_credits": used, "remaining_today": max(0, cap-used), "purchase_credits": False}
 
 
 class _NoRedirect(urllib.request.HTTPRedirectHandler):
@@ -130,6 +154,20 @@ class FirecrawlSearchProvider:
         self._api_key = api_key
 
     def search(self, *, query: str, domains: list[str], limit: int, timeout_seconds: int, max_bytes: int) -> dict[str, Any]:
+        # Read existing balance first. Never call billing/recharge endpoints.
+        balance_request = urllib.request.Request("https://api.firecrawl.dev/v2/team/credit-usage", headers={"Authorization": f"Bearer {self._api_key}"})
+        try:
+            with urllib.request.build_opener(_NoRedirect).open(balance_request, timeout=timeout_seconds) as response:
+                balance_bytes = response.read(16_385)
+            if len(balance_bytes) > 16_384:
+                raise ValueError("balance response too large")
+            balance = json.loads(balance_bytes).get("data", {}).get("remainingCredits")
+            if type(balance) not in (int, float) or balance < SEARCH_CREDITS:
+                raise ResearchExecutorError("research_existing_credits_exhausted")
+        except ResearchExecutorError:
+            raise
+        except (urllib.error.URLError, TimeoutError, OSError, ValueError, AttributeError):
+            raise ResearchExecutorError("research_credit_balance_unavailable") from None
         body = json.dumps({"query": query, "limit": limit, "sources": ["web"], "includeDomains": domains}).encode()
         request = urllib.request.Request(FIRECRAWL_SEARCH_URL, data=body, method="POST", headers={"Authorization": f"Bearer {self._api_key}", "Content-Type": "application/json"})
         try:
@@ -158,7 +196,7 @@ def _values(values: dict[str, str]) -> tuple[bool, str, list[str]]:
 
 def status(store: Any, values: dict[str, str]) -> dict[str, Any]:
     enabled, key, domains = _values(values)
-    return {"ok": True, "enabled": enabled, "configured": bool(key), "allowlist_configured": bool(domains), "limits": {"max_query_chars": MAX_QUERY_CHARS, "max_results": MAX_RESULTS, "max_domains": MAX_DOMAINS, "max_timeout_seconds": MAX_TIMEOUT_SECONDS, "max_response_bytes": MAX_RESPONSE_BYTES}}
+    return {"ok": True, "enabled": enabled, "configured": bool(key), "allowlist_configured": bool(domains), "budget": _budget(store, values), "limits": {"max_query_chars": MAX_QUERY_CHARS, "max_results": MAX_RESULTS, "max_domains": MAX_DOMAINS, "max_timeout_seconds": MAX_TIMEOUT_SECONDS, "max_response_bytes": MAX_RESPONSE_BYTES}}
 
 
 def _permission(store: Any, request: ResearchRequest, values: dict[str, str]) -> dict[str, Any]:
@@ -230,6 +268,9 @@ def run(store: Any, values: dict[str, str], data: dict[str, Any], provider: Rese
         check_id = store.record_connector_permission_check(check, actor_type="system", actor_id="research-run", connector_executed=False)
         raise ResearchExecutorError(f"research_permission_denied:{check.get('decision', 'denied')}:{check_id}")
     store.record_connector_permission_check(check, actor_type="system", actor_id="research-run-preflight", connector_executed=False)
+    # Reserve atomically before any provider attempt. Failures/unknown outcomes
+    # keep their reservation: never retry a potentially billed search silently.
+    budget = _budget(store, values, claim=str(data.get("preview_id") or ""))
     try:
         raw = (provider or FirecrawlSearchProvider(key)).search(query=request.query, domains=list(request.domains), limit=request.limit, timeout_seconds=request.timeout_seconds, max_bytes=request.max_bytes)
     except ResearchExecutorError as exc:
@@ -270,6 +311,7 @@ def run(store: Any, values: dict[str, str], data: dict[str, Any], provider: Rese
         "permission_check_id": check_id,
         "provider": "firecrawl",
         "credits_used": raw.get("creditsUsed"),
+        "budget": budget,
         "rejected_results": rejected_results,
     }
 

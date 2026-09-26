@@ -3655,7 +3655,7 @@ class Handler(BaseHTTPRequestHandler):
             self._send_json(google_response)
             return
         try:
-            research_response = research_request(STORE, method="GET", path=self.path, values=parse_selected_env_values({"RESEARCH_EXECUTOR_ENABLED", "FIRECRAWL_API_KEY", "RESEARCH_ALLOWED_DOMAINS"}))
+            research_response = research_request(STORE, method="GET", path=self.path, values=parse_selected_env_values({"RESEARCH_EXECUTOR_ENABLED", "FIRECRAWL_API_KEY", "RESEARCH_ALLOWED_DOMAINS", "RESEARCH_DAILY_CREDIT_LIMIT"}))
         except (ValueError, ResearchExecutorError) as exc:
             self._send_json({"error": str(exc)}, HTTPStatus.BAD_REQUEST)
             return
@@ -3840,7 +3840,7 @@ class Handler(BaseHTTPRequestHandler):
             if self.path in {"/api/research/preview", "/api/research/run"}:
                 data = self._read_body()
                 try:
-                    result = research_request(STORE, method="POST", path=self.path, values=parse_selected_env_values({"RESEARCH_EXECUTOR_ENABLED", "FIRECRAWL_API_KEY", "RESEARCH_ALLOWED_DOMAINS"}), data=data)
+                    result = research_request(STORE, method="POST", path=self.path, values=parse_selected_env_values({"RESEARCH_EXECUTOR_ENABLED", "FIRECRAWL_API_KEY", "RESEARCH_ALLOWED_DOMAINS", "RESEARCH_DAILY_CREDIT_LIMIT"}), data=data)
                 except ResearchExecutorError as exc:
                     code = str(exc)
                     status = HTTPStatus.BAD_GATEWAY if code in {"research_provider_unavailable", "research_provider_error", "research_provider_invalid_response", "research_response_limit"} else HTTPStatus.BAD_REQUEST

@@ -9,14 +9,15 @@ from zoneinfo import ZoneInfo
 
 _ACTIONS = {'shopper.create', 'shopper.update', 'shopper.pause', 'shopper.resume', 'shopper.search',
             'shopper.hold', 'shopper.status', 'calendar.read', 'mail.read', 'memory.save', 'memory.search',
-            'tasks.create', 'tasks.status', 'clarify'}
+            'tasks.create', 'tasks.execute', 'tasks.pause', 'tasks.resume', 'tasks.cancel', 'tasks.status', 'clarify'}
 
 
 def may_be_action(content: str) -> bool:
     text = content.casefold()
     shopping = bool(re.search(r'\b(shopper|marktplaats|vinted|ddr[345]|ram|deals?|aanbiedingen?|verkoper)\b', text))
     commands = bool(re.search(r'\b(zoek|zoeken|volg|regelen?|vind|pauze|pauzeer|stop|hervat|reageer|budget|status|hoe|update|verander|wacht|alleen|liever|voorkeur)\b', text))
-    return (shopping and commands) or bool(re.search(
+    work = bool(re.search(r'\b(maak|schrijf|stel|analyseer|vergelijk|vat|werk|pauzeer|hervat)\b', text) and re.search(r'\b(opdracht|achtergrond|plan|rapport|analyse|samenvatting|tekst|checklist|taak)\b', text))
+    return work or (shopping and commands) or bool(re.search(
         r'\b(agenda|afspraken|gmail|mail|geheugen)\b|\b(onthoud|bewaar|taken|opdrachten)\b', text))
 
 
@@ -31,6 +32,9 @@ def validate_authority(decision: dict, content: str) -> dict:
     """Writes require the current owner command; a model cannot invent a budget."""
     action, args = decision['action'], decision['args']
     text = content.casefold()
+    if action == 'tasks.create' and not re.search(r'\b(later|alleen bewaren|nog niet uitvoeren|niet starten)\b', text):
+        decision = {'action': 'tasks.execute', 'args': args}
+        action = 'tasks.execute'
     write_verbs = {
         'shopper.create': r'\b(zoek|zoeken|vind|volg|regel|maak)\b',
         'shopper.update': r'\b(zoek|budget|verander|pas|update|alleen|liever|voorkeur|wacht|ook)\b',
@@ -47,9 +51,11 @@ def validate_authority(decision: dict, content: str) -> dict:
         budgets |= {round(float(v.replace(',', '.')) * 100) for v in re.findall(r'(?:budget|maximaal|max|onder|tot)\s+(\d+(?:[.,]\d{1,2})?)\b(?!\s*(?:gb|modules|sticks))', text)}
         if type(args['max_total_cents']) is not int or args['max_total_cents'] not in budgets:
             return {'action':'clarify', 'args':{'question':'Wat is je maximale totaalprijs inclusief verzending, in euro?'}}
+    if action in {'tasks.pause','tasks.resume','tasks.cancel'} and not re.search({'tasks.pause':r'\b(pauzeer|pauze|stop)\b','tasks.resume':r'\b(hervat|verder|doorgaan)\b','tasks.cancel':r'\b(annuleer|stop|verwijder)\b'}[action],text):
+        return {'action':'tasks.status','args':{}}
     if action == 'memory.save' and not re.search(r'\b(onthoud|bewaar|sla|opslaan)\b', text):
         return {'action':'clarify','args':{'question':'Wil je dat ik dit in je geheugen bewaar?'}}
-    if action == 'tasks.create' and not re.search(r'\b(maak|plan|zet|bewaar|voeg|regel|doe)\b', text):
+    if action in {'tasks.create','tasks.execute'} and not re.search(r'\b(maak|plan|zet|bewaar|voeg|regel|doe|schrijf|stel|analyseer|vergelijk|vat|werk)\b', text):
         return {'action':'tasks.status','args':{}}
     return decision
 
@@ -63,30 +69,40 @@ def route(content: str, history: list[str], state: dict) -> dict:
     from leon_control_plane.shopper_runtime import model_json
     watches = [{'id': w['id'], 'query': w['query'], 'budget_cents': w['max_total_cents'],
                 'min_ram_gb': w['min_ram_gb'], 'enabled': w['enabled']} for w in state.get('watches', [])[:5]]
-    prompt = (
-        'Je bent Leons toolrouter voor de eigenaar. Alleen de laatste gebruikersopdracht geeft bevoegdheid; '
-        'geschiedenis helpt verwijzingen begrijpen. Kies één actie uit: ' + ', '.join(sorted(_ACTIONS)) + '. '
-        'JSON exact {"action":"...","args":{...}}. Geen shell, URLs, aankopen of betalingsacties. '
-        'shopper.create args: query,max_total_cents,min_ram_gb,preferred_ram_gb,max_ram_sticks,platform '
-        '(both is standaard: Marktplaats én Vinted). Budget ontbreekt? clarify args:{question:"Wat is je maximale totaalprijs?"}. '
-        'shopper.update args:watch_id + uitsluitend expliciet gewijzigde velden (query,max_total_cents,min_ram_gb,preferred_ram_gb,max_ram_sticks,wait_days). '
-        'shopper.pause/resume/search/hold args:{watch_id:"..."}. hold betekent verkopersgesprek niet beantwoorden. '
-        'shopper.status/tasks.status args:{}. calendar.read args:{period:"today|tomorrow|week"}. mail.read args:{}. '
-        'memory.save/search args:{text:"..."}. tasks.create args:{title:"...",goal:"..."}. '
-        'Gebruik uitsluitend bekende watch_ids. Bij meerdere mogelijke taken vraag welke met clarify. '
-        'Geen RAM-opdracht? RAM-velden zijn 0. Vraag verduidelijking bij niet-ondersteunde actie. '
-        'Een prijs in euro wordt centen: EUR50 = 5000. Nooit zelf een budget bedenken.\n'
-        + json.dumps({'watches': watches, 'previous_owner_messages': history[-2:], 'current_owner_command': content}, ensure_ascii=False)
+    instructions = (
+        'Je bent Leons lokale toolrouter. Alleen de huidige eigenaaropdracht autoriseert acties; geschiedenis is context. '
+        'Antwoord exact JSON {"action":"...","args":{...}}. Geen shell, vrije URLs, betaling of aankoop. Acties: '
+        + ', '.join(sorted(_ACTIONS)) + '. '
+        'shopper.create: query,max_total_cents,platform(both standaard),min_ram_gb,preferred_ram_gb,max_ram_sticks; '
+        'geen budget: clarify(question). shopper.update: watch_id + expliciet gewijzigde velden of wait_days. '
+        'shopper.pause/resume/search/hold: watch_id. hold=pauze verkopersgesprek. shopper.status:{}. '
+        'calendar.read:period(today|tomorrow|week). mail.read:{}. memory.save/search:text. '
+        'tasks.execute:title,goal,role(writer|planner|analyst) voor schrijven, analyseren, plannen. '
+        'tasks.create:title,goal uitsluitend bij expliciet later bewaren of niet uitvoeren. '
+        'Maak een opdracht/checklist in de achtergrond betekent tasks.execute. tasks.pause/resume/cancel:task_id. '
+        'tasks.status:{} of task_id. Gebruik bekende IDs; bij twijfel clarify(question). '
+        'Webonderzoek of ontbrekende tools: clarify. Budget EUR50=5000, verzin nooit budget. Geen RAM: RAM-velden 0.\n'
     )
-    if len(prompt.encode()) > 4096:
-        prompt = prompt[:prompt.index('\n')] + '\n' + json.dumps({'watches': watches[:2], 'current_owner_command': content[:1000]}, ensure_ascii=False)
+    context = {'watches': watches, 'tasks': state.get('tasks',[])[:5],
+               'previous_owner_messages': history[-2:], 'current_owner_command': content}
+    prompt = instructions + json.dumps(context,ensure_ascii=False)
+    while len(prompt.encode())>4096:
+        if context['previous_owner_messages']:
+            context['previous_owner_messages'].pop(0)
+        elif context['watches']:
+            context['watches'].pop()
+        elif context['tasks']:
+            context['tasks'].pop()
+        else:
+            raise ValueError('Owner command exceeds router context')
+        prompt = instructions + json.dumps(context,ensure_ascii=False)
     decision, _ = model_json(prompt)
     if not isinstance(decision, dict) or set(decision) != {'action', 'args'} or decision['action'] not in _ACTIONS or not isinstance(decision['args'], dict):
         raise ValueError('Unsupported tool decision')
     return decision
 
 
-def apply(store, request_id: str, decision: dict, shopper) -> str:
+def apply(store, request_id: str, decision: dict, shopper, *, owner_content='') -> str:
     action, args = decision['action'], decision['args']
     if action == 'clarify':
         question = args.get('question', 'Welke opdracht bedoel je precies?')
@@ -158,17 +174,29 @@ def apply(store, request_id: str, decision: dict, shopper) -> str:
             return 'Opgeslagen in je geheugen.'
         found = store.retrieve_memory(query=args['text'], limit=5)
         return '\n'.join('• '+item.get('excerpt','')[:200] for item in found.get('results',[])[:5]) or 'Geen passend geheugen gevonden.'
+    if action == 'tasks.execute':
+        from leon_control_plane.personal_tasks import execute
+        result=execute(store,request_id,args,owner_content=owner_content)
+        return f"Ik voer de opdracht uit op de M40: {args['title']}. Voortgang en het resultaat staan in Werk."
+    if action in {'tasks.pause','tasks.resume','tasks.cancel'}:
+        from leon_control_plane.personal_tasks import control
+        if set(args)!={'task_id'}:
+            raise ValueError('Expected personal task ID')
+        control(store,args['task_id'],action.split('.')[1])
+        return {'tasks.pause':'Opdracht gepauzeerd.','tasks.resume':'Opdracht hervat.','tasks.cancel':'Uitvoering geannuleerd.'}[action]
     if action == 'tasks.create':
         if set(args) != {'title', 'goal'} or any(not isinstance(v, str) or not 1 <= len(v) <= 500 for v in args.values()):
             raise ValueError('Invalid task')
         store.create_task(title=args['title'], goal=args['goal'], risk_level='low')
         return f"Opdracht opgeslagen: {args['title']}. Je kunt hem in Werk volgen. Uitvoering is nog niet gestart."
     if action == 'tasks.status':
-        if args:
+        if set(args)-{'task_id'}:
             raise ValueError('Unexpected task status fields')
         with closing(store.connect()) as conn:
-            rows = conn.execute("SELECT title,status FROM tasks WHERE title<>'Chat conversation' ORDER BY rowid DESC LIMIT 8").fetchall()
-        return '\n'.join(f"• {r['title']}: {r['status']}" for r in rows) or 'Nog geen opdrachten opgeslagen.'
+            rows = conn.execute("SELECT id,title,status,result FROM tasks WHERE title<>'Chat conversation' ORDER BY rowid DESC LIMIT 8").fetchall()
+        if args.get('task_id'):
+            rows=[row for row in rows if row['id']==args['task_id']]
+        return '\n'.join(f"• {r['title']}: {r['status']}"+(f"\n{r['result'][:1200]}" if r['result'] else '') for r in rows) or 'Nog geen opdrachten opgeslagen.'
     raise ValueError('Unsupported action')
 
 
@@ -194,10 +222,12 @@ class ActionRunner:
             with closing(self.store.connect()) as conn:
                 rows = conn.execute("SELECT content FROM chat_messages WHERE conversation_id=? AND role='user' AND created_at<? ORDER BY created_at DESC LIMIT 2", (message['conversation_id'], message['created_at'])).fetchall()
             shopper = shopper_service()
-            decision = validate_authority(route(message['request_content'], [r['content'][:500] for r in reversed(rows)], shopper.state()), message['request_content'])
+            from leon_control_plane.personal_tasks import task_context
+            state=shopper.state() | {'tasks':task_context(self.store)}
+            decision = validate_authority(route(message['request_content'], [r['content'][:500] for r in reversed(rows)], state), message['request_content'])
             with closing(self.store.connect()) as conn, conn:
                 conn.execute("UPDATE chat_actions SET status='applying',operation=?,updated_at=? WHERE message_id=?", (json.dumps(decision), time.time(), message['id']))
-            text = apply(self.store, message['request_id'], decision, shopper)
+            text = apply(self.store, message['request_id'], decision, shopper, owner_content=message['request_content'])
             status = 'complete'
         except Exception:
             text, status = 'Ik kon deze opdracht niet afronden. Er is geen bevestigde uitvoering; controleer Werk of geef de opdracht specifieker.', 'error'

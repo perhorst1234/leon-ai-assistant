@@ -24,7 +24,7 @@ def store(tmp_path: Path) -> ControlPlaneStore:
 
 
 def values(**extra):
-    return {"RESEARCH_EXECUTOR_ENABLED": "true", "FIRECRAWL_API_KEY": "test-key", "RESEARCH_ALLOWED_DOMAINS": "example.com", **extra}
+    return {"RESEARCH_EXECUTOR_ENABLED": "true", "FIRECRAWL_API_KEY": "test-key", "RESEARCH_DAILY_CREDIT_LIMIT": "10", "RESEARCH_ALLOWED_DOMAINS": "example.com", **extra}
 
 
 def test_disabled_by_default_and_preview_is_explicit(tmp_path: Path):
@@ -113,3 +113,53 @@ def test_invalid_provider_shape_is_audited_as_executed_failure(tmp_path: Path):
     assert failed["connector_executed"] == 1
     event = next(item for item in s.get_state()["audit_events"] if item["event_type"] == "connector_research_failed")
     assert json.loads(event["redacted_payload_json"])["details"]["research_outcome"] == "research_provider_invalid_response"
+
+
+def test_credit_budget_is_atomic_durable_and_never_retries(tmp_path):
+    from concurrent.futures import ThreadPoolExecutor
+    from leon_control_plane.research_executor import _budget
+    s = store(tmp_path)
+    def attempt(n):
+        try:
+            _budget(s, values(), claim=f'preview-{n}')
+            return True
+        except ResearchExecutorError as exc:
+            assert str(exc) == 'research_daily_credit_limit'
+            return False
+    with ThreadPoolExecutor(max_workers=8) as pool:
+        assert sum(pool.map(attempt, range(12))) == 5
+    assert _budget(s, values())['reserved_credits'] == 10
+    assert _budget(store(tmp_path), values())['remaining_today'] == 0
+    with pytest.raises(ResearchExecutorError, match='already_attempted'):
+        _budget(s, values(), claim='preview-0')
+    assert _budget(s, values(RESEARCH_DAILY_CREDIT_LIMIT='1000'))['daily_limit'] == 10
+
+
+def test_failed_provider_keeps_credit_reservation(tmp_path):
+    class Failed:
+        calls = 0
+        def search(self, **kwargs):
+            self.calls += 1
+            raise ResearchExecutorError('research_provider_unavailable')
+    s = store(tmp_path)
+    req = {'query': 'bounded query', 'max_results': 1}
+    p = preview(s, values(), req)
+    data = {**req, 'preview_id': p['preview_id'], 'preview_fingerprint': p['preview_fingerprint']}
+    wire = Failed()
+    with pytest.raises(ResearchExecutorError, match='unavailable'):
+        run(s, values(), data, wire)
+    with pytest.raises(ResearchExecutorError, match='already_attempted'):
+        run(s, values(), data, wire)
+    assert wire.calls == 1
+    assert status(s, values())['budget']['reserved_credits'] == 2
+    with pytest.raises(ResearchExecutorError, match='daily_credit_limit'):
+        from leon_control_plane.research_executor import _budget
+        _budget(s, {}, claim='disabled')
+
+
+def test_http_daily_limit_reads_server_configuration(tmp_path, monkeypatch):
+    env = 'LEON_DASHBOARD_TOKEN=secret\nRESEARCH_DAILY_CREDIT_LIMIT=10\n'
+    with run_test_http_server(tmp_path, monkeypatch, env_text=env) as (base, _store):
+        req = Request(base + '/api/research/status', headers={'Authorization': 'Bearer secret'})
+        with urlopen(req) as response:
+            assert json.load(response)['budget']['daily_limit'] == 10

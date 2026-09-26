@@ -1,5 +1,24 @@
 # Overdracht — Leon / Gaia
 
+**26 september, persoonlijke achtergrondtaken en researchbudget:** gewone
+schrijf-, plan- en analysetaken vanuit chat draaien daadwerkelijk via de M40-
+wachtrij. Resultaten worden eenmaal terugbezorgd in het oorspronkelijke gesprek
+én getoond in verenigd Werk. Pauzeren/hervatten/annuleren via chat aangesloten;
+expliciet “later” bewaart alleen, achtergrondopdrachten worden gestart. Echte
+M40-checklistproef leverde drie chatberichten en een afgeronde taak. Geen externe
+acties of feitenverificatie claimen bij zulke teksttaken. Volledige backend 508
+checks geslaagd; web typecheck/build, lint nul errors/zeven bestaande warnings.
+
+Eigenaar autoriseerde maximaal 10 bestaande Firecrawl-credits per Amsterdam-dag.
+Duurzame atomische reservering rekent 2 credits per search-only poging; fouten
+houden de reservering en dezelfde preview kan niet opnieuw betaald zoeken.
+Bestaande providerbalans wordt vooraf gelezen; geen billing/recharge-endpoints.
+Live call: drie docs.python.org-bronnen, creditsUsed=2, vandaag 8 over. Bron:
+https://docs.firecrawl.dev/features/search#cost-implications. Chatresearch en
+M40-synthese blijven de volgende integratiestap. Nieuwe HTTP-budgettest dekt
+het doorgeven van de serverconfiguratie; nog apart draaien.
+
+
 26 september, chat/werk/Google: alle echte opdrachten samen in inklapbaar Werk,
 met filters en progressiebolletjes; aparte Shopper-tab en voorbeeldschakelaars
 verwijderd, Vandaag compact. M40-chatrouter bedient bounded shopper-/Google-/
