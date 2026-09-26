@@ -1,5 +1,23 @@
 # Overdracht — Leon / Gaia
 
+**26 september, Werk en klikbare researchbronnen:** agentfilter bevat de
+werkelijke Leon-rollen (Research/Server/Writer enz.). Een voltooide taak toont het
+bevestigde opgeslagen resultaat, inclusief de echte bronlinks, in plaats van
+alleen de ruwe modelcheckpointtekst. HTTPS-links zijn klikbaar in chat én Werk;
+geen HTML-rendering van modeltekst. Browserproef Research + Afgerond: precies één
+researchkaart, bronnenlabel en drie HTTPS-anchors. Companion naar vrije
+headerruimte verplaatst; browserbounding-boxes bewijzen geen overlap met de
+opdrachtknop. Typecheck/build en 55 webtests geslaagd; lint nul errors/zeven
+bestaande warnings. Tijdelijke browserauthfile is na controle verwijderd.
+
+**Google is nu werkelijk verbonden:** actuele serverstatus configured=true.
+Echte geauthenticeerde Calendar-preview voor de komende week slaagt (nul
+gebeurtenissen); Gmail-metadata-preview levert vijf echte items. Geen persoonlijke
+inhoud in logs of repository. De planner kan nu lezen; afspraken toevoegen,
+wijzigen en verwijderen vereist nog de writerintegratie en aanvullend consent.
+Docker-groep is nog leeg, dus coding-testsandbox blijft zonder hosttoegang.
+
+
 **26 september, gedeelde GPU-beurt en zuinigere routing:** gewone chat telt
 een gecachet eigen Qwen-model niet langer als bezet. /api/ps toont residentie,
 geen generatie; daadwerkelijk gebruik wordt door een gedeelde flock bewaakt.

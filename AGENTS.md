@@ -1,5 +1,10 @@
 # Werken aan Leon / Gaia
 
+- Nieuwste 26 september: Google live connected=true; Calendar-weekpreview
+  HTTP200/0 events en Gmailmetadata 5 items, geen persoonsgegevens gelogd.
+  Agenda-writes nog bouwen. Werk filtert echte rollen en toont opgeslagen
+  resultaten/klikbare bronnen; M40-lease/cachefix live bewezen, 529 tests.
+
 - 26 september: serveragent zondag 10:00 Amsterdam, vaste serviceprobes en
   bounded herstart backend/web/worker (6h cooldown). Herstel live bewezen;
   stabiele checks melden niets, veranderingen in Leon updates en resultaat

@@ -15,7 +15,7 @@ beproeven en deployen voordat het volgende onderdeel wordt uitgebreid.
 | Memory / graph | Bewaren, ophalen, corrigeren, verwijderen, relaties en automatische context | Voorkeuren/correcties vanzelf leren, conflicten netjes behandelen |
 | Task Manager | SQLite-taken, wachtrij, checkpoints, herstel, chatuitvoering en terugbezorging | Subtaken en afhankelijkheden |
 | Research Agent | Chat → Firecrawl → M40-synthese → bronnen in chat/Werk, max10 credits/dag | Dieper lezen binnen budget en periodieke research |
-| Planner / Google | PKCE OAuth, alleen-lezen Agenda/Gmail-adapters | Echte accountconsent, live Agenda, planning en agenda-writes; Gmail is nu metadata, geen volledige mailbox |
+| Planner / Google | PKCE OAuth en live Agenda/Gmail-metadata bewezen | Agenda-writes en planning; Gmail is metadata, geen volledige mailbox |
 | Shopper | Wekelijkse MP/Vinted-zoekopdrachten, echte MP-berichten, delayed replies | Echte inkomende replyketen bewijzen, Vinted-onderhandelingen, TicketSwap-eventwatch en alerts |
 | Server Manager | Status, wekelijkse echte inspectie, chatmeldingen en beperkte serviceherstarts | Ruimere diagnose/backups en geverifieerde herstelacties voor andere storingen |
 | Model Scheduler | Lokale Qwen/M40, sensitive-local routing, gedeelde GPU-lease en correcte cacherouting | Gezamenlijke prioritering en globale thermische regeling |
@@ -50,9 +50,8 @@ beproeven en deployen voordat het volgende onderdeel wordt uitgebreid.
 
 ## Nog benodigde eigenaargegevens
 
-- Google OAuth: client-ID is bevestigd gelijk aan de server. De echte consent
-  en accounttoegang zijn nog niet bewezen; alleen opnieuw verbinden zodra de
-  opgeslagen callbacks bij Google actief zijn.
+- Google OAuth: live lezen is bewezen. Na aansluiten van de planner-writer
+  nog aanvullende Google-consent voor eigen afspraken schrijven nodig.
 - Research: toestemming voor maximaal tien bestaande Firecrawl-credits per dag
   is gegeven; geen credits kopen en geen OpenAI gebruiken voor synthese.
 - TicketSwap: eerste concert/eventlink, aantal tickets en maximale totaalprijs.
