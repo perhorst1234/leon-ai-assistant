@@ -69,3 +69,16 @@ purchases remain the owner's decision.
 
 Private watches, contacts, account tone and browser/test sessions stay outside
 Git. Source systemd templates are in `scripts/leon-shopper-watch.*`.
+
+## Owner correction: opening bids and tone
+
+The owner rejected an opening at the asking price. New openings use 80% of
+the proportional asking price for only the wanted modules, rounded to EUR5
+(EUR1 for small prices), always within budget. EUR45 for five modules becomes
+EUR30 for four; EUR45 for a complete four-module set becomes EUR35. Unknown
+asking prices start at 60% of budget. This is enforced in code rather than left
+to model discretion. Brand text between quantity and capacity is supported.
+Messages are short and informal (Hoi, heb je ze nog?, incl. verzenden); formal
+phrases and sign-offs were removed. The already sent EUR45 message stays as-is.
+Four pricing regressions pass, including an LLM proposing the asking price and
+the runtime enforcing the owner’s lower opening instead.

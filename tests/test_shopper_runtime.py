@@ -10,7 +10,7 @@ from leon_control_plane.local_model import LocalModelConfig
 def test_message_respects_four_slots_and_total_budget():
     watch = {"min_ram_gb": 64, "max_ram_sticks": 4, "max_total_cents": 4999}
     message = contact_message(watch, {"title": "5x16GB DDR3 ECC"}, 4000)
-    assert "4 modules van 16 GB" in message and "€40,00 inclusief verzending" in message
+    assert "4 modules van 16 GB" in message and "€40 incl. verzenden" in message
     with pytest.raises(ValueError):
         contact_message(watch, {"title": "5x16GB DDR3 ECC"}, 5000)
 

@@ -4,6 +4,13 @@ Stand: **25 september 2026**. De gebruiker wil vooral coderen; houd deze overdra
 
 ## Nieuwste wijziging
 
+26 september, correctie eigenaar: nieuwe openingsbiedingen worden verplicht
+onder de vraagprijs gezet, met verhouding voor alleen de gewenste modules.
+EUR45 voor vijf wordt EUR30 voor vier; EUR45 voor vier wordt EUR35. Merk tussen
+hoeveelheid en GB wordt herkend. Kortere losse toon zonder formele slotzinnen.
+Het bestaande EUR45-bericht blijft onaangetast; deze wijziging geldt voor nieuwe
+contacten. Zie de openingsstrategie in `docs/shopper-worker.md`.
+
 26 september: Leon heeft nu een eigen shopper-worker op de M40, duurzame
 wekelijkse zoekopdrachten en een geauthenticeerde `/shopper`-pagina. De eerste
 DDR3 ECC-watch (64–128GB, vier slots, totaal < EUR50) doorzocht live Marktplaats;
