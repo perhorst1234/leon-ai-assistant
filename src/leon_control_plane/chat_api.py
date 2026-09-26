@@ -18,6 +18,7 @@ from leon_control_plane.openai_text import MAX_INPUT_BYTES
 from leon_control_plane.secret_scanner import assert_no_secrets
 from leon_control_plane.sensitivity import classify_prompt
 from leon_control_plane.work_queue import MODEL_KIND, WorkQueue
+from leon_control_plane.chat_actions import may_be_action, ActionRunner
 
 
 MAX_MESSAGE_BYTES = 2048
@@ -79,6 +80,9 @@ class ChatService:
                     request_content TEXT, provider TEXT, max_output_tokens INTEGER, max_cost_microusd INTEGER,
                     created_at REAL NOT NULL, updated_at REAL NOT NULL
                 );
+                CREATE TABLE IF NOT EXISTS chat_actions (
+                    message_id TEXT PRIMARY KEY, request_id TEXT UNIQUE NOT NULL,
+                    status TEXT NOT NULL, updated_at REAL NOT NULL, operation TEXT, result TEXT);
                 CREATE INDEX IF NOT EXISTS chat_conversations_page ON chat_conversations(created_at DESC, id DESC);
                 CREATE INDEX IF NOT EXISTS chat_messages_conversation ON chat_messages(conversation_id, created_at, id);
             """)
@@ -87,6 +91,8 @@ class ChatService:
                 conn.execute("ALTER TABLE chat_messages ADD COLUMN request_content TEXT")
             if "provider" not in columns:
                 conn.execute("ALTER TABLE chat_messages ADD COLUMN provider TEXT")
+            if "execution_kind" not in columns:
+                conn.execute("ALTER TABLE chat_messages ADD COLUMN execution_kind TEXT NOT NULL DEFAULT 'model'")
 
     @staticmethod
     def _conversation(conn, conversation_id):
@@ -180,7 +186,7 @@ class ChatService:
         # move an earlier sensitive turn to an external provider.
         sensitivity = classify_prompt(prompt)
         local_busy = local_model_is_busy(LocalModelConfig.from_env())
-        requested_provider = "ollama" if sensitivity["local_only"] else None
+        requested_provider = "ollama" if sensitivity["local_only"] or may_be_action(content) else None
         quote = model_preview({"prompt": prompt, "max_output_tokens": details["max_output_tokens"], "max_cost_microusd": details["max_cost_microusd"], "provider": requested_provider}, local_busy=local_busy)
         return quote | {"conversation_id": conversation["id"], "conversation_revision": conversation["revision"],
                         "included_messages": included, "prompt": prompt,
@@ -191,6 +197,11 @@ class ChatService:
 
     def _recover(self, row):
         """Attach an already created queue record after a process crash."""
+        if row["execution_kind"] == 'action':
+            if row['status'] == 'pending':
+                ActionRunner(self.store).start(row)
+            with closing(self.store.connect()) as conn:
+                return self._message(conn, row['id'])
         if row["job_id"]:
             return row
         with closing(self.store.connect()) as conn:
@@ -225,7 +236,7 @@ class ChatService:
                 assistant = existing
         if assistant is not None:
             assistant = self._recover(assistant)
-            return self._message_view(assistant), WorkQueue(self.store).get(assistant["job_id"])
+            return self._message_view(assistant), ({"id": assistant['id'], "status": assistant['status'], "kind": 'chat_action'} if assistant['execution_kind']=='action' else WorkQueue(self.store).get(assistant["job_id"]))
         # Reconcile completed turns outside the write transaction.  _recover can
         # enqueue and therefore must never open a nested writer under this lock.
         self.get_conversation(conversation_id)
@@ -260,6 +271,8 @@ class ChatService:
                         (assistant_id, conversation_id, request_id, "assistant", "pending", prompt,
                          _approval_digest(prompt, details["max_output_tokens"], details["max_cost_microusd"], effective_provider), next_revision, content, effective_provider,
                          details["max_output_tokens"], details["max_cost_microusd"], assistant_at, assistant_at))
+                    if may_be_action(content):
+                        conn.execute("UPDATE chat_messages SET execution_kind='action' WHERE id=?", (assistant_id,))
                     conn.execute("UPDATE chat_conversations SET revision=?,updated_at=? WHERE id=?", (next_revision, now, conversation_id))
                     assistant = self._message(conn, assistant_id)
                 conn.commit()
@@ -267,7 +280,7 @@ class ChatService:
                 conn.rollback()
                 raise
         assistant = self._recover(assistant)
-        return self._message_view(assistant), WorkQueue(self.store).get(assistant["job_id"])
+        return self._message_view(assistant), ({"id": assistant['id'], "status": assistant['status'], "kind": 'chat_action'} if assistant['execution_kind']=='action' else WorkQueue(self.store).get(assistant["job_id"]))
 
     def _refresh(self, conn, row):
         if row["role"] != "assistant":

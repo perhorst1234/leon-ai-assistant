@@ -6,7 +6,7 @@ import './auth-gate.css';
 type Status = 'loading' | 'register' | 'login' | 'ready' | 'error';
 
 export default function AuthGate({ children }: { children: (logout: () => void) => ReactNode }) {
-  const [status, setStatus] = useState<Status>('loading');
+  const [status, setStatus] = useState<Status>('login');
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
   const [code, setCode] = useState('');
@@ -15,10 +15,14 @@ export default function AuthGate({ children }: { children: (logout: () => void) 
 
   useEffect(() => {
     let mounted = true;
-    fetch('/api/auth', { cache: 'no-store' })
+    if (new URLSearchParams(window.location.search).has('auth')) {
+      const timer = setTimeout(() => { if (mounted) setError('Inloggen niet gelukt. Controleer je wachtwoord of wacht een minuut.'); }, 0);
+      void timer;
+    }
+    fetch('/api/auth', { cache: 'no-store', signal: AbortSignal.timeout(15000) })
       .then(async response => { if (!response.ok) throw new Error('Inlogstatus niet beschikbaar.'); return response.json(); })
       .then(data => { const result = data as { authenticated?: boolean; registered?: boolean }; if (mounted) setStatus(result.authenticated ? 'ready' : result.registered ? 'login' : 'register'); })
-      .catch(reason => { if (mounted) { setStatus('error'); setError(reason instanceof Error ? reason.message : 'Inlogstatus niet beschikbaar.'); } });
+      .catch(reason => { if (mounted) { setStatus('login'); setError(reason instanceof Error ? reason.message : 'Inlogstatus niet beschikbaar.'); } });
     return () => { mounted = false; };
   }, []);
 
@@ -48,10 +52,11 @@ export default function AuthGate({ children }: { children: (logout: () => void) 
     <span className="auth-mark">✦</span><p className="auth-eyebrow">Leon AI Assistant</p>
     <h1>{status === 'register' ? 'Maak je account aan' : status === 'login' ? 'Welkom terug' : 'Leon wordt geladen'}</h1>
     <p className="auth-intro">{status === 'register' ? 'Kies je eigen wachtwoord. De instelcode is alleen nodig bij het aanmaken van je account.' : 'Log in met je wachtwoord om je assistent te openen.'}</p>
-    {(status === 'register' || status === 'login') && <form onSubmit={event => void submit(event)}>
-      {status === 'register' && <label>Eenmalige instelcode<input type="text" autoComplete="one-time-code" value={code} onChange={event => setCode(event.target.value)} required /></label>}
-      <label>Wachtwoord<input type="password" autoComplete={status === 'register' ? 'new-password' : 'current-password'} minLength={status === 'register' ? 12 : undefined} value={password} onChange={event => setPassword(event.target.value)} required /></label>
-      {status === 'register' && <label>Herhaal wachtwoord<input type="password" autoComplete="new-password" minLength={12} value={confirm} onChange={event => setConfirm(event.target.value)} required /></label>}
+    <noscript><p className="auth-error">Schakel JavaScript in je browser in om Leon te gebruiken.</p></noscript>
+    {(status === 'register' || status === 'login') && <form action="/api/auth" method="post" onSubmit={event => void submit(event)}><input type="hidden" name="action" value={status} />
+      {status === 'register' && <label>Eenmalige instelcode<input name="code" type="text" autoComplete="one-time-code" value={code} onChange={event => setCode(event.target.value)} required /></label>}
+      <label>Wachtwoord<input name="password" type="password" autoComplete={status === 'register' ? 'new-password' : 'current-password'} minLength={status === 'register' ? 12 : undefined} value={password} onChange={event => setPassword(event.target.value)} required /></label>
+      {status === 'register' && <label>Herhaal wachtwoord<input name="confirm" type="password" autoComplete="new-password" minLength={12} value={confirm} onChange={event => setConfirm(event.target.value)} required /></label>}
       {error && <p className="auth-error" role="alert">{error}</p>}
       <button type="submit" disabled={busy}>{busy ? 'Even wachten…' : status === 'register' ? 'Account aanmaken' : 'Inloggen'}</button>
     </form>}

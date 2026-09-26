@@ -5,6 +5,7 @@ type Config = { url?: string; token?: string; webAuth?: WebAuthConfig };
 const routes: Record<string, Partial<Record<string, string>>> = {
   jobs: { GET: '/api/work/jobs', POST: '/api/work/jobs' },
   control: { POST: '/api/work/control' },
+  'work-status': { GET: '/api/work/status' },
   tasks: { GET: '/api/work/tasks', POST: '/api/tasks' },
   model: { POST: '/api/work/model' },
   'model-preview': { POST: '/api/work/model/preview' },

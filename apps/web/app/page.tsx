@@ -271,7 +271,6 @@ function SpaceSwitcher({
             </button>
           );
         })}
-        <a className="switcher-tab" href="/shopper" aria-label="Shopper openen"><ShoppingBag size={15}/><span>Shopper</span></a>
       </div>
       <button className="switcher-icon" type="button" aria-label="Instellingen openen" onClick={onSettings}>
         <Settings2 size={17} strokeWidth={1.7} />
@@ -331,10 +330,10 @@ function GaiaCompanion({
 }) {
   const [actionsOpen, setActionsOpen] = useState(false);
   const desktopPositions: Record<SpaceId, { left: string; top: string; scale: number }> = {
-    today: { left: '54%', top: '49%', scale: 0.72 },
+    today: { left: '88%', top: '20%', scale: 0.3 },
     chat: { left: '80%', top: '32%', scale: 0.58 },
-    flows: { left: '68%', top: '50%', scale: 0.5 },
-    memory: { left: '15%', top: '34%', scale: 0.6 },
+    flows: { left: '92%', top: '20%', scale: 0.23 },
+    memory: { left: '92%', top: '20%', scale: 0.23 },
   };
   const compactPositions: Record<SpaceId, { left: string; top: string; scale: number }> = {
     today: { left: '50%', top: '31%', scale: 0.3 },
@@ -1153,6 +1152,13 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
   const toastTimerRef = useRef<number | null>(null);
   const compact = useCompactLayout();
   const [activeSpace, setActiveSpace] = useState<SpaceId>('today');
+  useEffect(() => {
+    const space = new URLSearchParams(window.location.search).get('space');
+    if (['today','chat','flows','memory'].includes(space || '')) {
+      const timer = setTimeout(() => setActiveSpace(space as SpaceId), 0);
+      return () => clearTimeout(timer);
+    }
+  }, []);
   const [gaiaState, setGaiaState] = useState<GaiaState>('idle');
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [agentPickerOpen, setAgentPickerOpen] = useState(false);
@@ -1347,7 +1353,7 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
             />
           )}
           {activeSpace === 'flows' && (
-            <ConnectedWork demo={<FlowsView
+            <ConnectedWork onOpenChat={openChatCommand} demo={<FlowsView
               activeStep={activeFlowStep}
               onRun={runFlow}
               paused={missionPaused}
@@ -1361,7 +1367,7 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
               onApprove={() => setReviewKind('approval')}
             />} />
           )}
-          {activeSpace === 'memory' && <ConnectedMemory demo={<MemoryView selected={selectedMemory} onSelect={setSelectedMemory} />} />}
+          {activeSpace === 'memory' && <ConnectedMemory />}
         </motion.div>
       </AnimatePresence>
 
@@ -1430,7 +1436,6 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
         )}
       </AnimatePresence>
 
-      {(activeSpace === 'flows' || activeSpace === 'chat') && <div className="prototype-note">{activeSpace === 'flows' ? 'Werk: lokale status of expliciet ontwerpvoorbeeld' : chatDemo ? 'Chat: expliciet ontwerpvoorbeeld' : 'Chat: verbonden met Leon'}</div>}
     </main>
     </MotionConfig>
   );

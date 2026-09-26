@@ -1,5 +1,18 @@
 # Overdracht — Leon / Gaia
 
+26 september, chat/werk/Google: alle echte opdrachten samen in inklapbaar Werk,
+met filters en progressiebolletjes; aparte Shopper-tab en voorbeeldschakelaars
+verwijderd, Vandaag compact. M40-chatrouter bedient bounded shopper-/Google-/
+geheugentools met duurzaam geen-dubbele-uitvoering-register. Gezamenlijke echte
+zoekronde MP+Vinted: 29 advertenties, geen passende 128GB-set, 64GB-contact blijft
+op pauze. Google PKCE-callbacks voor vaste HTTPS-host én actuele Quick Tunnel;
+LAN-start verhuist eerst naar HTTPS met eigen Leon-login. Eigenaar voegt tweede
+callback toe; echte Google-consent/Agenda-call nog open. DuckDNS extern twee
+HTTP 200-metingen, thuis NAT-loopbackprobleem: lokale IP of HTTPS-tunnel gebruiken.
+501 backendtests, 55 webtests, typecheck/build geslaagd; lint nul errors/zeven
+prototype-warnings. Zie `docs/chat-work-google.md`.
+
+
 Stand: **25 september 2026**. De gebruiker wil vooral coderen; houd deze overdracht kort.
 
 ## Nieuwste wijziging

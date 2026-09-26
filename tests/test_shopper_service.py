@@ -157,3 +157,26 @@ def test_held_conversation_cannot_trigger_a_reply(tmp_path, monkeypatch):
     assert service.state()['watches'][0]['held_contacts'] == 1
     with service.connect() as c:
         assert c.execute('SELECT COUNT(*) FROM replies').fetchone()[0] == 0
+
+
+def test_combined_sources_preserve_platform_and_continue_on_partial_failure(tmp_path):
+    class Browser:
+        def search(self, platform, query):
+            if platform == 'vinted':
+                return {'items': [], 'empty': False, 'challenge': True}
+            return {'items': [{'url':'https://www.marktplaats.nl/v/ram/m1','title':'4x32GB DDR3 ECC','text':'€ 40,00'}],'empty':False,'challenge':False}
+    service = ShopperService(tmp_path/'shopper.sqlite', bridge_factory=Browser)
+    watch=service.create(spec(platform='both',min_ram_gb=128,max_ram_sticks=4))
+    service.start(watch['id'],background=False)
+    result=service.state()['watches'][0]['latest_run']
+    assert result['status']=='partial'
+    assert result['result']['matches'][0]['platform']=='marktplaats'
+    assert result['result']['sources'][1]['status']=='needs_owner'
+
+
+def test_edit_query_replaces_old_hardware_filters_without_resuming_contact(tmp_path):
+    service=ShopperService(tmp_path/'shopper.sqlite')
+    watch=service.create(spec())
+    service.edit(watch['id'],{'query':'concert ticket','platform':'both'})
+    result=service.state()['watches'][0]
+    assert result['platform']=='both' and result['required_terms']==[] and result['excluded_terms']==[]

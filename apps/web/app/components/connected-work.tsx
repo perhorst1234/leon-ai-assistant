@@ -1,162 +1,43 @@
 'use client';
+import { useCallback, useEffect, useState, type ReactNode } from 'react';
+import { ArrowUpRight, MessageCircle, RefreshCw, ShoppingBag } from 'lucide-react';
+import './agent-work.css';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
-import type { ReactNode } from 'react';
-import { Check, Cpu, Database, LockKeyhole, Pause, Play, RefreshCw, X } from 'lucide-react';
-import './connected-work.css';
-import { createRequestId } from '../lib/request-id';
-import ModelRequestForm from './model-request-form';
-import type { ModelPreview } from '../../lib/model-submission';
-import ModelCostRecovery from './model-cost-recovery';
-import SelfImprovementReview from './self-improvement-review';
-import type { CostProposal } from '../../lib/model-reconciliation';
+type Lead = { url: string; title: string; platform?: string; asking_price_cents: number | null; usable_capacity_gb?: number; notes: string[] };
+type Watch = { id: string; query: string; platform: string; enabled: boolean; max_total_cents: number; next_run: number; min_ram_gb: number; fallback_after?: number; fallback_min_ram_gb?: number; held_contacts: number; replies: { status: string; due_at: number; conversation_url: string }[]; latest_run: { status: string; finished_at: number; result: { matches: Lead[]; sources?: { platform: string; status: string; checked: number; reason?: string }[]; listings_checked: number; agent?: { status: string; offer_cents: number; conversation_url?: string } } | null } | null };
+type Task = { id: string; title: string; goal?: string; status?: string };
+type Job = { id: string; task_id: string; status: string; completed_steps: number; total_steps: number; kind: string; results: { text?: string; ok?: boolean; reason?: string }[] };
+const money = (cents: number) => new Intl.NumberFormat('nl-NL', { style: 'currency', currency: 'EUR' }).format(cents/100);
+const date = (stamp: number) => new Date(stamp*1000).toLocaleString('nl-NL', { timeZone: 'Europe/Amsterdam', dateStyle: 'medium', timeStyle: 'short' });
+async function fetchState(resource: string, signal: AbortSignal) { const r = await fetch(`/api/leon?resource=${resource}`, { signal, cache: 'no-store' }); const d = await r.json() as { error?:string; watches?:Watch[]; jobs?:Job[]; tasks?:Task[] }; if (!r.ok) throw new Error(d.error || 'Werk is niet bereikbaar'); return d; }
+function Dots({ names, current, complete = false }: { names: string[]; current: number; complete?: boolean }) { return <ol className="agent-dots" aria-label="Voortgang">{names.map((name,i)=><li key={name} data-state={i<current || complete ? 'done' : i===current ? 'current' : 'next'} aria-current={i===current && !complete ? 'step' : undefined}><span className="agent-dot"/><span>{name}</span></li>)}</ol>; }
 
-type Task = { id: string; title: string };
-type Result = { ok: boolean; step: string; text?: string; source_sha256?: string; files_checked?: number; reason?: string; failures?: { path: string; line: number | null }[] };
-type Job = {
-  kind: string; request_id: string; execution_kind?: string; provider?: 'ollama' | 'openai'; model?: string;
-  model_state?: string; reserved_microusd?: number; accounted_microusd?: number;
-  id: string; task_id: string; status: 'queued' | 'running' | 'paused' | 'succeeded' | 'failed' | 'cancelled';
-  completed_steps: number; total_steps: number; results: Result[]; updated_at: number; error: string;
-};
-type ApiPayload = { error?: string; jobs?: Job[]; tasks?: Task[]; job?: Job | null; id?: string; preview?: ModelPreview; reconciliation?: CostProposal };
-const labels: Record<Job['status'], string> = {
-  queued: 'In de wachtrij', running: 'In uitvoering', paused: 'Gepauzeerd',
-  succeeded: 'Uitvoering afgerond', failed: 'Niet afgerond — bekijk het resultaat', cancelled: 'Geannuleerd',
-};
-const stepNames = ['Bronbestanden vastleggen', 'Python-syntax controleren', 'Resultaat en bronversie bevestigen'];
-
-async function api(resource: string, token: string, body?: unknown, signal?: AbortSignal, requestId?: string, jobId?: string) {
-  const query = new URLSearchParams({ resource, ...(jobId ? { id: jobId } : requestId ? { [resource === 'reconciliation' ? 'id' : 'request_id']: requestId } : {}) });
-  const response = await fetch(`/api/leon?${query}`, {
-    method: body === undefined ? 'GET' : 'POST', signal, cache: 'no-store',
-    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-    ...(body === undefined ? {} : { body: JSON.stringify(body) }),
-  });
-  const data = await response.json() as ApiPayload;
-  if (!data || typeof data !== 'object') throw new Error('Onverwacht antwoord van de backend.');
-  if (!response.ok) throw new Error(typeof data.error === 'string' ? data.error : 'Verzoek mislukt.');
-  return data;
-}
-
-export default function ConnectedWork({ demo }: { demo: ReactNode }) {
-  const [showDemo, setShowDemo] = useState(false);
-  const token = 'session';
-  const [jobs, setJobs] = useState<Job[]>([]);
-  const [tasks, setTasks] = useState<Task[]>([]);
-  const [taskId, setTaskId] = useState('');
-  const [selectedId, setSelectedId] = useState('');
-  const [detailJob, setDetailJob] = useState<Job | null>(null);
-  const [error, setError] = useState('');
-  const [connectionError, setConnectionError] = useState('');
-  const [busy, setBusy] = useState(false);
-  const [connected, setConnected] = useState(false);
-  const pendingRequest = useRef<{ taskId: string; requestId: string } | null>(null);
-  const refreshController = useRef<AbortController | null>(null);
-  const job = jobs.find(item => item.id === selectedId) ?? (detailJob?.id === selectedId ? detailJob : undefined) ?? jobs[0];
-
-  const refresh = useCallback(async () => {
-    refreshController.current?.abort();
-    const controller = new AbortController();
-    refreshController.current = controller;
-    try {
-      const [work, available] = await Promise.all([
-        api('jobs', token, undefined, controller.signal), api('tasks', token, undefined, controller.signal),
-      ]);
-      if (controller.signal.aborted) return;
-      if (!Array.isArray(work.jobs) || !Array.isArray(available.tasks)) throw new Error('Onverwacht antwoord van de backend.');
-      setJobs(work.jobs); setTasks(available.tasks); setConnected(true); setConnectionError('');
-      if (selectedId && !work.jobs.some(item => item.id === selectedId)) {
-        const detail = await api('jobs', token, undefined, controller.signal, undefined, selectedId);
-        if (detail.job) setDetailJob(detail.job);
-      } else if (selectedId) setDetailJob(null);
-    } catch (reason) {
-      if (controller.signal.aborted) return;
-      setConnected(false); setConnectionError(reason instanceof Error ? reason.message : 'Verbinding onderbroken.');
-    }
-  }, [selectedId, token]);
-
-  useEffect(() => {
-    if (!token || showDemo) return;
-    let stopped = false;
-    let timer: ReturnType<typeof setTimeout>;
-    async function poll() {
-      await refresh();
-      if (!stopped) timer = setTimeout(poll, 3000);
-    }
-    void poll();
-    return () => { stopped = true; clearTimeout(timer); refreshController.current?.abort(); };
-  }, [refresh, token, showDemo]);
-
-  async function mutate(action: () => Promise<void>) {
-    setBusy(true); setError('');
-    try { await action(); await refresh(); }
-    catch (reason) { setError(reason instanceof Error ? reason.message : 'Actie niet bevestigd. Ververs de status.'); }
-    finally { setBusy(false); }
-  }
-
-  const activeTask = taskId || tasks[0]?.id || '';
-  const controlsDisabled = busy || !connected;
-  return <>
-    <div className="work-mode-switch" aria-label="Werkmodus">
-      <button type="button" aria-pressed={!showDemo} onClick={() => setShowDemo(false)}>Echte taken</button>
-      <button type="button" aria-pressed={showDemo} onClick={() => setShowDemo(true)}>Ontwerpvoorbeeld</button>
+export default function ConnectedWork({ onOpenChat }: { demo?: ReactNode; onOpenChat?: () => void }) {
+  const [watches,setWatches] = useState<Watch[]>([]); const [jobs,setJobs] = useState<Job[]>([]); const [tasks,setTasks] = useState<Task[]>([]);
+  const [agent,setAgent] = useState('all'); const [filter,setFilter] = useState('active'); const [layout,setLayout] = useState('compact'); const [error,setError] = useState(''); const [busy,setBusy] = useState(false);
+  const refresh = useCallback(async(signal: AbortSignal)=>{setBusy(true);const results=await Promise.allSettled(['shopper-state','jobs','work-status'].map(r=>fetchState(r,signal)));if(signal.aborted)return;let failed=false;for(const [i,r] of results.entries()){if(r.status==='rejected'){failed=true;continue;}if(i===0)setWatches(r.value.watches || []);if(i===1)setJobs(r.value.jobs || []);if(i===2)setTasks(r.value.tasks || []);}setError(failed?'Een deel van de voortgang is tijdelijk niet bereikbaar.':'');setBusy(false);},[]);
+  useEffect(()=>{const c=new AbortController();let timer:ReturnType<typeof setTimeout>;const poll=async()=>{await refresh(c.signal);if(!c.signal.aborted)timer=setTimeout(poll,15000);};void poll();return()=>{c.abort();clearTimeout(timer);};},[refresh]);
+  const visibleWatches = watches.filter(w=>agent!=='tasks' && (filter!=='active'||w.enabled) && (filter!=='paused'||!w.enabled||w.held_contacts>0) && filter!=='done');
+  const realTasks = tasks.filter(t=>t.title!=='Chat conversation');
+  const visibleTasks = realTasks.filter(t=>agent!=='shopper' && (filter!=='active'||!['done','cancelled'].includes(t.status||'')) && (filter!=='done'||t.status==='done') && (filter!=='paused'||jobs.some(j=>j.task_id===t.id&&j.status==='paused')));
+  return <div className="space-view agent-work" data-layout={layout}>
+    <header className="agent-page-header"><div><span className="agent-eyebrow">Jouw opdrachten</span><h1>Werk.</h1><p>Geef Leon opdrachten in de chat. Hier zie je hoe ze lopen.</p></div><button className="agent-primary" onClick={onOpenChat}><MessageCircle size={16}/> Geef een opdracht</button></header>
+    <div className="agent-filters"><label>Agent<select value={agent} onChange={e=>setAgent(e.target.value)}><option value="all">Alle agents</option><option value="shopper">Shopper</option><option value="tasks">Overige opdrachten</option></select></label><label>Status<select value={filter} onChange={e=>setFilter(e.target.value)}><option value="active">Actief</option><option value="all">Alles</option><option value="paused">Gepauzeerd</option><option value="done">Afgerond</option></select></label><label>Weergave<select value={layout} onChange={e=>setLayout(e.target.value)}><option value="compact">Compact</option><option value="roomy">Ruim</option></select></label><button className="agent-quiet" disabled={busy} onClick={()=>void refresh(new AbortController().signal)} aria-label="Voortgang verversen"><RefreshCw size={16}/></button></div>
+    {error&&<p role="alert" className="agent-error">{error}</p>}
+    <div className="agent-task-list">{visibleWatches.map(w=>{const result=w.latest_run?.result;const leads=result?.matches||[];const ready=w.replies?.some(r=>r.status==='ready_for_owner');const stage=ready?4:result?.agent?.status==='confirmed'?3:leads.length?2:w.latest_run?1:0;return <details className="agent-task-card" key={w.id}>
+      <summary><div className="agent-task-icon"><ShoppingBag size={19}/></div><div className="agent-task-title"><small>Shopper · {w.platform==='both'?'Marktplaats + Vinted':w.platform}</small><h2>{w.query}</h2><p>{!w.enabled?'Gepauzeerd':ready?'Aanbod klaar voor jou':w.latest_run?.status==='running'?'Aanbiedingen zoeken…':leads.length?`${leads.length} passende leads`:'Verder zoeken naar een passende deal'} · maximaal {money(w.max_total_cents)}</p></div><span className="agent-task-badge">{leads.length} leads <ArrowUpRight size={14}/></span></summary>
+      <div className="agent-task-body"><Dots names={['Opdracht','Zoeken','Leads','Gesprekken','Aanbod']} current={stage}/>
+        <div className="agent-task-facts"><span>{result?.listings_checked??0} advertenties in de laatste ronde</span><span>Volgende ronde: {date(w.next_run)}</span></div>
+        {w.fallback_after&&<p className="agent-muted">Tot {date(w.fallback_after)} voorrang voor {w.min_ram_gb} GB; daarna mag {w.fallback_min_ram_gb} GB als reserve meewegen.</p>}
+        {!!w.held_contacts&&<p className="agent-muted">{w.held_contacts} reservegesprek op pauze. Leon antwoordt daar niet.</p>}
+        {result?.sources?.map(s=><p key={s.platform} className="agent-muted">{s.platform}: {s.status==='complete'?`${s.checked} advertenties bekeken`:s.reason||'Niet bereikbaar'}</p>)}
+        {!leads.length&&<p className="agent-empty">Nog geen passende leads. De opdracht blijft doorlopen.</p>}
+        <div className="agent-leads">{leads.map(l=><article key={l.url}><small>{l.platform||w.platform}{l.usable_capacity_gb?` · ${l.usable_capacity_gb} GB bruikbaar`:''}</small><a href={l.url} target="_blank" rel="noreferrer">{l.title.split(' Te koop:')[0].slice(0,150)} <ArrowUpRight size={13}/></a><strong>{l.asking_price_cents===null?'Prijs navragen':`${money(l.asking_price_cents)} vraagprijs`}</strong><p>{l.notes.slice(0,2).join(' · ')}</p></article>)}</div>
+        {result?.agent?.conversation_url&&<a href={result.agent.conversation_url} target="_blank" rel="noreferrer">Bekijk gesprek · {result.agent.status==='confirmed'?'bericht bevestigd':'bezorging nog niet bevestigd'}</a>}
+        {w.replies?.map(r=><p key={r.conversation_url+r.due_at}>{r.status==='pending'?`Reactie gepland voor ${date(r.due_at)}`:r.status==='ready_for_owner'?'Aanbod klaar om zelf te kopen':r.status==='on_hold'?'Reactie op pauze':r.status==='clicked'?'Reactie verzonden, bezorging nog niet bevestigd':r.status==='attempted'||r.status==='unknown'?'Verzendstatus onzeker; geen dubbele reactie':'Gesprek bijgewerkt'}</p>)}
+      </div></details>;})}
+      {visibleTasks.slice(0,30).map(t=>{const j=jobs.find(j=>j.task_id===t.id);const done=t.status==='done'||j?.status==='succeeded';return <details className="agent-task-card" key={t.id}><summary><div className="agent-task-icon"><MessageCircle size={18}/></div><div className="agent-task-title"><small>{j?.kind==='openai_text'?'Leon · modelopdracht':'Leon · opdracht'}</small><h2>{t.title}</h2><p>{j?.status||t.status||'Opgeslagen'}</p></div><span className="agent-task-badge">{done?'Afgerond':'Volgen'} <ArrowUpRight size={14}/></span></summary><div className="agent-task-body"><Dots names={['Opdracht','In uitvoering','Resultaat']} current={done?2:j?.status==='running'?1:0} complete={done}/>{t.goal&&<p>{t.goal}</p>}{j&&<p className="agent-muted">{j.completed_steps}/{j.total_steps} bevestigde checkpoints</p>}{j?.results?.map((r,i)=><p key={i}>{r.text?.slice(0,1000)||r.reason||(r.ok?'Checkpoint bevestigd':'Checkpoint niet bevestigd')}</p>)}{!j&&<p className="agent-muted">Opdracht opgeslagen; nog geen uitvoering geregistreerd.</p>}</div></details>;})}
     </div>
-    {showDemo ? <><span className="work-demo-label">Voorbeelddata — geen echte agentuitvoering</span>{demo}</> :
-      <div className="space-view work-view connected-work">
-        <header className="work-header"><div><h1>Werk dat bewaard blijft.</h1><p>Echte uitvoering met opgeslagen voortgang. Geen gesimuleerde agents.</p></div></header>
-        <div className="work-layout">
-          <section className="mission-console" aria-label="Echte taakvoortgang">
-            <div className="console-status"><span>{connected ? 'Verbonden met Leon' : 'Niet verbonden — status niet live'}</span><span>{job?.kind === 'openai_text' ? (job.provider === 'ollama' ? 'Lokale M40 · geen API-kosten' : 'OpenAI · begrensde fallback') : 'Lokale CPU · geen API-kosten'}</span></div>
-            {error && <p className="work-error" role="alert">{error}</p>}
-            {connectionError && <p className="work-error" role="alert">{connectionError}</p>}
-            {token && <div className="work-actions"><button className="secondary-control" type="button" onClick={() => void refresh()} disabled={busy}><RefreshCw size={15} /> Ververs</button></div>}
-            <div className="console-goal"><div><h2>{job?.kind === 'openai_text' ? 'Begrensde modeluitvoering' : 'Python-projectcontrole'}</h2><p>{job?.kind === 'openai_text' ? (job.provider === 'ollama' ? `Goedgekeurde tekst wordt lokaal verwerkt door ${job.model ?? 'de M40'}.` : 'Alleen de goedgekeurde tekst gaat naar de begrensde externe fallback.') : 'Leg bestandshashes vast, controleer de syntax en bewaar het gemeten resultaat. Dit wijzigt geen broncode.'}</p></div><span className="console-eta"><small>verwachte duur</small><strong>—</strong><em>nog niet gemeten</em></span></div>
-            {job ? <>
-              <label className="work-field">Opgeslagen controle<select value={job.id} onChange={event => { setSelectedId(event.target.value); setDetailJob(null); }}>{jobs.map(item => <option key={item.id} value={item.id}>{labels[item.status]} · {item.id.slice(-8)}</option>)}</select></label>
-              <p className="work-current-status" role="status">{labels[job.status]}{!connected && ' · laatst bekende status'}</p>
-              <div className="console-progress-row"><span><strong>{job.completed_steps}/{job.total_steps}</strong><small>checkpoints</small></span><progress max={job.total_steps} value={job.completed_steps} aria-label="Voltooide checkpoints" /></div>
-              <ol className="mission-timeline">{(job.kind === 'openai_text' ? ['Modelantwoord en verbruik vastleggen'] : stepNames).map((name, index) => <li key={name} data-state={index < job.completed_steps ? 'done' : 'planned'}><span className="timeline-marker">{index < job.completed_steps ? <Check size={14} /> : index + 1}</span><span><strong>{name}</strong><small>{job.results[index]?.ok ? 'Resultaat opgeslagen' : job.results[index] ? 'Afwijking gevonden' : 'Nog niet uitgevoerd'}</small></span></li>)}</ol>
-              {job.kind === 'openai_text' && <p className="work-hint">{job.provider === 'ollama' ? 'Lokale M40-uitvoering · API-kosten $0.000000.' : `Gereserveerd: $${((job.reserved_microusd ?? 0) / 1e6).toFixed(6)} · verbruik: $${((job.accounted_microusd ?? 0) / 1e6).toFixed(6)} USD.`} {job.model_state === 'unknown' ? 'Uitkomst onzeker. Geen automatische betaalde herhaling; nieuwe externe modelcalls wachten op controle.' : 'Annuleren kan een al gestarte aanvraag niet terugdraaien.'}</p>}
-              <div className="work-actions">
-                {['queued', 'running', 'paused'].includes(job.status) && <><button type="button" className="pause-control" disabled={controlsDisabled} onClick={() => void mutate(async () => { await api('control', token, { id: job.id, action: job.status === 'paused' ? 'resume' : 'pause' }); })}>{job.status === 'paused' ? <Play size={15} /> : <Pause size={15} />}{job.status === 'paused' ? 'Hervat' : 'Pauzeer'}</button><button type="button" className="secondary-control" disabled={controlsDisabled} onClick={() => void mutate(async () => { await api('control', token, { id: job.id, action: 'cancel' }); })}><X size={15} /> Annuleer</button></>}
-              </div>
-              <details className="work-evidence"><summary>Bekijk opgeslagen bewijs</summary><pre>{JSON.stringify(job.results, null, 2)}</pre></details>
-              {job.kind === 'openai_text' && job.results.filter(result => result.text).map((result, index) => <div className="model-answer" key={index}><h3>{result.ok ? 'Modelantwoord' : 'Onvolledig modelantwoord'}</h3><p>{result.text}</p></div>)}
-              {job.model_state === 'unknown' && <ModelCostRecovery key={job.id} jobId={job.id} disabled={controlsDisabled}
-                request={(resource, body, id) => api(resource, token, body, undefined, id)} onSaved={refresh} />}
-              {job.model_state === 'reconciled' && <p className="work-hint">Kosten afgeboekt op basis van ontvangen verbruik. Geen bevestigd antwoord; deze opdracht is niet opnieuw verstuurd.</p>}
-              {job.status === 'queued' && <p className="work-hint">De worker verwerkt deze wachtrij. Blijft de taak wachten? Start de worker op de backendserver.</p>}
-            </> : <p className="work-hint">{connected ? 'Nog geen echte controles. Kies een taak en start de eerste controle.' : 'Verbind om opgeslagen taken en resultaten te laden.'}</p>}
-          </section>
-          <aside className="work-sidebar" aria-label="Controle starten">
-            <section className="agent-ensemble"><div className="sidebar-heading"><span><Cpu size={16} /> Nieuwe lokale controle</span></div>
-              <label className="work-field">Koppel aan taak<select value={activeTask} disabled={!connected} onChange={event => { setTaskId(event.target.value); pendingRequest.current = null; }}><option value="" disabled>Kies een taak</option>{tasks.map(task => <option key={task.id} value={task.id}>{task.title}</option>)}</select></label>
-              <button type="button" className="trace-action" disabled={controlsDisabled || !activeTask} onClick={() => void mutate(async () => {
-                if (!pendingRequest.current || pendingRequest.current.taskId !== activeTask) pendingRequest.current = { taskId: activeTask, requestId: createRequestId() };
-                const result = await api('jobs', token, { task_id: activeTask, request_id: pendingRequest.current.requestId });
-                if (!result.job?.id) throw new Error('Taakaanmaak niet bevestigd. Ververs de status voordat je opnieuw probeert.');
-                setSelectedId(result.job.id); setDetailJob(result.job); pendingRequest.current = null;
-              })}><Play size={15} /> Start echte controle</button>
-              <button type="button" className="trace-action" disabled={controlsDisabled} onClick={() => void mutate(async () => {
-                const result = await api('tasks', token, { title: 'Lokale Python-projectcontrole', goal: 'Controleer de Python-syntax van deze Leon-bronversie zonder bronwijzigingen.', risk_level: 'low' });
-                if (!result.id) throw new Error('Taakaanmaak niet bevestigd. Ververs de takenlijst.');
-                setTaskId(result.id); pendingRequest.current = null;
-              })}>Maak een controletaak</button>
-            </section>
-            {token && <ModelRequestForm key={activeTask} taskId={activeTask} disabled={controlsDisabled}
-              request={(resource, body, requestId) => api(resource, token, body, undefined, requestId)}
-              onQueued={async id => { setSelectedId(id); setDetailJob(null); await refresh(); }} />}
-            {token && <SelfImprovementReview disabled={controlsDisabled} request={async (path, body) => {
-              const response = await fetch(`/api/self-improvement/${path}`, { method: 'POST', cache: 'no-store', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
-              const data = await response.json() as unknown;
-              if (!response.ok) throw new Error(data && typeof data === 'object' && 'error' in data ? String(data.error) : 'Verzoek mislukt.');
-              return data;
-            }} />}
-            <section className="approval-gate"><div className="sidebar-heading"><span><LockKeyhole size={16} /> Begrensde uitvoering</span></div><p>De controleknop doet alleen lokale syntaxcontrole. AI-opdrachten vragen afzonderlijk jouw tekst- en kostenapproval. Geen shellopdrachten of installs; de bovenliggende taak wordt niet automatisch goedgekeurd.</p></section>
-            <section className="resilience-log"><div className="sidebar-heading"><span><Database size={16} /> Opgeslagen in SQLite</span></div><p>Checkpoints blijven na browser- en workerherstart bestaan. Een onderbroken leesstap kan opnieuw worden gecontroleerd.</p><code>PYTHONPATH=src python3 -m leon_control_plane.local_worker</code></section>
-          </aside>
-        </div>
-      </div>}
-  </>;
+    {!visibleWatches.length&&!visibleTasks.length&&<p className="agent-empty">Geen opdrachten in deze weergave. Geef Leon een opdracht in de chat of kies een ander filter.</p>}
+  </div>;
 }

@@ -142,14 +142,14 @@ class ShopperService:
         except (KeyError, ValueError, TypeError, AttributeError):
             raise ValueError("request_id must be a UUID") from None
         platform, query = body.get("platform"), body.get("query")
-        if platform not in {"marktplaats", "vinted"} or not isinstance(query, str) or not 1 <= len(query.strip()) <= 160:
+        if platform not in {"marktplaats", "vinted", "both"} or not isinstance(query, str) or not 1 <= len(query.strip()) <= 160:
             raise ValueError("Choose Marktplaats/Vinted and a query of 1–160 characters")
         budget = body.get("max_total_cents")
         if type(budget) is not int or not 1 <= budget <= 1_000_000:
             raise ValueError("Set a maximum total price in cents")
         spec = {"platform": platform, "query": query.strip(), "max_total_cents": budget}
         automatic_messages = body.get("automatic_messages", False)
-        if type(automatic_messages) is not bool or (automatic_messages and platform != "marktplaats"):
+        if type(automatic_messages) is not bool or (automatic_messages and platform not in {"marktplaats", "both"}):
             raise ValueError("Automatic contact currently supports Marktplaats only")
         spec["automatic_messages"] = automatic_messages
         for field in ("min_ram_gb", "preferred_ram_gb", "max_ram_sticks"):
@@ -233,32 +233,79 @@ class ShopperService:
         return {"ok": True, "run_id": run_id, "status": "running" if background else "finished"}
 
     def execute(self, run_id: str, watch_id: str, spec: dict) -> None:
-        try:
-            with self.browser_lock():
-                bridge = self.bridge_factory()
-                page = bridge.search(spec["platform"], spec["query"])
-            if page["challenge"]:
-                result = {"reason": "Complete the website challenge yourself in Chrome", "matches": []}
-                status = "needs_owner"
-            elif not page["items"] and not page["empty"]:
-                result = {"reason": "Page not recognized, consent or login may be needed", "matches": []}
-                status = "needs_owner"
-            else:
-                effective = dict(spec)
-                if self.clock() >= spec.get("fallback_after", float("inf")):
-                    effective["min_ram_gb"] = spec.get("fallback_min_ram_gb", spec["min_ram_gb"])
-                result = {"matches": shortlist(page["items"], effective), "listings_checked": len(page["items"]), "source": spec["platform"], "scope": "First 40 rendered listings; asking prices, not confirmed total prices"}
-                status = "complete"
-                if spec.get("automatic_messages") and result["matches"]:
-                    result["agent"] = self.autonomous_contact(watch_id, effective, result["matches"])
-        except Exception:
-            status, result = "disconnected", {"reason": "Browser unavailable or busy; check Chrome and the SSH tunnel", "matches": []}
+        platforms = ['marktplaats', 'vinted'] if spec['platform']=='both' else [spec['platform']]
+        sources, items = [], []
+        effective = dict(spec)
+        if self.clock() >= spec.get('fallback_after', float('inf')):
+            effective['min_ram_gb'] = spec.get('fallback_min_ram_gb', spec['min_ram_gb'])
+        for platform in platforms:
+            try:
+                with self.browser_lock():
+                    page = self.bridge_factory().search(platform, spec['query'])
+                if page['challenge']:
+                    sources.append({'platform': platform, 'status': 'needs_owner', 'checked': 0, 'reason': 'Website vraagt een menselijke controle'})
+                elif not page['items'] and not page['empty']:
+                    sources.append({'platform': platform, 'status': 'needs_owner', 'checked': 0, 'reason': 'Toestemming of login nodig'})
+                else:
+                    sources.append({'platform': platform, 'status': 'complete', 'checked': len(page['items'])})
+                    items.extend({**item, 'platform': platform} for item in page['items'])
+            except Exception:
+                sources.append({'platform': platform, 'status': 'disconnected', 'checked': 0, 'reason': 'Serverbrowser of website niet beschikbaar'})
+        matches = shortlist(items, effective)
+        by_url = {item['url']: item['platform'] for item in items}
+        for match in matches:
+            match['platform'] = by_url[match['url']]
+        complete = sum(source['status']=='complete' for source in sources)
+        status = 'complete' if complete==len(sources) else 'partial' if complete else sources[0]['status']
+        result = {'matches': matches, 'sources': sources, 'listings_checked': sum(source['checked'] for source in sources),
+                  'source': spec['platform'], 'scope': 'First 40 rendered listings per source; asking prices, not confirmed totals'}
+        if not complete:
+            result['reason'] = 'Controleer de serverbrowserverbinding of website-login.'
+        contacts = [match for match in matches if match['platform']=='marktplaats']
+        if spec.get('automatic_messages') and contacts:
+            result['agent'] = self.autonomous_contact(watch_id, effective, contacts)
         with self.connect() as connection:
-            connection.execute("UPDATE runs SET status=?,finished_at=?,result=? WHERE id=?", (status, self.clock(), json.dumps(result), run_id))
-            if status != "complete":
-                # No looping through challenges or failed connections. Retry the
-                # read-only watch next hour after the owner restores the browser.
-                connection.execute("UPDATE watches SET next_run=? WHERE id=?", (self.clock() + 3600, watch_id))
+            connection.execute('UPDATE runs SET status=?,finished_at=?,result=? WHERE id=?', (status, self.clock(), json.dumps(result), run_id))
+            if status not in {'complete', 'partial'}:
+                connection.execute('UPDATE watches SET next_run=? WHERE id=?', (self.clock()+3600, watch_id))
+
+    def edit(self, watch_id: str, changes: dict) -> None:
+        allowed = {'query','max_total_cents','min_ram_gb','preferred_ram_gb','max_ram_sticks','wait_days','platform'}
+        if not changes or set(changes)-allowed:
+            raise ValueError('Unsupported watch changes')
+        with self.connect() as c:
+            c.execute('BEGIN IMMEDIATE')
+            row = c.execute('SELECT spec FROM watches WHERE id=?',(watch_id,)).fetchone()
+            if not row:
+                raise ValueError('Unknown watch')
+            spec = json.loads(row['spec'])
+            for key,value in changes.items():
+                if key=='query' and (not isinstance(value,str) or not 1<=len(value.strip())<=160):
+                    raise ValueError('Invalid query')
+                if key=='platform' and value not in {'marktplaats','vinted','both'}:
+                    raise ValueError('Invalid platforms')
+                if key not in {'query','platform'}:
+                    maximum = 1000000 if key=='max_total_cents' else 32 if key=='max_ram_sticks' else 90 if key=='wait_days' else 1024
+                    if type(value) is not int or not 0<=value<=maximum or (key=='max_total_cents' and value==0):
+                        raise ValueError('Invalid watch limit')
+                if key=='wait_days':
+                    spec['fallback_after'] = self.clock()+value*86400
+                else:
+                    spec[key] = value.strip() if isinstance(value,str) else value
+            if 'query' in changes:
+                ddr3 = 'ddr3' in spec['query'].casefold()
+                spec['required_terms'] = ['ddr3'] if ddr3 else []
+                spec['excluded_terms'] = ['ddr4', 'sodimm', 'so-dimm', 'gezocht'] if ddr3 else []
+            c.execute('UPDATE watches SET spec=? WHERE id=?',(json.dumps(spec,sort_keys=True),watch_id))
+
+    def hold(self, watch_id: str) -> None:
+        with self.connect() as c:
+            c.execute('BEGIN IMMEDIATE')
+            latest = c.execute('SELECT url FROM contacts WHERE watch_id=? ORDER BY attempted_at DESC LIMIT 1',(watch_id,)).fetchone()
+            if not latest:
+                raise ValueError('No seller contact to hold')
+            c.execute("UPDATE contacts SET status='on_hold' WHERE url=?",(latest['url'],))
+            c.execute("UPDATE replies SET status='on_hold' WHERE contact_url=? AND status='pending'",(latest['url'],))
 
     def autonomous_contact(self, watch_id: str, spec: dict, matches: list[dict]) -> dict:
         from leon_control_plane.shopper_runtime import contact_decision, contact_message, send_first_contact

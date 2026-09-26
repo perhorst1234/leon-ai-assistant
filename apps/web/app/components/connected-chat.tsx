@@ -68,7 +68,7 @@ function clearPending() { window.sessionStorage.removeItem(pendingKey); }
 
 function messageStatus(message: ChatMessage) {
   if (message.role === 'user') return '';
-  if (message.status === 'pending') return 'Gaia verwerkt dit…';
+  if (message.status === 'pending') return 'Leon verwerkt je opdracht…';
   if (message.status === 'error') return message.error || 'Antwoord kon niet worden bevestigd.';
   if (message.status === 'unknown') return 'Uitkomst onzeker. Controleer het opgeslagen werk.';
   return '';
@@ -77,12 +77,11 @@ function messageStatus(message: ChatMessage) {
 function titleFor(conversation: Conversation) { return conversation.title?.trim() || 'Nieuw gesprek'; }
 function includedCount(value: Preview['included_messages']) { return typeof value === 'number' ? value : value.length; }
 export default function ConnectedChat({
-  demo, request, draft, onDraftChange, onSubmitRequest, onClearDraft, onModeChange,
+  request, draft, onDraftChange, onSubmitRequest, onClearDraft,
 }: {
   demo: ReactNode; request: ChatRequest | null; draft: string; onDraftChange: (value: string) => void;
   onSubmitRequest: (value: string) => void; onClearDraft: () => void; onModeChange: (demo: boolean) => void;
 }) {
-  const [showDemo, setShowDemo] = useState(false);
   const token = 'session';
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [selectedId, setSelectedId] = useState('');
@@ -144,7 +143,7 @@ export default function ConnectedChat({
   }, [api, loadConversation]);
 
   useEffect(() => {
-    if (!token || showDemo) return;
+    if (!token) return;
     let stopped = false;
     let timer: ReturnType<typeof setTimeout> | undefined;
     const poll = async () => {
@@ -158,7 +157,7 @@ export default function ConnectedChat({
     };
     void poll();
     return () => { stopped = true; if (timer) clearTimeout(timer); };
-  }, [loadConversation, refreshConversations, showDemo, token]);
+  }, [loadConversation, refreshConversations, token]);
 
   const ensureConversation = useCallback(async () => {
     if (selectedRef.current) return selectedRef.current;
@@ -213,8 +212,8 @@ export default function ConnectedChat({
   useEffect(() => {
     if (!request || lastRequest.current === request.id) return;
     lastRequest.current = request.id;
-    if (!showDemo && token) window.setTimeout(() => void previewDraft(request.content), 0);
-  }, [previewDraft, request, showDemo, token]);
+    if (token) window.setTimeout(() => void previewDraft(request.content), 0);
+  }, [previewDraft, request, token]);
 
   const submitApproved = async () => {
     if (!review || review.content !== draft || !approved || busy) return;
@@ -277,20 +276,7 @@ export default function ConnectedChat({
     finally { setBusy(false); }
   };
 
-  if (showDemo) return <>
-    <div className="work-mode-switch" aria-label="Chatmodus">
-      <button type="button" aria-pressed={false} onClick={() => { setShowDemo(false); onModeChange(false); }}>Verbonden chat</button>
-      <button type="button" aria-pressed>Ontwerpvoorbeeld</button>
-    </div>
-    <span className="work-demo-label">Voorbeelddata — geen echte modelaanvraag</span>
-    {demo}
-  </>;
-
   return <>
-    <div className="work-mode-switch" aria-label="Chatmodus">
-      <button type="button" aria-pressed>Verbonden chat</button>
-      <button type="button" aria-pressed={false} onClick={() => { setShowDemo(true); onModeChange(true); }}>Ontwerpvoorbeeld</button>
-    </div>
     <div className="space-view chat-view connected-chat">
       <div className="chat-workspace">
         <aside className="chat-conversation-list" aria-label="Opgeslagen gesprekken">
@@ -308,12 +294,12 @@ export default function ConnectedChat({
           <div className="chat-messages" aria-live="polite">
             {!messages.length && hasConversation && <p className="chat-empty">Dit gesprek is nog leeg. Schrijf onderaan wat je wilt onderzoeken.</p>}
             {!hasConversation && connected && <p className="chat-empty">Kies een gesprek of begin onderaan met een nieuwe gedachte.</p>}
-            {messages.map(message => <article className={`chat-message chat-message-${message.role}`} key={message.id}><span className="chat-message-label">{message.role === 'user' ? 'Per' : 'Gaia'}</span><p>{message.content}</p>{messageStatus(message) && <small className={message.status === 'error' || message.status === 'unknown' ? 'chat-message-warning' : ''}>{messageStatus(message)}</small>}</article>)}
+            {messages.map(message => <article className={`chat-message chat-message-${message.role}`} key={message.id}><span className="chat-message-label">{message.role === 'user' ? 'Per' : 'Leon'}</span><p>{message.content}</p>{messageStatus(message) && <small className={message.status === 'error' || message.status === 'unknown' ? 'chat-message-warning' : ''}>{messageStatus(message)}</small>}</article>)}
           </div>
           {activeReview && <section ref={reviewPanelRef} className="chat-review" aria-label="Tekst en uitvoering goedkeuren"><div className="chat-review-heading"><span><ShieldCheck size={16} /> Tekst en context controleren</span><button type="button" aria-label="Preview sluiten" onClick={() => { setReview(null); setApproved(false); }}><X size={15} /></button></div><p className="chat-review-meta">{activeReview.preview.provider === 'ollama' ? 'Lokale M40' : 'OpenAI'} · {activeReview.preview.model} · {includedCount(activeReview.preview.included_messages)} eerdere berichten · revisie {activeReview.preview.conversation_revision}</p>{activeReview.preview.sensitivity?.local_only && <p className="chat-notice">Gevoelige inhoud herkend: deze beurt blijft verplicht op de M40.</p>}<blockquote>{activeReview.preview.prompt}</blockquote><p>{activeReview.preview.provider === 'ollama' ? 'Lokale uitvoering zonder API-kosten.' : `Reservering: $${(activeReview.preview.reserved_microusd / 1e6).toFixed(6)} USD.`} Er is nog niets naar een model verstuurd.</p><label className="model-approval"><input type="checkbox" checked={approved} disabled={busy} onChange={event => setApproved(event.target.checked)} />Ik keur precies deze tekst, context en uitvoeringslimiet goed.</label><button type="button" className="trace-action" disabled={!approved || busy} onClick={() => void submitApproved()}>Goedkeuren en in wachtrij zetten</button></section>}
           {pending?.conversation_id === selectedId && <section className="chat-pending" aria-label="Onzekere verzending"><strong>Verzending nog niet bevestigd</strong><p>Gaia maakt geen nieuwe aanvraag. Controleer dezelfde aanvraag-id of probeer exact die id opnieuw.</p><div><button type="button" className="secondary-control" disabled={busy} onClick={() => void recoverPending()}>Controleer status</button><button type="button" className="trace-action" disabled={busy} onClick={() => void retryPending()}>Herstel met dezelfde id</button></div></section>}
-          <form className="chat-composer" onSubmit={event => { event.preventDefault(); if (draft.trim()) onSubmitRequest(draft); }}><label className="sr-only" htmlFor="connected-chat-prompt">Vraag Gaia iets</label><textarea id="connected-chat-prompt" rows={2} value={draft} onChange={event => updateDraft(event.target.value)} placeholder="Schrijf een gedachte voor Gaia…" disabled={busy} /><button type="submit" aria-label="Bekijk tekst en kosten" disabled={busy || !draft.trim()}><ArrowUp size={17} /></button></form>
-          <p className="chat-footnote">Lokale M40-chat wordt direct verzonden. OpenAI en acties met kosten of externe gevolgen blijven eerst ter controle zichtbaar.</p>
+          <form className="chat-composer" onSubmit={event => { event.preventDefault(); if (draft.trim()) onSubmitRequest(draft); }}><label className="sr-only" htmlFor="connected-chat-prompt">Vraag Gaia iets</label><textarea id="connected-chat-prompt" rows={2} value={draft} onChange={event => updateDraft(event.target.value)} placeholder="Vraag iets of geef een opdracht, bijvoorbeeld: zoek DDR3 op Marktplaats en Vinted…" disabled={busy} /><button type="submit" aria-label="Versturen" disabled={busy || !draft.trim()}><ArrowUp size={17} /></button></form>
+          <p className="chat-footnote">Geef Leon hier je opdrachten. Shopper volgt ze automatisch; kopen doe je zelf.</p>
         </section>
       </div>
     </div>

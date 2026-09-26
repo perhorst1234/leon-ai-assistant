@@ -1,5 +1,9 @@
 # Werken aan Leon / Gaia
 
+- Nieuwste: chatbediening, verenigd Werk en OAuth voor HTTPS-tunnel gedeployd;
+  zie `docs/chat-work-google.md`. Google-consent blijft eigenaarstap; geen
+  werkende Agenda claimen zolang configured=false.
+
 - 26 september, eigenaarcorrecties shopper: 64GB-contact op `on_hold`, niet
   beantwoorden/afwijzen. 128GB prioriteit voor 21 dagen, daarna 64GB reserve;
   bestaand gesprek blijft gepauzeerd. Openingsbod op gewenste hoeveelheid met

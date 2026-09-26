@@ -8,13 +8,21 @@ from leon_control_plane import model_receipts
 
 def work_request(store, *, method, path, body=None):
     url = urlsplit(path)
-    if url.path not in {"/api/work/jobs", "/api/work/control", "/api/work/tasks", "/api/work/model", "/api/work/model/preview", "/api/work/model/reconciliation"}:
+    if url.path not in {"/api/work/jobs", "/api/work/control", "/api/work/tasks", "/api/work/status", "/api/work/model", "/api/work/model/preview", "/api/work/model/reconciliation"}:
         return None
     if method == "GET" and url.path == "/api/work/model/reconciliation":
         query = parse_qs(url.query, keep_blank_values=True)
         if set(query) != {"id"} or len(query["id"]) != 1 or not query["id"][0]:
             raise ValueError("Expected one job id")
         return {"ok": True, "reconciliation": model_receipts.preview(WorkQueue(store), query["id"][0])}
+    if method == "GET" and url.path == "/api/work/status" and not url.query:
+        from contextlib import closing
+        store.initialize()
+        with closing(store.connect()) as conn:
+            tasks = [dict(row) for row in conn.execute(
+                "SELECT id,title,goal,status,owner FROM tasks WHERE title<>'Chat conversation' "
+                "ORDER BY created_at DESC LIMIT 100")]
+        return {"ok": True, "tasks": tasks}
     if method == "GET" and url.path == "/api/work/tasks" and not url.query:
         from contextlib import closing
         store.initialize()
