@@ -3,7 +3,8 @@
 - 26 september: chat-achtergrondtaken draaien lokaal en bezorgen resultaten
   automatisch in chat/Werk. Firecrawl hard max10 bestaande credits/dag, geen
   bijkoop, duurzame reservering ook bij fouten. Zie docs/completion-plan.md.
-  Echte M40-task en search-call bewezen; research-synthese nog integreren.
+  Echte chatresearch met lokale synthese en bronlinks live bewezen; 515 backend-
+  tests en 55 webtests. Google-consent/Docker-toegang nog eigenaarstappen.
 
 - Nieuwste: chatbediening, verenigd Werk en OAuth voor HTTPS-tunnel gedeployd;
   zie `docs/chat-work-google.md`. Google-consent blijft eigenaarstap; geen

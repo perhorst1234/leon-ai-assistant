@@ -11,10 +11,10 @@ beproeven en deployen voordat het volgende onderdeel wordt uitgebreid.
 
 | Onderdeel van de visie | Werkelijk aanwezig | Nog afmaken |
 |---|---|---|
-| Personal Agent / chat | Echte M40-chat, gesprekken en vaste tools | Geheugen automatisch gebruiken, algemene opdrachten uitvoeren, betrouwbare multi-tool-plannen |
-| Memory / graph | Bewaren, ophalen, corrigeren, verwijderen en relaties | Automatische context per gesprek, voorkeuren en correcties leren, conflicten netjes behandelen |
-| Task Manager | SQLite-taken, wachtrij, checkpoints, herstel | Chatgestuurde uitvoering, resultaten terug in chat, subtaken en afhankelijkheden |
-| Research Agent | Firecrawl search-adapter met bronfilters | Chat → zoeken → M40-synthese → bronnen/resultaat in Werk; gecontroleerd creditgebruik |
+| Personal Agent / chat | Echte M40-chat, automatisch geheugen, lokale achtergrondtaken en vaste tools | Betrouwbare multi-tool-plannen |
+| Memory / graph | Bewaren, ophalen, corrigeren, verwijderen, relaties en automatische context | Voorkeuren/correcties vanzelf leren, conflicten netjes behandelen |
+| Task Manager | SQLite-taken, wachtrij, checkpoints, herstel, chatuitvoering en terugbezorging | Subtaken en afhankelijkheden |
+| Research Agent | Chat → Firecrawl → M40-synthese → bronnen in chat/Werk, max10 credits/dag | Dieper lezen binnen budget en periodieke research |
 | Planner / Google | PKCE OAuth, alleen-lezen Agenda/Gmail-adapters | Echte accountconsent, live Agenda, planning en agenda-writes; Gmail is nu metadata, geen volledige mailbox |
 | Shopper | Wekelijkse MP/Vinted-zoekopdrachten, echte MP-berichten, delayed replies | Echte inkomende replyketen bewijzen, Vinted-onderhandelingen, TicketSwap-eventwatch en alerts |
 | Server Manager | Echt statusoverzicht | Wekelijkse inspectie, foutmeldingen en gerichte herstelacties |
@@ -28,13 +28,13 @@ beproeven en deployen voordat het volgende onderdeel wordt uitgebreid.
 
 ## Bouwvolgorde
 
-1. **Algemene lokale opdrachten uitvoeren.** Schrijf-/analyse-/planningstaken
+1. **Algemene lokale opdrachten uitvoeren — gereed voor teksttaken.** Schrijf-/analyse-/planningstaken
    via chat op de bestaande M40-wachtrij, pauze/hervatten/annuleren en één keer
    terugmelden in het oorspronkelijke gesprek. Resultaten in Werk. Geen betaalde
    providerfallback. Tekst voltooid betekent niet dat externe acties zijn gedaan.
-2. **Geheugen in dagelijks gebruik.** Relevante bestaande herinneringen in
+2. **Geheugen in dagelijks gebruik — automatische context gereed.** Relevante bestaande herinneringen in
    gewone gesprekken en taken gebruiken; expliciete correcties/voorkeuren bewaren.
-3. **Echte research.** Bestaande Firecrawl-credits, duidelijke daglimiet,
+3. **Echte research — live bewezen.** Bestaande Firecrawl-credits, duidelijke daglimiet,
    bronvermelding, lokale synthese en geen nieuwe betaling.
 4. **Planner en accounts.** Google-consent afmaken; agenda lezen, plannen en
    de eigenaar-geautoriseerde schrijfacties aansluiten.

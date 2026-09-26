@@ -54,3 +54,17 @@ def test_result_delivered_to_chat_once_even_after_parent_already_completed(tmp_p
     reconcile(queue);reconcile(queue)
     messages=service.get_conversation(conversation['id'])['messages']
     assert [m['content'] for m in messages]==['Gestart','Werkelijk resultaat']
+
+
+def test_research_summary_has_real_sources_in_task_and_delivered_chat(tmp_path, monkeypatch):
+    monkeypatch.setenv('LEON_LOCAL_MODEL_ENABLED','1')
+    store=make_store(tmp_path);ChatService(store)
+    queued=execute(store,str(uuid.uuid4()),{'title':'Onderzoek','goal':'Vat bronnen samen','role':'researcher'},
+        evidence='Echte bron: asyncio cancellation.',source_refs=['research-source:https://docs.python.org/3/library/asyncio.html'])
+    queue=WorkQueue(store);claim=queue.claim()
+    queue.checkpoint(claim,{'ok':True,'text':'Samenvatting https://invented.example/fake','step':'model'})
+    reconcile(queue)
+    task=store.get_task(queued['task_id'])
+    assert task['status']=='done'
+    assert 'https://docs.python.org/3/library/asyncio.html' in task['result']
+    assert 'invented.example' not in task['result']

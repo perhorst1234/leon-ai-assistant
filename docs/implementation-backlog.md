@@ -1,5 +1,21 @@
 # Leon / Gaia — uitvoeringsbacklog
 
+**26 september, geïntegreerde webresearch:** expliciet onderzoek vanuit chat
+roept de bestaande Firecrawl search-only connector aan en zet de brongegevens
+op de lokale M40-wachtrij. Geen OpenAI-synthese. Resultaat krijgt de daadwerkelijk
+gevonden bronlinks in chat en Werk. Zoeksnippets worden als onbetrouwbare data
+behandeld; geen claim dat volledige paginas zijn gelezen. Sensuele research
+wordt niet naar Firecrawl verstuurd. Dagbudget blijft gedeeld met de bestaande
+research-API; budget op/fout geeft een concrete melding zonder automatische retry.
+
+Echte chat → router → Firecrawl → M40 → done-task → terugbezorging bewezen:
+1015 tekens en drie echte bronlinks. Twee live searchproeven samen vier credits,
+vandaag nog zes beschikbaar. Backend 515 tests, web 55 tests geslaagd;
+productiebuild/typecheck eerder deze wijzigingsronde geslaagd. M40-coding-review
+loopt als begrensde read-only controle. Google-consent en Docker-toegang zijn
+nog eigenaarstappen; daarop wachten houdt andere onderdelen niet tegen.
+
+
 **26 september, automatisch geheugen in gewone chat:** relevante actieve
 geheugenitems en maximaal drie voorkeuren gaan nu mee in de begrensde prompt.
 Verwijderde, verlopen, kandidaat- en conflicterende items worden uitgesloten.

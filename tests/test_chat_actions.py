@@ -79,3 +79,23 @@ def test_router_preserves_complete_owner_command_when_history_exceeds_budget():
     prompt = model.call_args.args[0]
     assert len(prompt.encode()) <= 4096
     assert json.loads(prompt[prompt.index('{"watches"'):])['current_owner_command'] == content
+
+
+def test_research_routes_real_sources_to_local_task_without_external_summary(tmp_path, monkeypatch):
+    from leon_control_plane.chat_actions import apply
+    monkeypatch.setenv('LEON_LOCAL_MODEL_ENABLED','1')
+    store=make_store(tmp_path)
+    result={'results':[{'title':'Asyncio','description':'Cancellation','url':'https://docs.python.org/3/library/asyncio.html'}]}
+    with patch('leon_control_plane.research_executor.preview',return_value={'preview_id':'p','preview_fingerprint':'f'}), patch('leon_control_plane.research_executor.run',return_value=result) as search:
+        text=apply(store,str(uuid.uuid4()),{'action':'research.search','args':{'query':'Python asyncio cancellation'}},None,owner_content='Onderzoek Python asyncio cancellation')
+    assert 'M40' in text and search.call_count==1
+    from leon_control_plane.work_queue import WorkQueue
+    assert WorkQueue(store).list()[0]['provider']=='ollama'
+
+
+def test_sensitive_research_never_calls_firecrawl(tmp_path):
+    from leon_control_plane.chat_actions import apply
+    with patch('leon_control_plane.research_executor.run') as search:
+        text=apply(make_store(tmp_path),str(uuid.uuid4()),{'action':'research.search','args':{'query':'sensuele verhalen'}},None,owner_content='Onderzoek sensuele verhalen')
+    assert 'M40' in text
+    search.assert_not_called()

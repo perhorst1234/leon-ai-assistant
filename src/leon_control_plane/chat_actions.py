@@ -9,7 +9,7 @@ from zoneinfo import ZoneInfo
 
 _ACTIONS = {'shopper.create', 'shopper.update', 'shopper.pause', 'shopper.resume', 'shopper.search',
             'shopper.hold', 'shopper.status', 'calendar.read', 'mail.read', 'memory.save', 'memory.search',
-            'tasks.create', 'tasks.execute', 'tasks.pause', 'tasks.resume', 'tasks.cancel', 'tasks.status', 'clarify'}
+            'tasks.create', 'tasks.execute', 'tasks.pause', 'tasks.resume', 'tasks.cancel', 'tasks.status', 'research.search', 'clarify'}
 
 
 def may_be_action(content: str) -> bool:
@@ -17,7 +17,7 @@ def may_be_action(content: str) -> bool:
     shopping = bool(re.search(r'\b(shopper|marktplaats|vinted|ddr[345]|ram|deals?|aanbiedingen?|verkoper)\b', text))
     commands = bool(re.search(r'\b(zoek|zoeken|volg|regelen?|vind|pauze|pauzeer|stop|hervat|reageer|budget|status|hoe|update|verander|wacht|alleen|liever|voorkeur)\b', text))
     work = bool(re.search(r'\b(maak|schrijf|stel|analyseer|vergelijk|vat|werk|pauzeer|hervat)\b', text) and re.search(r'\b(opdracht|achtergrond|plan|rapport|analyse|samenvatting|tekst|checklist|taak)\b', text))
-    return work or (shopping and commands) or bool(re.search(
+    return work or (shopping and commands) or bool(re.search(r'\b(onderzoek|webresearch|zoek op internet|zoek online|zoek bronnen)\b',text)) or bool(re.search(
         r'\b(agenda|afspraken|gmail|mail|geheugen)\b|\b(onthoud|bewaar|taken|opdrachten)\b', text))
 
 
@@ -32,6 +32,8 @@ def validate_authority(decision: dict, content: str) -> dict:
     """Writes require the current owner command; a model cannot invent a budget."""
     action, args = decision['action'], decision['args']
     text = content.casefold()
+    if action == 'research.search' and not re.search(r'\b(onderzoek|zoek|zoeken|check|vergelijk|research)\b', text):
+        return {'action':'clarify','args':{'question':'Wat wil je dat ik op internet onderzoek?'}}
     if action == 'tasks.create' and not re.search(r'\b(later|alleen bewaren|nog niet uitvoeren|niet starten)\b', text):
         decision = {'action': 'tasks.execute', 'args': args}
         action = 'tasks.execute'
@@ -81,7 +83,9 @@ def route(content: str, history: list[str], state: dict) -> dict:
         'tasks.create:title,goal uitsluitend bij expliciet later bewaren of niet uitvoeren. '
         'Maak een opdracht/checklist in de achtergrond betekent tasks.execute. tasks.pause/resume/cancel:task_id. '
         'tasks.status:{} of task_id. Gebruik bekende IDs; bij twijfel clarify(question). '
-        'Webonderzoek of ontbrekende tools: clarify. Budget EUR50=5000, verzin nooit budget. Geen RAM: RAM-velden 0.\n'
+        'research.search:query voor publiek webonderzoek, bronnen zoeken en online feiten checken. '
+        'Geen research voor Marktplaats-advertenties: gebruik shopper. Ontbrekende tools: clarify. '
+        'Budget EUR50=5000, verzin nooit budget. Geen RAM: RAM-velden 0.\n'
     )
     context = {'watches': watches, 'tasks': state.get('tasks',[])[:5],
                'previous_owner_messages': history[-2:], 'current_owner_command': content}
@@ -109,6 +113,33 @@ def apply(store, request_id: str, decision: dict, shopper, *, owner_content='') 
         if set(args) - {'question'} or not isinstance(question, str) or len(question) > 400:
             raise ValueError('Invalid clarification')
         return question
+    if action == 'research.search':
+        from leon_control_plane import research_executor, personal_tasks
+        from leon_control_plane.secret_scanner import assert_no_secrets
+        from leon_control_plane.sensitivity import classify_prompt
+        from leon_control_plane.server import parse_selected_env_values
+        if set(args) != {'query'} or not isinstance(args['query'], str) or not 1 <= len(args['query']) <= 500:
+            raise ValueError('Invalid research query')
+        assert_no_secrets('Research query', args['query'])
+        if classify_prompt(owner_content + '\n' + args['query'])['local_only']:
+            return 'Deze inhoud blijft op de M40. Ik stuur hiervoor geen zoekopdracht naar Firecrawl.'
+        values = parse_selected_env_values({'RESEARCH_EXECUTOR_ENABLED','FIRECRAWL_API_KEY','RESEARCH_ALLOWED_DOMAINS','RESEARCH_DAILY_CREDIT_LIMIT'})
+        request = {'query': args['query'], 'max_results': 3}
+        try:
+            planned = research_executor.preview(store, values, request)
+            data = research_executor.run(store, values, {**request, 'preview_id': planned['preview_id'], 'preview_fingerprint': planned['preview_fingerprint']})
+        except research_executor.ResearchExecutorError as exc:
+            if str(exc) == 'research_daily_credit_limit':
+                return 'Het researchbudget voor vandaag is op. Ik gebruik maximaal 10 bestaande credits per dag en koop niets bij.'
+            return 'Het webonderzoek kon niet worden afgerond. Ik koop geen credits bij en herhaal de zoekpoging niet automatisch.'
+        if not data['results']:
+            return 'Ik vond geen bruikbare bronnen binnen de ingestelde websites. Ik verzin geen onderzoeksresultaat.'
+        evidence = '\n'.join(json.dumps({'title': row['title'][:80], 'snippet': row['description'][:140]}, ensure_ascii=False) for row in data['results'])
+        evidence = evidence.encode()[:800].decode('utf-8', errors='ignore')
+        personal_tasks.execute(store, request_id, {'title':'Onderzoek: '+args['query'][:100], 'goal':args['query'], 'role':'researcher'},
+            owner_content=owner_content, evidence=evidence,
+            source_refs=['research-source:'+row['url'] for row in data['results']])
+        return 'Bronnen gevonden. De M40 werkt het onderzoek uit; je krijgt het resultaat hier en kunt de voortgang in Werk volgen.'
     if action.startswith('shopper.'):
         if action == 'shopper.create':
             allowed = {'query', 'max_total_cents', 'min_ram_gb', 'preferred_ram_gb', 'max_ram_sticks', 'platform'}

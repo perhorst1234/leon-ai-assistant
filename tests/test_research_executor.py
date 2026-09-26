@@ -130,8 +130,11 @@ def test_credit_budget_is_atomic_durable_and_never_retries(tmp_path):
         assert sum(pool.map(attempt, range(12))) == 5
     assert _budget(s, values())['reserved_credits'] == 10
     assert _budget(store(tmp_path), values())['remaining_today'] == 0
+    from contextlib import closing
+    with closing(s.connect()) as conn:
+        used_claim = conn.execute('SELECT claim FROM research_credit_reservations LIMIT 1').fetchone()[0]
     with pytest.raises(ResearchExecutorError, match='already_attempted'):
-        _budget(s, values(), claim='preview-0')
+        _budget(s, values(), claim=used_claim)
     assert _budget(s, values(RESEARCH_DAILY_CREDIT_LIMIT='1000'))['daily_limit'] == 10
 
 
