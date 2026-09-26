@@ -391,6 +391,7 @@ def _calendar_event(raw: Any) -> dict[str, Any]:
         "start": normalized_start,
         "end": normalized_end,
         "all_day": "date" in normalized_start,
+        **({'transparency':'transparent'} if raw.get('transparency')=='transparent' else {}),
     }
 
 

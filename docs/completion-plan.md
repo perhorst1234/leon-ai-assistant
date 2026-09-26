@@ -15,7 +15,7 @@ beproeven en deployen voordat het volgende onderdeel wordt uitgebreid.
 | Memory / graph | Bewaren, ophalen, corrigeren, verwijderen, relaties en automatische context | Voorkeuren/correcties vanzelf leren, conflicten netjes behandelen |
 | Task Manager | SQLite-taken, wachtrij, checkpoints, herstel, chatuitvoering en terugbezorging | Subtaken en afhankelijkheden |
 | Research Agent | Chat → Firecrawl → M40-synthese → bronnen in chat/Werk, max10 credits/dag | Dieper lezen binnen budget en periodieke research |
-| Planner / Google | PKCE OAuth, live Agenda/Gmail-metadata en writer vanuit chat/Werk | Aanvullend write-consent en echte writeproef; multi-tool-planning; Gmail alleen metadata |
+| Planner / Google | PKCE OAuth, live Agenda/Gmail-metadata, vrije momenten en writer vanuit chat/Werk | Aanvullend write-consent en echte writeproef; multi-tool-planning; Gmail alleen metadata |
 | Shopper | Wekelijkse MP/Vinted-zoekopdrachten, echte MP-berichten, delayed replies | Echte inkomende replyketen bewijzen, Vinted-onderhandelingen, TicketSwap-eventwatch en alerts |
 | Server Manager | Status, wekelijkse echte inspectie, chatmeldingen en beperkte serviceherstarts | Ruimere diagnose/backups en geverifieerde herstelacties voor andere storingen |
 | Model Scheduler | Lokale Qwen/M40, sensitive-local routing, gedeelde GPU-lease en correcte cacherouting | Gezamenlijke prioritering en globale thermische regeling |
@@ -38,7 +38,8 @@ beproeven en deployen voordat het volgende onderdeel wordt uitgebreid.
    bronvermelding, lokale synthese en geen nieuwe betaling.
 4. **Planner en accounts.** Lezen bewezen en geautoriseerde writer gedeployd.
    Aanvullend Google-consent en echte create/update/delete-proef nog nodig;
-   daarna beschikbaarheid en samengestelde planning.
+   vrije momenten vanuit chat nu live bewezen. Samengestelde planning
+   en meerdere agenda's nog aansluiten.
 5. **Shopper afronden.** Vinted en TicketSwap, echte meldingen en follow-ups;
    het bestaande 64GB-gesprek blijft op pauze, 128GB blijft prioriteit.
 6. **Proactieve routines.** Dag-/weekchecks, serverinspectie, ochtendbrief en

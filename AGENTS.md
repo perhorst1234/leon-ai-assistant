@@ -1,5 +1,10 @@
 # Werken aan Leon / Gaia
 
+- Nieuwste 26 september: vrije-momentenplanner op echte primaire Google-agenda
+  vanuit chat live bewezen, inclusief tweede bericht. Afgekapt resultaat is
+  geen bewijs van vrije tijd; all-day/overlap/DST afgedekt. Writegrant nog false;
+  samengestelde planning en andere agenda's open. Zie docs/handoff.md.
+
 - Nieuwste 26 september: Calendar-writer vanuit chat/Werk gedeployd met
   deduplicatie/readback, persistent consent-wachten en terugbezorging. Eigen
   primaire afspraken zonder gasten/herhaling; live writegrant nog false. Knop

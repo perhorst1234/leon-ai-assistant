@@ -8,7 +8,7 @@ import time
 from zoneinfo import ZoneInfo
 
 _ACTIONS = {'shopper.create', 'shopper.update', 'shopper.pause', 'shopper.resume', 'shopper.search',
-            'shopper.hold', 'shopper.status', 'calendar.read', 'calendar.create', 'calendar.update', 'calendar.delete', 'mail.read', 'memory.save', 'memory.search',
+            'shopper.hold', 'shopper.status', 'calendar.read', 'calendar.find_slots', 'calendar.create', 'calendar.update', 'calendar.delete', 'mail.read', 'memory.save', 'memory.search',
             'tasks.create', 'tasks.execute', 'tasks.pause', 'tasks.resume', 'tasks.cancel', 'tasks.status', 'research.search', 'server.status', 'server.check', 'clarify'}
 
 
@@ -17,7 +17,8 @@ def may_be_action(content: str) -> bool:
     shopping = bool(re.search(r'\b(shopper|marktplaats|vinted|ddr[345]|ram|deals?|aanbiedingen?|verkoper)\b', text))
     commands = bool(re.search(r'\b(zoek|zoeken|volg|regelen?|vind|pauze|pauzeer|stop|hervat|reageer|budget|status|hoe|update|verander|wacht|alleen|liever|voorkeur)\b', text))
     work = bool(re.search(r'\b(maak|schrijf|stel|analyseer|vergelijk|vat|werk|pauzeer|hervat)\b', text) and re.search(r'\b(opdracht|achtergrond|plan|rapport|analyse|samenvatting|tekst|checklist|taak)\b', text))
-    return work or (shopping and commands) or bool(re.search(r'\b(onderzoek|webresearch|zoek op internet|zoek online|zoek bronnen)\b',text)) or bool(re.search(
+    availability=bool(re.search(r'\b(vrije? (?:momenten?|tijd)|wanneer .{0,60}(?:tijd|vrij))\b',text))
+    return availability or work or (shopping and commands) or bool(re.search(r'\b(onderzoek|webresearch|zoek op internet|zoek online|zoek bronnen)\b',text)) or bool(re.search(
         r'\b(server|m40|agenda|afspraak|afspraken|gmail|mail|geheugen)\b|\b(onthoud|bewaar|taken|opdrachten)\b', text))
 
 
@@ -83,9 +84,9 @@ def route(content: str, history: list[str], state: dict) -> dict:
         'shopper.create:query,max_total_cents,platform(both),min_ram_gb,preferred_ram_gb,max_ram_sticks. '
         'Geen budget:clarify(question). shopper.update:watch_id+gewijzigde velden/wait_days. '
         'shopper.pause/resume/search/hold:watch_id; hold=pauze gesprek. shopper.status:{}. '
-        'calendar.read:period(today|tomorrow|week). calendar.create:title,start,end; '
+        'calendar.read:period(today|tomorrow|week). calendar.find_slots:period,duration_minutes,day_start(HH:MM),day_end(HH:MM); vrije momenten. calendar.create:title,start,end; '
         'calendar.update:event_id+title en/of start,end. calendar.delete:event_id. '
-        'Tijden ISO8601 met Amsterdam-offset; hele dag YYYY-MM-DD. Ontbrekende/ambigue tijden:clarify(question). '
+        'Afspraak start/end:ISO8601 Amsterdam-offset of hele dag YYYY-MM-DD. Slot dagvenster:HH:MM. Ambigue tijden:clarify(question). '
         'Bestaande afspraak alleen met bekend ID, niet raden. mail.read:{}. memory.save/search:text. '
         'tasks.execute:title,goal,role(writer|planner|analyst) voert tekstwerk uit. '
         'tasks.create:title,goal uitsluitend expliciet later bewaren. tasks.pause/resume/cancel:task_id. '
@@ -138,6 +139,14 @@ def apply(store, request_id: str, decision: dict, shopper, *, owner_content='') 
             if str(exc)=='calendar_event_not_known':
                 return 'Welke afspraak bedoel je? Laat mij eerst je agenda voor die periode ophalen; ik kies geen onbekende afspraak.'
             return 'Ik heb niets in je agenda gewijzigd. Geef de titel en een duidelijke begin- en eindtijd, of zeg welke bestaande afspraak je bedoelt.'
+    if action=='calendar.find_slots':
+        from leon_control_plane.calendar_planner import find_slots
+        from leon_control_plane.calendar_writer import GOOGLE_KEYS
+        from leon_control_plane.server import parse_selected_env_values
+        try:
+            return find_slots(store,parse_selected_env_values(GOOGLE_KEYS),args)['text']
+        except (ValueError,TypeError):
+            return 'Ik kan de vrije momenten nog niet bevestigen. Geef vandaag, morgen of deze week, de duur en eventueel een tijdvenster zoals 09:00–17:00.'
     if action == 'research.search':
         from leon_control_plane import research_executor, personal_tasks
         from leon_control_plane.secret_scanner import assert_no_secrets

@@ -1,5 +1,23 @@
 # Overdracht — Leon / Gaia
 
+**26 september, echte vrije-momentenplanner:** calendar.find_slots is vanuit
+chat aangesloten op volledige Google-events van de primaire agenda. Bestaande
+planner-gapberekening wordt hergebruikt zonder sampledata. Overlap, all-day,
+nonblocking/cancelled events, grenzen, verleden en Amsterdam-DST zijn afgedekt.
+Afgekapt of onbekend resultaat levert geen vrijverklaring. Defaults 09:00–17:00
+staan expliciet in het antwoord; overige agenda's zijn niet meegenomen.
+
+Eerste echte chatproef ontdekte een M40-schemafout (datums bij kloktijdvelden).
+Het schema is verduidelijkt en de adapter accepteert ook datumkloktijden met
+geverifieerde dag/Amsterdam-offset; ontbrekende/onjuiste gegevens geven een
+vriendelijke verduidelijking. Vervolgbericht in hetzelfde echte gesprek ging
+chat → M40-router → Google → complete met één bevestigd morgenvenster. Geen
+agenda-mutatie/Firecrawl/OpenAI-call; direct providerpad ook live bevestigd.
+Schrijfrecht blijft ontbreken; de eerder gevraagde extra toestemming staat open.
+Samengestelde planning en rekening houden met andere agenda's blijven open.
+561 backendtests geslaagd; services active en de feature op de doelserver.
+Frontend is ongewijzigd; de vorige 56 webtests/typecheck/build blijven geldig.
+
 **26 september, Calendar-writer gedeployd:** chat ondersteunt eigen afspraken
 maken, wijzigen en verwijderen; wijzigingsopdrachten halen actuele Google-events
 op zodat echte event-IDs beschikbaar zijn. Amsterdam-tijden inclusief DST worden

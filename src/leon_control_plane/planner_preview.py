@@ -143,6 +143,8 @@ def _free_slots(
     workday_end: time,
     duration: timedelta,
 ) -> list[dict[str, Any]]:
+    def elapsed(start: datetime, end: datetime) -> timedelta:
+        return end.astimezone(UTC) - start.astimezone(UTC)
     slots: list[dict[str, Any]] = []
     day = horizon_start.date()
     while day <= horizon_end.date():
@@ -150,24 +152,24 @@ def _free_slots(
         day_end = datetime.combine(day, workday_end, tzinfo=horizon_start.tzinfo)
         window_start = max(horizon_start, day_start)
         window_end = min(horizon_end, day_end)
-        if window_end - window_start >= duration:
+        if elapsed(window_start, window_end) >= duration:
             cursor = window_start
             for busy_start, busy_end, _event in _merge_busy_windows(events, window_start, window_end):
-                if busy_start - cursor >= duration:
+                if elapsed(cursor, busy_start) >= duration:
                     slots.append(
                         {
                             "start": cursor.isoformat(),
                             "end": busy_start.isoformat(),
-                            "duration_minutes": int((busy_start - cursor).total_seconds() // 60),
+                            "duration_minutes": int(elapsed(cursor, busy_start).total_seconds() // 60),
                         }
                     )
                 cursor = max(cursor, busy_end)
-            if window_end - cursor >= duration:
+            if elapsed(cursor, window_end) >= duration:
                 slots.append(
                     {
                         "start": cursor.isoformat(),
                         "end": window_end.isoformat(),
-                        "duration_minutes": int((window_end - cursor).total_seconds() // 60),
+                        "duration_minutes": int(elapsed(cursor, window_end).total_seconds() // 60),
                     }
                 )
         day = day + timedelta(days=1)
