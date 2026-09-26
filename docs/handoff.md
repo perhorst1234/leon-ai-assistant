@@ -1,5 +1,25 @@
 # Overdracht — Leon / Gaia
 
+**26 september, Calendar-writer gedeployd:** chat ondersteunt eigen afspraken
+maken, wijzigen en verwijderen; wijzigingsopdrachten halen actuele Google-events
+op zodat echte event-IDs beschikbaar zijn. Amsterdam-tijden inclusief DST worden
+gevalideerd. Iedere opdracht krijgt een duurzame identiteit en Planner-taak in
+Werk. Ontbrekend consent blokkeert zichtbaar; de worker hervat automatisch na
+werkelijke scopegrant en meldt één keer terug in het oorspronkelijke gesprek.
+Onzekere uitvoering wordt nooit opnieuw verstuurd; maximaal vijf begrensde
+readbacks kunnen de daadwerkelijke Google-toestand alsnog bevestigen.
+
+Persoonlijke primaire-agenda-items zonder gasten of herhaling worden ondersteund;
+geen uitnodigingen, gedeelde/terugkerende afspraken of multi-tool-autoplanning.
+Wijzigingen gebruiken versiecontrole en worden pas done na providerreadback.
+Schrijfrecht is enabled=true maar werkelijk granted=false: actuele accounttoegang
+blijft alleen lezen. Vandaag toont de browser-bewezen knop “Afspraken beheren
+inschakelen”; aanvullend Google-consent is bij de eigenaar gevraagd. Echte writes
+zijn dus nog niet live bewezen. Agenda/Gmail-readprobes na deployment: HTTP200,
+0 events en 5 metadata-items (geen persoonlijke inhoud opgeslagen in docs/logs).
+547 backendtests, 56 webtests, typecheck/build geslaagd; lint nul errors/zeven
+bestaande warnings. Backend/web/worker herstartten idle en staan active.
+
 **26 september, Werk en klikbare researchbronnen:** agentfilter bevat de
 werkelijke Leon-rollen (Research/Server/Writer enz.). Een voltooide taak toont het
 bevestigde opgeslagen resultaat, inclusief de echte bronlinks, in plaats van

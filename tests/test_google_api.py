@@ -160,3 +160,10 @@ def test_http_invalid_preview_input_is_audited_and_safe400(tmp_path, monkeypatch
         assert status == 400
         assert body == {"error": "google_calendar_invalid_time_range"}
         assert store.get_state()["connector_permission_checks"][-1]["decision"] == "allowed"
+
+
+def test_google_write_capability_uses_actual_scope_and_feature_flag():
+    base={'GOOGLE_READONLY_ENABLED':'true','GOOGLE_CALENDAR_WRITE_ENABLED':'true','GOOGLE_ACCESS_TOKEN':'opaque'}
+    assert google_api.status(None,base)['calendar_write']=={'enabled':True,'granted':False}
+    grant={**base,'GOOGLE_GRANTED_SCOPES':'https://www.googleapis.com/auth/calendar.events.owned'}
+    assert google_api.status(None,grant)['calendar_write']=={'enabled':True,'granted':True}

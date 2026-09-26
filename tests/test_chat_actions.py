@@ -52,6 +52,28 @@ def test_interrupted_action_is_unknown_without_replay(tmp_path):
         assert c.execute('SELECT status FROM chat_actions').fetchone()[0]=='unknown'
 
 
+def test_calendar_edit_refreshes_current_events_before_routing(tmp_path):
+    from leon_control_plane.calendar_writer import remember
+    store=make_store(tmp_path);ChatService(store)
+    remember(store,[{'id':'old','summary':'Oude afspraak','start':{},'end':{}}])
+    message={'id':'test-message','conversation_id':'test-conversation','created_at':time.time(),
+        'request_id':str(uuid.uuid4()),'request_content':'Verplaats mijn tandarts afspraak naar morgen'}
+    def read_calendar(*args):
+        remember(store,[{'id':'real-google-id','summary':'Tandarts','start':{},'end':{}}])
+        return {'items':[]}
+    with patch('leon_control_plane.chat_actions.shopper_service') as shopper, \
+         patch('leon_control_plane.server.parse_selected_env_values',return_value={}), \
+         patch('leon_control_plane.google_api.status',return_value={'configured':True}), \
+         patch('leon_control_plane.google_api.preview',side_effect=read_calendar) as read, \
+         patch('leon_control_plane.chat_actions.route',return_value={'action':'clarify','args':{'question':'Hoe laat?'}}) as route, \
+         patch('leon_control_plane.chat_actions.apply',return_value='Hoe laat?') as apply:
+        shopper.return_value.state.return_value={'watches':[]}
+        ActionRunner(store).execute(message)
+    assert read.call_count==1
+    assert route.call_args.args[2]['calendar'][0]['id']=='real-google-id'
+    assert apply.call_args.args[2]['action']=='clarify'
+
+
 def test_work_projection_includes_real_status_and_read_only_unapproved_tasks(tmp_path):
     from leon_control_plane.work_api import work_request
     store=make_store(tmp_path)
@@ -105,3 +127,22 @@ def test_server_recovery_requires_current_command():
     d={'action':'server.check','args':{}}
     assert validate_authority(d,'Hoe gaat het met de server?')['action']=='server.status'
     assert validate_authority(d,'Controleer de server en herstel Leon')['action']=='server.check'
+
+
+def test_calendar_write_requires_current_command_and_read_questions_are_not_writes():
+    decision={'action':'calendar.create','args':{'title':'Test','start':'2026-09-27T14:00:00+02:00','end':'2026-09-27T15:00:00+02:00'}}
+    assert validate_authority(decision,'Zet Test morgen van 14 tot 15 in mijn agenda')['action']=='calendar.create'
+    assert validate_authority(decision,'Hoe maak ik een afspraak in mijn agenda?')['action']=='clarify'
+    assert validate_authority(decision,'Wat staat morgen in mijn agenda?')['action']=='clarify'
+
+
+def test_calendar_command_saves_pending_task_and_preserves_maximum_router_input(tmp_path):
+    from leon_control_plane.chat_actions import apply,route
+    with patch('leon_control_plane.server.parse_selected_env_values',return_value={}):
+        text=apply(make_store(tmp_path),str(uuid.uuid4()),{'action':'calendar.create','args':{'title':'Test','start':'2026-09-27T14:00:00+02:00','end':'2026-09-27T15:00:00+02:00'}},None,owner_content='Zet Test morgen van 14 tot 15 in mijn agenda')
+    assert 'bewaard in Werk' in text
+    content='Maak een taak '+('x'*(2048-len('Maak een taak ')))
+    with patch('leon_control_plane.shopper_runtime.model_json',return_value=({'action':'tasks.status','args':{}},{})) as model:
+        route(content,['old'*1500],{'calendar':[{'id':'x','title':'x'*1000}]*5})
+    prompt=model.call_args.args[0]
+    assert len(prompt.encode())<=4096 and content in prompt

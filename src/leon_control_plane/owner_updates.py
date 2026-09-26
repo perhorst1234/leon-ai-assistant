@@ -6,13 +6,19 @@ import uuid
 from leon_control_plane.secret_scanner import assert_no_secrets
 
 
-def publish(store, event_key, content):
+def publish(store, event_key, content, *, request_id=None):
     from leon_control_plane.chat_api import ChatService
     if not isinstance(content, str) or not 1 <= len(content.encode()) <= 12000:
         raise ValueError('Invalid owner update')
     assert_no_secrets('Owner update', content)
     service = ChatService(store)
-    conversation = service.create_conversation({
+    conversation = None
+    if request_id:
+        with closing(store.connect()) as conn:
+            origin=conn.execute("SELECT conversation_id FROM chat_messages WHERE request_id=? AND role='assistant'",(request_id,)).fetchone()
+        if origin:
+            conversation={'id':origin['conversation_id']}
+    conversation = conversation or service.create_conversation({
         'request_id': str(uuid.uuid5(uuid.NAMESPACE_URL, 'leon:owner-updates')),
         'title': 'Leon updates',
     })

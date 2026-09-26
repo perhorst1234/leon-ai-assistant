@@ -5,6 +5,7 @@ export type GoogleStatus = {
   enabled: boolean;
   configured: boolean;
   scopes: { calendar: boolean; mail: boolean };
+  calendarWrite?: { enabled: boolean; granted: boolean };
 };
 
 export type CalendarDraft = { start: string; end: string };
@@ -110,7 +111,9 @@ export function normalizeGoogleStatus(value: unknown): GoogleStatus {
     || typeof scopes?.calendar !== 'boolean' || typeof scopes.mail !== 'boolean') {
     throw new Error('Onverwachte Google-status.');
   }
-  return { enabled: data.enabled, configured: data.configured, scopes: { calendar: scopes.calendar, mail: scopes.mail } };
+  const writer=record(data.calendar_write);
+  if (writer && (typeof writer.enabled!=='boolean' || typeof writer.granted!=='boolean')) throw new Error('Onverwachte agenda-schrijfstatus.');
+  return { enabled: data.enabled, configured: data.configured, scopes: { calendar: scopes.calendar, mail: scopes.mail }, ...(writer?{calendarWrite:{enabled:writer.enabled as boolean,granted:writer.granted as boolean}}:{}) };
 }
 
 function previewItems(value: unknown) {

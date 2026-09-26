@@ -1,5 +1,11 @@
 # Werken aan Leon / Gaia
 
+- Nieuwste 26 september: Calendar-writer vanuit chat/Werk gedeployd met
+  deduplicatie/readback, persistent consent-wachten en terugbezorging. Eigen
+  primaire afspraken zonder gasten/herhaling; live writegrant nog false. Knop
+  “Afspraken beheren inschakelen” browser-bewezen; eigenaar gevraagd om consent.
+  Lezen blijft HTTP200. 547 backendtests/56 webtests. Zie docs/handoff.md.
+
 - Nieuwste 26 september: Google live connected=true; Calendar-weekpreview
   HTTP200/0 events en Gmailmetadata 5 items, geen persoonsgegevens gelogd.
   Agenda-writes nog bouwen. Werk filtert echte rollen en toont opgeslagen

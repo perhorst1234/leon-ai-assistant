@@ -85,6 +85,8 @@ class LocalWorker:
         self.model_executor = model_executor if model_executor is not None else ModelExecutor(queue)
 
     def run_once(self) -> bool:
+        from leon_control_plane.calendar_writer import reconcile as reconcile_calendar
+        reconcile_calendar(self.queue.store)
         from leon_control_plane.personal_tasks import reconcile
         reconcile(self.queue)
         self.queue.recover_agent_run_jobs()

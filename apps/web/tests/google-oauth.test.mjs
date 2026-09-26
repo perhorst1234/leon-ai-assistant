@@ -17,7 +17,7 @@ test('Google consent uses PKCE and session-bound signed expiring state', () => {
   assert.equal(validateOAuthState(config,cookie,state,'leon_session=owner',2000).verifier.length,64);
   for(const [c,s,session,now] of [[cookie,state,'another owner',2000],[cookie,'wrong', 'leon_session=owner',2000],[cookie,state,'leon_session=owner',601001],[cookie+'x',state,'leon_session=owner',2000]])assert.throws(()=>validateOAuthState(config,c,s,session,now));
 });
-test('Token exchange writes only granted readonly scopes to a private atomic credential file',async()=>{
+test('Token exchange writes only granted requested scopes to a private atomic credential file',async()=>{
  const dir=await mkdtemp(join(tmpdir(),'leon-google-test-'));
  try{
   const cfg={...config,credentialsFile:join(dir,'credentials.json')};
@@ -27,7 +27,7 @@ test('Token exchange writes only granted readonly scopes to a private atomic cre
     return Response.json({refresh_token:'fake-refresh',scope:GOOGLE_SCOPES.join(' ')+' https://example.org/extra'});
   });
   const saved=JSON.parse(await readFile(cfg.credentialsFile,'utf8'));
-  assert.deepEqual(saved.granted_scopes,GOOGLE_SCOPES);assert.equal(saved.refresh_token,'fake-refresh');
+  assert.deepEqual(saved.granted_scopes,GOOGLE_SCOPES);assert.ok(saved.granted_scopes.includes('https://www.googleapis.com/auth/calendar.events.owned'));assert.equal(saved.refresh_token,'fake-refresh');
   assert.equal((await stat(cfg.credentialsFile)).mode&0o777,0o600);
   await assert.rejects(exchangeGoogleCode(cfg,'fake','fake',async()=>Response.json({access_token:'no-refresh',scope:GOOGLE_SCOPES.join(' ')})));
   assert.deepEqual(JSON.parse(await readFile(cfg.credentialsFile,'utf8')),saved);
@@ -45,4 +45,15 @@ test('LAN connections use the configured HTTPS tunnel while the public domain re
  const url=new URL(started.url);assert.equal(url.searchParams.get('redirect_uri'),temporary+'/api/google/oauth/callback');
  const cookie=started.cookie.split(';')[0].slice('leon_google_oauth='.length);
  assert.throws(()=>validateOAuthState(config,cookie,url.searchParams.get('state'),'owner'));
+});
+
+test('Partial consent preserves read access without inventing Calendar write permission',async()=>{
+ const dir=await mkdtemp(join(tmpdir(),'leon-google-partial-'));
+ try{
+  const cfg={...config,credentialsFile:join(dir,'credentials.json')};
+  const readonly=GOOGLE_SCOPES.filter(s=>!s.endsWith('calendar.events.owned'));
+  await exchangeGoogleCode(cfg,'code','verifier',async()=>Response.json({refresh_token:'fake-refresh',scope:readonly.join(' ')}));
+  const saved=JSON.parse(await readFile(cfg.credentialsFile,'utf8'));
+  assert.deepEqual(saved.granted_scopes,readonly);
+ }finally{await rm(dir,{recursive:true,force:true});}
 });

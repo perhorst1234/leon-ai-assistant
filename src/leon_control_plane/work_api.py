@@ -20,7 +20,7 @@ def work_request(store, *, method, path, body=None):
         store.initialize()
         with closing(store.connect()) as conn:
             tasks = [dict(row) for row in conn.execute(
-                "SELECT id,title,goal,status,owner,result FROM tasks WHERE title<>'Chat conversation' "
+                "SELECT id,title,goal,status,owner,result,blocked_reason FROM tasks WHERE title<>'Chat conversation' "
                 "ORDER BY created_at DESC LIMIT 100")]
         return {"ok": True, "tasks": tasks}
     if method == "GET" and url.path == "/api/work/tasks" and not url.query:

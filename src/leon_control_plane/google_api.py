@@ -71,7 +71,10 @@ def status(store, values: dict[str, str]) -> dict[str, Any]:
     _, credentials = _provider_and_credentials(values)
     configured = bool(credentials and (credentials.access_token or all((credentials.refresh_token, credentials.client_id, credentials.client_secret))))
     granted = set(credentials.granted_scopes) if credentials else set()
-    return {"ok": True, "enabled": enabled, "configured": configured, "scopes": {"calendar": "https://www.googleapis.com/auth/calendar.events.readonly" in granted, "mail": "https://www.googleapis.com/auth/gmail.metadata" in granted}}
+    result = {"ok": True, "enabled": enabled, "configured": configured, "scopes": {"calendar": "https://www.googleapis.com/auth/calendar.events.readonly" in granted, "mail": "https://www.googleapis.com/auth/gmail.metadata" in granted}}
+    if 'GOOGLE_CALENDAR_WRITE_ENABLED' in values:
+        result['calendar_write']={'enabled':values['GOOGLE_CALENDAR_WRITE_ENABLED'].lower() in {'1','true','yes'},'granted':'https://www.googleapis.com/auth/calendar.events.owned' in granted}
+    return result
 
 
 def _permission_check(store, manifest: dict[str, Any], scope: str, values: dict[str, str]) -> dict[str, Any]:
@@ -131,6 +134,8 @@ def preview(store, values: dict[str, str], kind: str, data: dict[str, Any]) -> d
             raise GoogleReadonlyError("google_calendar_invalid_time_range") from None
         result = client.upcoming_events(manifest, start=start, end=end, timezone=str(data.get("timezone") or "Europe/Amsterdam"), limit=limit)
         result["items"] = [{**item, "source_ref": f"google:calendar:event:{item['id']}"} for item in result.get("items", [])]
+        from leon_control_plane.calendar_writer import remember
+        remember(store,result['items'])
     else:
         try:
             limit = int(data.get("limit", 10))

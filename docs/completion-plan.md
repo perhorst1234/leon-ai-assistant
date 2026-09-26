@@ -15,7 +15,7 @@ beproeven en deployen voordat het volgende onderdeel wordt uitgebreid.
 | Memory / graph | Bewaren, ophalen, corrigeren, verwijderen, relaties en automatische context | Voorkeuren/correcties vanzelf leren, conflicten netjes behandelen |
 | Task Manager | SQLite-taken, wachtrij, checkpoints, herstel, chatuitvoering en terugbezorging | Subtaken en afhankelijkheden |
 | Research Agent | Chat → Firecrawl → M40-synthese → bronnen in chat/Werk, max10 credits/dag | Dieper lezen binnen budget en periodieke research |
-| Planner / Google | PKCE OAuth en live Agenda/Gmail-metadata bewezen | Agenda-writes en planning; Gmail is metadata, geen volledige mailbox |
+| Planner / Google | PKCE OAuth, live Agenda/Gmail-metadata en writer vanuit chat/Werk | Aanvullend write-consent en echte writeproef; multi-tool-planning; Gmail alleen metadata |
 | Shopper | Wekelijkse MP/Vinted-zoekopdrachten, echte MP-berichten, delayed replies | Echte inkomende replyketen bewijzen, Vinted-onderhandelingen, TicketSwap-eventwatch en alerts |
 | Server Manager | Status, wekelijkse echte inspectie, chatmeldingen en beperkte serviceherstarts | Ruimere diagnose/backups en geverifieerde herstelacties voor andere storingen |
 | Model Scheduler | Lokale Qwen/M40, sensitive-local routing, gedeelde GPU-lease en correcte cacherouting | Gezamenlijke prioritering en globale thermische regeling |
@@ -36,8 +36,9 @@ beproeven en deployen voordat het volgende onderdeel wordt uitgebreid.
    gewone gesprekken en taken gebruiken; expliciete correcties/voorkeuren bewaren.
 3. **Echte research — live bewezen.** Bestaande Firecrawl-credits, duidelijke daglimiet,
    bronvermelding, lokale synthese en geen nieuwe betaling.
-4. **Planner en accounts.** Google-consent afmaken; agenda lezen, plannen en
-   de eigenaar-geautoriseerde schrijfacties aansluiten.
+4. **Planner en accounts.** Lezen bewezen en geautoriseerde writer gedeployd.
+   Aanvullend Google-consent en echte create/update/delete-proef nog nodig;
+   daarna beschikbaarheid en samengestelde planning.
 5. **Shopper afronden.** Vinted en TicketSwap, echte meldingen en follow-ups;
    het bestaande 64GB-gesprek blijft op pauze, 128GB blijft prioriteit.
 6. **Proactieve routines.** Dag-/weekchecks, serverinspectie, ochtendbrief en
@@ -50,8 +51,8 @@ beproeven en deployen voordat het volgende onderdeel wordt uitgebreid.
 
 ## Nog benodigde eigenaargegevens
 
-- Google OAuth: live lezen is bewezen. Na aansluiten van de planner-writer
-  nog aanvullende Google-consent voor eigen afspraken schrijven nodig.
+- Google OAuth: live lezen is bewezen. De planner-writer is gedeployd;
+  aanvullende Google-consent voor eigen afspraken schrijven nodig.
 - Research: toestemming voor maximaal tien bestaande Firecrawl-credits per dag
   is gegeven; geen credits kopen en geen OpenAI gebruiken voor synthese.
 - TicketSwap: eerste concert/eventlink, aantal tickets en maximale totaalprijs.

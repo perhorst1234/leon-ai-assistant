@@ -3,7 +3,7 @@ import { mkdir, writeFile, rename, lstat, realpath, unlink } from 'node:fs/promi
 import { dirname, resolve } from 'node:path';
 import { readFileSync } from 'node:fs';
 
-export const GOOGLE_SCOPES = ['https://www.googleapis.com/auth/calendar.events.readonly', 'https://www.googleapis.com/auth/gmail.metadata'];
+export const GOOGLE_SCOPES = ['https://www.googleapis.com/auth/calendar.events.readonly', 'https://www.googleapis.com/auth/gmail.metadata', 'https://www.googleapis.com/auth/calendar.events.owned'];
 export const OAUTH_COOKIE = 'leon_google_oauth';
 type Config = { clientId: string; clientSecret: string; publicOrigin: string; sessionSecret: string; credentialsFile: string; repositoryRoot: string };
 type State = { state: string; verifier: string; sessionHash: string; origin: string; expires: number };
