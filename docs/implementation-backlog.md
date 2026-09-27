@@ -1,5 +1,17 @@
 # Leon / Gaia — uitvoeringsbacklog
 
+**27 september, gezamenlijke GPU-prioriteiten gedeployd:** chat en inkomende
+shopperreacties vóór zoeken, achtergrondwerk en coding. Wachttijd verhoogt de
+prioriteit zodat oude taken ook starten; lopende generaties worden niet afgebroken.
+SQLite bevat uitsluitend tijdelijke procesmetadata; dode/reboot-PID tickets worden
+opgeruimd. Echte subprocessproef bevestigt chat vóór achtergrondwerk; echte
+coding-wrapper stelt uit met exit75 voor wachtende chat. Generatievrijgave hangt
+niet af van een nieuwe databaseverbinding. Workerlease omvat wachten én generatie.
+Live chat gaf “Leon is bereikbaar.” via Ollama met charged0. 579 backendtests.
+Nog open: adaptieve modelkeuze/batching en Code Worker vanuit chat. Volgende
+onderdeel op eigenaarverzoek: echte gesprekreflectie en vaardigheden-todo om22:00.
+Google writegrant is op27september inmiddels true; echte writeproef nog nodig.
+
 **26 september, globale M40-temperatuurbewaking gedeployd:**
 leon-m40-guard.service is enabled/active met een doorlopend nvidia-smi/NVML-
 meetproces voor GPU0 (op deze VM geverifieerd Tesla M40 24GB). Losse NVML-

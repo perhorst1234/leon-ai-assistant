@@ -1,5 +1,10 @@
 # Werken aan Leon / Gaia
 
+- Nieuwste27september: GPU-prioriteiten chat/reply→shopper→background→coding,
+  aging en procescleanup; echte chat/charged0 en codingdefer75 bewezen;579tests.
+  Volgende: gesprekreflectie om22:00. Google writegrant nu true, writeproef open.
+  Zie docs/handoff.md.
+
 - Nieuwste 26 september: globale M40-guard active/enabled, cutoff89C en
   eigen-Ollama-herstel pas na 30s <=80C. Continu NVML-proces voorkomt bewezen
   meetinitialisatiehangs. Verse guardstatus vóór model/coding; cooling bewaart

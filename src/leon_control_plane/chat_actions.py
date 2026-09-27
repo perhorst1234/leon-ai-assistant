@@ -109,7 +109,7 @@ def route(content: str, history: list[str], state: dict) -> dict:
         else:
             raise ValueError('Owner command exceeds router context')
         prompt = instructions + json.dumps(context,ensure_ascii=False)
-    decision, _ = model_json(prompt)
+    decision, _ = model_json(prompt,priority='chat')
     if not isinstance(decision, dict) or set(decision) != {'action', 'args'} or decision['action'] not in _ACTIONS or not isinstance(decision['args'], dict):
         raise ValueError('Unsupported tool decision')
     return decision

@@ -1,4 +1,4 @@
-# Leon afmaken — actuele volgorde, 26 september 2026
+# Leon afmaken — actuele volgorde, 27 september 2026
 
 De productvisie staat in personal-ai-assistant-plan.md. De nieuwste eigenaar-
 instructies geven routineopdrachten, shopper-berichten en lokale teksttaken
@@ -18,7 +18,7 @@ beproeven en deployen voordat het volgende onderdeel wordt uitgebreid.
 | Planner / Google | PKCE OAuth, live Agenda/Gmail-metadata, vrije momenten en writer vanuit chat/Werk | Aanvullend write-consent en echte writeproef; multi-tool-planning; Gmail alleen metadata |
 | Shopper | Wekelijkse MP/Vinted-zoekopdrachten, echte MP-berichten, delayed replies | Echte inkomende replyketen bewijzen, Vinted-onderhandelingen, TicketSwap-eventwatch en alerts |
 | Server Manager | Status, wekelijkse echte inspectie, chatmeldingen en beperkte serviceherstarts | Ruimere diagnose/backups en geverifieerde herstelacties voor andere storingen |
-| Model Scheduler | Lokale M40, sensitive-local routing, GPU-lease, cacherouting en globale 89C-guard met cooling-aware queue | Gezamenlijke prioritering |
+| Model Scheduler | Lokale M40, sensitive-local routing, GPU-lease met prioriteiten/aging, cacherouting en globale 89C-guard met cooling-aware queue | Adaptieve modelkeuze, batching en aansluiting Code Worker |
 | M40 Code Worker | OpenCode/GPT-OSS read/edit/readback eerder bewezen; laatste Qwen-review timeout zonder verdict | Vanuit Leon starten met eigen workspace, daadwerkelijke checks en deployment terugkoppelen |
 | Value / Opportunity / Curiosity | Scores, observaties, policies en queue-algoritmes | Relevante echte bronnen, herhaling in eigen gebruik herkennen en bruikbare verbeteringen uitvoeren |
 | Night Cycle / Feedback | Dagelijkse veilige bronindex en ochtendbrief | Echte gesprek-/foutreflectie, memory-updates, laag-risicotaken en leerresultaten |
@@ -53,7 +53,7 @@ beproeven en deployen voordat het volgende onderdeel wordt uitgebreid.
 ## Nog benodigde eigenaargegevens
 
 - Google OAuth: live lezen is bewezen. De planner-writer is gedeployd;
-  aanvullende Google-consent voor eigen afspraken schrijven nodig.
+  write-consent is inmiddels verleend; echte writeproef nog nodig.
 - Research: toestemming voor maximaal tien bestaande Firecrawl-credits per dag
   is gegeven; geen credits kopen en geen OpenAI gebruiken voor synthese.
 - TicketSwap: eerste concert/eventlink, aantal tickets en maximale totaalprijs.

@@ -56,6 +56,7 @@ class LocalModelConfig:
     timeout_seconds: int = 180
     thermal_guard_enabled: bool = False
     max_temp_c: int = 89
+    gpu_priority: str = 'background'
 
     @classmethod
     def from_env(cls, *, env_file: Path | None = None):
@@ -93,6 +94,9 @@ class LocalModelConfig:
             raise ModelPreflightError("local_model_timeout_invalid")
         if type(self.max_temp_c) is not int or not 65<=self.max_temp_c<=89:
             raise ModelPreflightError('local_gpu_temperature_limit_invalid')
+        from leon_control_plane.gpu_lease import PRIORITIES
+        if self.gpu_priority not in PRIORITIES:
+            raise ModelPreflightError('local_gpu_priority_invalid')
 
 
 def request_payload(prompt: str, max_output_tokens: int, config: LocalModelConfig) -> dict:
@@ -113,7 +117,7 @@ def request_payload(prompt: str, max_output_tokens: int, config: LocalModelConfi
 def send_response(payload: dict, config: LocalModelConfig) -> dict:
     config.validate()
     from leon_control_plane.gpu_lease import acquire
-    with acquire(config.timeout_seconds):
+    with acquire(config.timeout_seconds,priority=config.gpu_priority):
         if config.thermal_guard_enabled:
             from leon_control_plane.thermal_guard import check
             check(config.max_temp_c)

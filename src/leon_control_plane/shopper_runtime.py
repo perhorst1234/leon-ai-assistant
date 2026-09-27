@@ -15,13 +15,14 @@ from leon_control_plane.shopper_pricing import opening_offer, ram_bundle
 ROOT = Path(__file__).resolve().parents[2]
 
 
-def model_json(prompt: str) -> tuple[dict, str]:
-    config = replace(LocalModelConfig.from_env(env_file=ROOT / ".env.local"), timeout_seconds=120)
+def model_json(prompt: str, *, priority='shopper') -> tuple[dict, str]:
+    config = replace(LocalModelConfig.from_env(env_file=ROOT / ".env.local"), timeout_seconds=120,gpu_priority=priority)
     config.validate()
-    probe = subprocess.run(["nvidia-smi", "--query-gpu=temperature.gpu", "--format=csv,noheader,nounits"],
-                           capture_output=True, text=True, timeout=5, check=True)
-    if max(int(value.strip()) for value in probe.stdout.splitlines()) >= 89:
-        raise RuntimeError("gpu_hot")
+    if not config.thermal_guard_enabled:
+        probe = subprocess.run(["nvidia-smi", "--query-gpu=temperature.gpu", "--format=csv,noheader,nounits"],
+                               capture_output=True, text=True, timeout=5, check=True)
+        if max(int(value.strip()) for value in probe.stdout.splitlines()) >= 89:
+            raise RuntimeError("gpu_hot")
     payload = request_payload(prompt, 256, config)
     parsed = parse_response(send_response(payload, config), payload)
     if not parsed["ok"]:
@@ -170,7 +171,7 @@ def reply_decision(watch: dict, seller_text: str) -> dict:
         + json.dumps({"budget_cents": watch["max_total_cents"], "min_ram_gb": watch["min_ram_gb"],
                       "max_ram_sticks": watch.get("max_ram_sticks", 0), "seller_text": seller_text[:1200]}, ensure_ascii=False)
     )
-    decision, model = model_json(prompt)
+    decision, model = model_json(prompt,priority='reply')
     if not isinstance(decision, dict) or set(decision) != {"action", "offer_cents"}:
         raise ValueError("Invalid reply decision")
     if decision["action"] not in {"ask_total", "counter", "decline", "ready"}:

@@ -84,7 +84,7 @@ def test_preflight_blocks_hot_or_unreadable_gpu_without_model_transport(tmp_path
     for temp in [None,89]:
         with patch('leon_control_plane.thermal_guard.available',return_value=True), \
              patch('leon_control_plane.thermal_guard.load',return_value={'temperature_c':temp}), \
-             patch('leon_control_plane.gpu_lease.acquire',side_effect=lambda timeout:acquire(timeout,path=tmp_path/'test-gpu.lock')), \
+             patch('leon_control_plane.gpu_lease.acquire',side_effect=lambda timeout,**kwargs:acquire(timeout,path=tmp_path/'test-gpu.lock',**kwargs)), \
              patch('leon_control_plane.local_model._send_response') as transport:
             with pytest.raises(ModelPreflightError):send_response({},config)
         transport.assert_not_called()

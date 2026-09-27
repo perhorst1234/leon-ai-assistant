@@ -345,11 +345,13 @@ class WorkQueue:
     def claim(self, *, local_ready=True):
         with self._transaction() as conn:
             now = self.clock()
+            has_chat=conn.execute("SELECT 1 FROM sqlite_master WHERE name='chat_messages'").fetchone()
+            rank="CASE WHEN EXISTS(SELECT 1 FROM chat_messages cm WHERE cm.job_id=work_jobs.id) THEN 0 ELSE 2 END" if has_chat else '2'
             row = conn.execute(
                 "SELECT * FROM work_jobs WHERE (status='queued' OR (status='running' AND lease_until<=?)) "
                 "AND (? OR NOT EXISTS (SELECT 1 FROM model_work m WHERE m.job_id=work_jobs.id "
                 "AND json_extract(m.approved_json,'$.payload.provider')='ollama')) "
-                "ORDER BY created_at,id LIMIT 1", (now,bool(local_ready)),
+                f"ORDER BY MAX(0,({rank})-CAST((?-created_at)/30 AS INTEGER)),created_at,id LIMIT 1", (now,bool(local_ready),now),
             ).fetchone()
             if row is None:
                 return None

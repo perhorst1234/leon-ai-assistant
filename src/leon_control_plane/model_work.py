@@ -4,6 +4,7 @@ The sending marker commits before HTTP. A crash after that point is ambiguous,
 not permission to retry. A separate database is a separate budget boundary.
 """
 from __future__ import annotations
+from dataclasses import replace
 
 import hashlib
 import json
@@ -163,7 +164,7 @@ class ModelExecutor:
             # the same fenced lease before sending; checkpoint still requires
             # the original token and rejects any stale worker.
             if is_local:
-                execution_window = self.local_config.timeout_seconds + 30
+                execution_window = 2*self.local_config.timeout_seconds + 30
                 conn.execute(
                     "UPDATE work_jobs SET lease_until = ?, updated_at = ? WHERE id = ? AND lease_token = ?",
                     (now + execution_window, now, job["id"], claim["token"]),
@@ -197,7 +198,10 @@ class ModelExecutor:
         try:
             is_local = payload.get("provider") == "ollama"
             if is_local:
-                observed = self.local_transport(payload, self.local_config)
+                with self.queue._transaction() as conn:
+                    has_chat=conn.execute("SELECT 1 FROM sqlite_master WHERE name='chat_messages'").fetchone()
+                    is_chat=has_chat and conn.execute('SELECT 1 FROM chat_messages WHERE job_id=?',(claim['id'],)).fetchone()
+                observed = self.local_transport(payload, replace(self.local_config,gpu_priority='chat' if is_chat else 'background'))
                 result = parse_local_response(observed, payload)
             else:
                 observed = self.transport(payload, self.config.api_key)

@@ -22,7 +22,7 @@ def isolated_gpu_lease(tmp_path,monkeypatch):
     from leon_control_plane import gpu_lease
     acquire,busy=gpu_lease.acquire,gpu_lease.busy
     path=tmp_path/'m40-test.lock'
-    monkeypatch.setattr(gpu_lease,'acquire',lambda timeout_seconds=180:acquire(timeout_seconds,path=path))
+    monkeypatch.setattr(gpu_lease,'acquire',lambda timeout_seconds=180,**kwargs:acquire(timeout_seconds,path=path,**kwargs))
     monkeypatch.setattr(gpu_lease,'busy',lambda:busy(path))
 
 
@@ -216,7 +216,7 @@ def test_local_agent_prompt_is_bounded_and_redacted():
     assert len(prompt.encode("utf-8")) <= 4096
 
 
-def test_local_model_extends_fenced_lease_for_cold_start(tmp_path, monkeypatch):
+def test_local_model_lease_covers_gpu_wait_and_generation(tmp_path, monkeypatch):
     monkeypatch.setenv("LEON_LOCAL_MODEL_ENABLED", "1")
     now = [1_000.0]
     queue = WorkQueue(make_store(tmp_path), clock=lambda: now[0])
@@ -234,7 +234,8 @@ def test_local_model_extends_fenced_lease_for_cold_start(tmp_path, monkeypatch):
     )
 
     def slow_transport(_payload, config):
-        now[0] += 31
+        now[0] += 2*config.timeout_seconds+5
+        assert queue.claim() is None  # Another worker cannot steal the in-flight generation.
         return {
             "model": config.model,
             "response": "Klaar.",

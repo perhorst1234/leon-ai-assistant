@@ -28,6 +28,10 @@ if ! flock -n 9; then
   exit 75
 fi
 peak_temp=0
+if ! "$repo_root/.venv/bin/python" -m leon_control_plane.gpu_lease; then
+  echo "M40 has queued Leon requests; defer this coding task." >&2
+  exit 75
+fi
 "$repo_root/.venv/bin/python" -m leon_control_plane.thermal_guard --check
 setsid "$opencode_bin" --pure --model "ollama/$model" "$@" &
 agent_pid=$!
