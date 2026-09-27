@@ -1,5 +1,36 @@
 # Overdracht — Leon / Gaia
 
+**27 september, Magister-agenda werkelijk verbonden met Leon Planner:**
+Verlopen schoolpagina werd onterecht als leerlingnummerformulier herkend;
+status onderscheidt nu verlopen sessie/schoolkeuze/username. Native username
+veld en sl-button herkend, start gebruikt CDP-muisactie op exact schooltarget;
+async same-origin schoolread ondersteund. Echte herstart+normale serverbrowser-
+bediening accepteerden het leerlingnummer. Daarna echte portal-API200; eigen
+stamnummer bevestigd. Geen schoolwachtwoord/2FA-code door Codex ontvangen of
+verstuurd; bestaande browsersessie leverde werkelijke geautoriseerde toegang.
+Dit bewijst geen MFA-bypass en geen nieuwe wachtwoordaanmelding.
+
+Nieuwe magister_agenda leest via de bestaande Angular-HTTP-client, zonder tokens
+uit de browser te exporteren. Accountcontrole vóór afspraken, status1, max7dagen/
+50records, begrensde velden, tijdzonevalidatie/overlapfilter en expliciete
+truncatie. Werkelijk18 komende-weekafspraken gelezen. Geauthenticeerde backend
+én webbridge200; Vandaag toont connected en zes afspraken plus restverwijzing.
+UI-test met tijdelijke lokale Leon-testsessie, cookie daarna teruggezet; kleine
+viewport vereiste expliciet scrollen vóór knopklik. School/API-data en privé-
+proofs blijven buiten Git.
+
+LEON_MAGISTER_AGENDA_ENABLED=1 privé ingesteld. Vrije momenten combineren nu
+primaire Google-agenda en Magister; ontbrekende/afgekapte schoolbron geeft geen
+bevestigde vrije tijd. Echte weekproef7slots zonder lesoverlap. Productiechat
+school.read geeft echte weekagenda, tweede bericht/M40-router geeft vrije
+momenten uit beide bronnen. Schoolread zelf vereist geen model/API-geld.
+Zelfleren-Magister-taak met deze exacte scope done en journal bijgewerkt;
+melding in dezelfde schoolchat. Andere schoolbronnen/cijfers/huiswerk/mails en
+routinesintegratie blijven vervolgwerk; volledige Leon-goal blijft actief.
+668full backend/56gerichte checks,57webtests, tsc/build, lint0errors/7 bestaande
+warnings; backend/web gedeployd. De 56 gerichte regressies slagen ook na de
+routerafbakening. Zie docs/magister-agenda.md voor bediening en grenzen.
+
 **27 september, M40-testbestanden en gratis TicketSwap-voorbeeld:**
 Compact coder had6stappen/768output; nu10stappen/1536output, nog steeds
 4096context/600s deadline/89C/local-only. Echte korte GPT-OSS20B-proef59.4s:

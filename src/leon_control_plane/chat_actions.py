@@ -7,7 +7,7 @@ import threading
 import time
 from zoneinfo import ZoneInfo
 
-_ACTIONS = {'tickets.search', 'code.build', 'code.invoke', 'code.list', 'shopper.create', 'shopper.update', 'shopper.pause', 'shopper.resume', 'shopper.search',
+_ACTIONS = {'school.read', 'tickets.search', 'code.build', 'code.invoke', 'code.list', 'shopper.create', 'shopper.update', 'shopper.pause', 'shopper.resume', 'shopper.search',
             'shopper.hold', 'shopper.status', 'calendar.read', 'calendar.find_slots', 'calendar.create', 'calendar.update', 'calendar.delete', 'mail.read', 'memory.save', 'memory.search',
             'tasks.create', 'tasks.execute', 'tasks.pause', 'tasks.resume', 'tasks.cancel', 'tasks.status', 'research.search', 'server.status', 'server.check', 'clarify'}
 
@@ -20,7 +20,7 @@ def may_be_action(content: str) -> bool:
     availability=bool(re.search(r'\b(vrije? (?:momenten?|tijd)|wanneer .{0,60}(?:tijd|vrij))\b',text))
     tools=bool(re.search(r'\b(tools?|functie)\b',text) and re.search(r'\b(gebruik|voer|roep|bereken|reken|welke|beschikbaar)\b',text))
     return tools or code_command(content) or availability or work or (shopping and commands) or bool(re.search(r'\b(onderzoek|webresearch|zoek op internet|zoek online|zoek bronnen)\b',text)) or bool(re.search(
-        r'\b(server|m40|agenda|afspraak|afspraken|gmail|mail|geheugen)\b|\b(onthoud|bewaar|taken|opdrachten)\b', text))
+        r'\b(magister|schoolagenda|schoolrooster|server|m40|agenda|afspraak|afspraken|gmail|mail|geheugen)\b|\b(onthoud|bewaar|taken|opdrachten)\b', text))
 
 
 def code_command(content):
@@ -89,6 +89,8 @@ def route(content: str, history: list[str], state: dict) -> dict:
         return {'action':'tickets.search','args':{'query':''}}
     if re.search(r'\b(welke|beschikbare)\b.*\btools\b',content,re.I):
         return {'action':'code.list','args':{}}
+    if re.search(r'\b(magister|schoolagenda|schoolrooster)\b',content,re.I) and re.search(r'\b(agenda|schoolagenda|schoolrooster|rooster|lessen|vandaag|morgen|week)\b',content,re.I):
+        return {'action':'school.read','args':{'period':'tomorrow' if re.search(r'\bmorgen\b',content,re.I) else 'today' if re.search(r'\bvandaag\b',content,re.I) else 'week'}}
     from leon_control_plane.shopper_runtime import model_json
     watches = [{'id': w['id'], 'query': w['query'], 'budget_cents': w['max_total_cents'],
                 'min_ram_gb': w['min_ram_gb'], 'enabled': w['enabled']} for w in state.get('watches', [])[:5]]
@@ -98,7 +100,7 @@ def route(content: str, history: list[str], state: dict) -> dict:
         'shopper.create:query,max_total_cents,platform(both),min_ram_gb,preferred_ram_gb,max_ram_sticks. '
         'Geen budget:clarify(question). shopper.update:watch_id+gewijzigde velden/wait_days. '
         'shopper.pause/resume/search/hold:watch_id; hold=pauze gesprek. shopper.status:{}. '
-        'calendar.read:period(today|tomorrow|week). calendar.find_slots:period,duration_minutes,day_start(HH:MM),day_end(HH:MM); vrije momenten. calendar.create:title,start,end; '
+        'school.read:period(today|tomorrow|week) leest de Magister-schoolagenda. calendar.read:period(today|tomorrow|week). calendar.find_slots:period,duration_minutes,day_start(HH:MM),day_end(HH:MM); vrije momenten. calendar.create:title,start,end; '
         'calendar.update:event_id+title en/of start,end. calendar.delete:event_id. '
         'Afspraak start/end:ISO8601 Amsterdam-offset of hele dag YYYY-MM-DD. Slot dagvenster:HH:MM. Ambigue tijden:clarify(question). '
         'Bestaande afspraak alleen met bekend ID, niet raden. mail.read:{}. memory.save/search:text. '
@@ -145,6 +147,14 @@ def apply(store, request_id: str, decision: dict, shopper, *, owner_content='') 
         from leon_control_plane.code_tools import enqueue_call
         enqueue_call(store,request_id,args['tool_id'],args['arguments'])
         return 'Ik gebruik de lokale functie en stuur het resultaat hier terug. Je kunt de uitvoering volgen in Werk.'
+    if action=='school.read':
+        if set(args)!={'period'} or args['period'] not in {'today','tomorrow','week'}:raise ValueError('Unknown school period')
+        from leon_control_plane.magister_agenda import preview as school_preview
+        start=datetime.now(ZoneInfo('Europe/Amsterdam')).replace(hour=0,minute=0,second=0,microsecond=0)+timedelta(days=args['period']=='tomorrow')
+        try:data=school_preview(start,start+timedelta(days=7 if args['period']=='week' else 1))
+        except ValueError:return 'Je schoolagenda is niet bereikbaar. Controleer Magister in Vandaag en open zo nodig de schoolaanmelding opnieuw.'
+        text='Magister:\n'+'\n'.join('• '+e['summary']+' — '+calendar_time(e['start']) for e in data['items']) if data['items'] else 'Geen schoolafspraken in deze periode.'
+        return text+('\nDe schoolagenda is afgekapt; dit is geen volledig overzicht.' if data['truncated'] else '')
     if action=='tickets.search':
         if args!={'query':''} or not re.search(r'\bticketswap\b',owner_content,re.I) or not re.search(r'\b(voorbeeld\w*|overzicht)\b',owner_content,re.I):raise ValueError('Unsupported concert query')
         from leon_control_plane.ticketswap_search import execute
@@ -181,7 +191,7 @@ def apply(store, request_id: str, decision: dict, shopper, *, owner_content='') 
         from leon_control_plane.calendar_writer import GOOGLE_KEYS
         from leon_control_plane.server import parse_selected_env_values
         try:
-            return find_slots(store,parse_selected_env_values(GOOGLE_KEYS),args)['text']
+            return find_slots(store,parse_selected_env_values(GOOGLE_KEYS|{'LEON_MAGISTER_AGENDA_ENABLED'}),args)['text']
         except (ValueError,TypeError):
             return 'Ik kan de vrije momenten nog niet bevestigen. Geef vandaag, morgen of deze week, de duur en eventueel een tijdvenster zoals 09:00–17:00.'
     if action == 'research.search':
@@ -252,7 +262,7 @@ def apply(store, request_id: str, decision: dict, shopper, *, owner_content='') 
     if action in {'calendar.read', 'mail.read'}:
         from leon_control_plane.google_api import preview, status
         from leon_control_plane.server import parse_selected_env_values
-        keys = {'GOOGLE_READONLY_ENABLED','GOOGLE_ACCESS_TOKEN','GOOGLE_REFRESH_TOKEN','GOOGLE_CLIENT_ID','GOOGLE_CLIENT_SECRET','GOOGLE_GRANTED_SCOPES','GOOGLE_CREDENTIALS_FILE'}
+        keys = {'GOOGLE_READONLY_ENABLED','GOOGLE_ACCESS_TOKEN','GOOGLE_REFRESH_TOKEN','GOOGLE_CLIENT_ID','GOOGLE_CLIENT_SECRET','GOOGLE_GRANTED_SCOPES','GOOGLE_CREDENTIALS_FILE','LEON_MAGISTER_AGENDA_ENABLED'}
         values = parse_selected_env_values(keys)
         if not status(store, values)['configured']:
             return 'Google heeft nog geen Agenda/Gmail-toegang gegeven. Open Vandaag en klik op Google verbinden; daarna kan ik je afspraken hier tonen.'
@@ -267,7 +277,14 @@ def apply(store, request_id: str, decision: dict, shopper, *, owner_content='') 
         start = now.replace(hour=0, minute=0, second=0, microsecond=0) + timedelta(days=1 if args['period']=='tomorrow' else 0)
         end = start + timedelta(days=7 if args['period']=='week' else 1)
         data = preview(store, values, 'calendar', {'start': start.isoformat(), 'end': end.isoformat(), 'timezone': 'Europe/Amsterdam', 'limit': 10})
-        return '\n'.join(f"• {item['summary']} — {calendar_time(item['start'])}" for item in data['items']) or 'Geen afspraken in deze periode.'
+        items=data['items'];warning=''
+        if values.get('LEON_MAGISTER_AGENDA_ENABLED')=='1':
+            from leon_control_plane.magister_agenda import preview as school_preview
+            try:
+                school=school_preview(start,end);items=items+school['items']
+                if school['truncated']:warning='\nDe schoolagenda is afgekapt; dit overzicht is onvolledig.'
+            except ValueError:warning='\nMagister is nu niet bereikbaar; je schoollessen ontbreken in dit overzicht.'
+        return ('\n'.join(f"• {item['summary']} — {calendar_time(item['start'])}"+(' · Magister' if item.get('source')=='Magister' else '') for item in items) or 'Geen afspraken in deze periode.')+warning
     if action.startswith('memory.'):
         if set(args) != {'text'} or not isinstance(args['text'], str) or not 1 <= len(args['text']) <= 1000:
             raise ValueError('Invalid memory text')

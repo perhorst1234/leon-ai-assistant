@@ -22,6 +22,7 @@ const routes: Record<string, Partial<Record<string, string>>> = {
   'memory-update': { POST: '/api/memory/update' },
   'memory-delete': { POST: '/api/memory/delete' },
   'google-status': { GET: '/api/google/status' },
+  'magister-calendar': { GET: '/api/magister/calendar' },
   'magister-status': { GET: '/api/magister/status' },
   'magister-login': { POST: '/api/magister/login' },
   'magister-start': { POST: '/api/magister/start' },

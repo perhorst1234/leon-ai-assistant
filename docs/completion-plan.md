@@ -15,7 +15,7 @@ beproeven en deployen voordat het volgende onderdeel wordt uitgebreid.
 | Memory / graph | Bewaren, ophalen, corrigeren, verwijderen, relaties en automatische context | Voorkeuren/correcties vanzelf leren, conflicten netjes behandelen |
 | Task Manager | SQLite-taken, wachtrij, checkpoints, herstel, chatuitvoering en terugbezorging | Subtaken en afhankelijkheden |
 | Research Agent | Chat → Firecrawl → M40-synthese → bronnen in chat/Werk, max10 credits/dag | Dieper lezen binnen budget en periodieke research |
-| Planner / Google | PKCE OAuth, live Agenda/Gmail-metadata, vrije momenten en create/update/delete live bewezen | Multi-tool-planning, andere agenda's; Gmail alleen metadata |
+| Planner / Google | PKCE OAuth, live Agenda/Gmail-metadata, Google+Magister-vrije momenten en create/update/delete live bewezen | Multi-tool-planning en andere agenda's open; Gmail alleen metadata |
 | Shopper | Wekelijkse MP/Vinted-zoekopdrachten, echte MP-berichten, delayed replies | Echte inkomende replyketen bewijzen, Vinted-onderhandelingen, TicketSwap-eventwatch en alerts |
 | Server Manager | Status, wekelijkse echte inspectie, chatmeldingen en beperkte serviceherstarts | Ruimere diagnose/backups en geverifieerde herstelacties voor andere storingen |
 | Model Scheduler | Lokale M40, sensitive-local routing, GPU-lease met prioriteiten/aging, cacherouting en globale 89C-guard met cooling-aware queue | Adaptieve modelkeuze, batching en aansluiting Code Worker |
@@ -24,7 +24,7 @@ beproeven en deployen voordat het volgende onderdeel wordt uitgebreid.
 | Night Cycle / Feedback | Bronindex, ochtendbrief en echte lokale gesprekreflectie om22:00: voorkeuren in chat, tools/vragen in Werk en automatische MCP-cataloguszoekstap plus lokale skillbouw/test/registratie | Foutreflectie, semantische conflictoplossing en externe vaardigheden aansluiten |
 | Zelfverbetering / Genome | Patchvalidator, rollbackcontract, configuratie/journal | Werkende doelhost-uitvoering, tests, succesvolle update en automatische rollback |
 | UI / Experience / Character | Eén Werk, compacte Vandaag, echte Chat/Memory | Kaarten passend bij echte tools, zichtbare blokkades en minder demo-restanten |
-| Manager / school / reizen | Vooral conceptrollen | Magister-serveraanmelding met wachtwoord/2FA gereed; schoolagenda na eigenaar-login testen, financiële acties open |
+| Manager / school / reizen | Vooral conceptrollen | Magister-agenda live in chat/Vandaag/planning; cijfers/huiswerk/mail en financiële acties open |
 
 ## Bouwvolgorde
 

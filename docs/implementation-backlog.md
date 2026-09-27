@@ -1,3 +1,8 @@
+Actueel27september: Magister-agenda live gekoppeld aan chat, Vandaag en vrije-
+momentenplanner (Google+school). Schoolaccount gecontroleerd,18weekafspraken,
+7slots zonder overlap, eigen taakdone. Nog geen schoolcijfers/huiswerk/mail,
+volledige routines of andere agenda's; overige visie blijft open.
+
 Actueel: kort M40-build/test/registratiebewijs59.4s na output/staplimietfix;
 volledige nachtketen nog opnieuw bewijzen. TicketSwap publieke voorbeeldzoekactie
 gedeployd, maar actuele live toegang403/Verifying. Gratis snapshotvoorbeeld in

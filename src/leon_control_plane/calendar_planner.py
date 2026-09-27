@@ -49,6 +49,16 @@ def find_slots(store, values, args, *, now=None):
     # Missing pages are not evidence that the remainder of a week is free.
     if data.get('truncated') is not False:
         return {'status':'incomplete','slots':[],'text':'Je agenda bevat meer afspraken dan ik volledig kon ophalen. Ik kan de vrije momenten niet bevestigen; vraag het voor één dag.'}
+    school=False
+    if values.get('LEON_MAGISTER_AGENDA_ENABLED')=='1':
+        from leon_control_plane.magister_agenda import preview as school_preview
+        try:
+            extra=school_preview(start,end)
+        except ValueError:
+            return {'status':'incomplete','slots':[],'text':'Je schoolagenda is nu niet bereikbaar. Ik kan vrije momenten niet bevestigen zonder je lessen; controleer Magister in Vandaag.'}
+        if extra.get('truncated') is not False:
+            return {'status':'incomplete','slots':[],'text':'Je schoolagenda is niet volledig opgehaald. Ik kan de vrije momenten niet bevestigen; vraag het voor één dag.'}
+        data={**data,'items':data['items']+extra['items']};school=True
     events=[]
     for item in data['items']:
         if item.get('status')=='cancelled' or item.get('transparency')=='transparent':continue
@@ -60,8 +70,9 @@ def find_slots(store, values, args, *, now=None):
     horizon=max(start,now.replace(second=0,microsecond=0)+timedelta(minutes=bool(now.second or now.microsecond)))
     slots=_free_slots(events=events,horizon_start=horizon,horizon_end=end,
         workday_start=day_start,workday_end=day_end,duration=timedelta(minutes=minutes))
-    text=f'Volgens je primaire Google-agenda, tussen {day_start:%H:%M} en {day_end:%H:%M}, voor minimaal {minutes} minuten:'
+    sources='Google-agenda en Magister' if school else 'primaire Google-agenda'
+    text=f'Volgens je {sources}, tussen {day_start:%H:%M} en {day_end:%H:%M}, voor minimaal {minutes} minuten:'
     if slots:
         text+='\n'+'\n'.join('• '+datetime.fromisoformat(s['start']).strftime('%d-%m %H:%M')+'–'+datetime.fromisoformat(s['end']).strftime('%H:%M') for s in slots)
     else:text+='\nGeen passend vrij moment gevonden.'
-    return {'status':'completed','slots':slots,'text':text+'\nAlleen je primaire agenda is meegenomen; er is geen afspraak aangemaakt.'}
+    return {'status':'completed','slots':slots,'text':text+('\nJe primaire Google-agenda en schoollessen zijn meegenomen; er is geen afspraak aangemaakt.' if school else '\nAlleen je primaire agenda is meegenomen; er is geen afspraak aangemaakt.')}

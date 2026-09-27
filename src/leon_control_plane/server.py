@@ -3649,7 +3649,17 @@ class Handler(BaseHTTPRequestHandler):
         try:
             if self.path == '/api/magister/status':
                 from leon_control_plane.magister_auth import status
-                self._send_json(status())
+                result=status()
+                if result.get('state')=='signed_in_unverified':
+                    from leon_control_plane.magister_agenda import preview
+                    try:
+                        data=preview();result.update(state='connected',calendar_connected=True,appointment_count=len(data['items']))
+                    except ValueError:pass
+                self._send_json(result)
+                return
+            if self.path == '/api/magister/calendar':
+                from leon_control_plane.magister_agenda import preview
+                self._send_json(preview())
                 return
             google_response = google_request(STORE, method="GET", path=self.path, values=parse_selected_env_values({"GOOGLE_CALENDAR_WRITE_ENABLED", "GOOGLE_READONLY_ENABLED", "GOOGLE_ACCESS_TOKEN", "GOOGLE_REFRESH_TOKEN", "GOOGLE_CLIENT_ID", "GOOGLE_CLIENT_SECRET", "GOOGLE_GRANTED_SCOPES", "GOOGLE_CREDENTIALS_FILE"}))
         except (ValueError, GoogleReadonlyError) as exc:

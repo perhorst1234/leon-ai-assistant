@@ -41,6 +41,23 @@ def test_browser_errors_never_expose_secret_script(monkeypatch):
         browser('dummy-private-input')
 
 
+def test_trusted_click_stays_on_school_cdp_target(monkeypatch):
+    from io import BytesIO
+    from contextlib import nullcontext
+    targets=[{'type':'page','url':'https://accounts.magister.net/login','webSocketDebuggerUrl':'ws://127.0.0.1:9223/devtools/page/school'}]
+    monkeypatch.setattr('leon_control_plane.magister_auth.urllib.request.urlopen',lambda *a,**k:BytesIO(json.dumps(targets).encode()))
+    commands=[]
+    class Connection:
+        def send(self,value):commands.append(json.loads(value))
+        def recv(self,**kwargs):
+            id=commands[-1]['id']
+            return json.dumps({'id':id,'result':{'result':{'value':'{"x":100,"y":200}'}}} if id==1 else {'id':id,'result':{}})
+    monkeypatch.setattr('leon_control_plane.magister_auth.websocket_connect',lambda *a,**k:nullcontext(Connection()))
+    assert browser('fixed-school-control-script',click=True)=={'submitted':True}
+    assert commands[0]['params']['awaitPromise'] is True
+    assert [c['params']['type'] for c in commands[1:]]==['mousePressed','mouseReleased']
+
+
 def page(**kwargs):
     return {'host':'login.microsoftonline.com','account':True,'password':True,'mfa':False,'wrong':False,**kwargs}
 
@@ -48,6 +65,48 @@ def page(**kwargs):
 def test_password_state_is_not_calendar_connection():
     result=status(VALUES,lambda _:page())
     assert result['state']=='password_needed' and result['calendar_connected'] is False
+
+
+def test_expired_school_session_is_not_username_form():
+    assert status(VALUES,lambda _:page(host='accounts.magister.net',expired=True,username=False))['state']=='session_expired'
+    assert status(VALUES,lambda _:page(host='accounts.magister.net',expired=False,username=True))['state']=='username_needed'
+    assert status(VALUES,lambda _:page(host='accounts.magister.net',expired=False,username=False))['state']=='signing_in'
+    assert status(VALUES,lambda _:page(host='accounts.magister.net',expired=False,school=True,username=True))['state']=='school_needed'
+
+
+def test_expired_session_restarts_exact_school_link_without_password(monkeypatch,tmp_path):
+    from leon_control_plane.magister_auth import start
+    binary=tmp_path/'.npm/_npx/example/node_modules/agent-browser/bin/agent-browser.js'
+    binary.parent.mkdir(parents=True);binary.write_text('')
+    monkeypatch.setenv('HOME',str(tmp_path));calls=[]
+    monkeypatch.setattr('leon_control_plane.magister_auth.status',lambda _: {'state':'session_expired'})
+    monkeypatch.setattr('leon_control_plane.magister_auth.browser',lambda script,**kwargs:calls.append(script))
+    assert start({**VALUES,'LEON_MAGISTER_USERNAME':'student'})['state']=='signing_in'
+    assert len(calls)==1 and 'Opnieuw inloggen' in calls[0] and 'new URL(link.href).hostname' in calls[0]
+    assert 'input[type=password]' not in calls[0]
+
+
+def test_school_username_targets_real_web_component_and_skips_school_field(monkeypatch,tmp_path):
+    from leon_control_plane.magister_auth import start
+    binary=tmp_path/'.npm/_npx/example/node_modules/agent-browser/bin/agent-browser.js'
+    binary.parent.mkdir(parents=True);binary.write_text('')
+    monkeypatch.setenv('HOME',str(tmp_path));calls=[]
+    monkeypatch.setattr('leon_control_plane.magister_auth.status',lambda _: {'state':'username_needed'})
+    monkeypatch.setattr('leon_control_plane.magister_auth.browser',lambda script,**kwargs:calls.append(script))
+    assert start({**VALUES,'LEON_MAGISTER_USERNAME':'student'})['state']=='signing_in'
+    assert '#username_submit' in calls[0] and 'button,sl-button' in calls[0] and '#username:not([disabled])' in calls[0]
+
+
+def test_school_selector_opens_configured_portal_without_typing_student_number(monkeypatch,tmp_path):
+    from leon_control_plane.magister_auth import start
+    binary=tmp_path/'.npm/_npx/example/node_modules/agent-browser/bin/agent-browser.js'
+    binary.parent.mkdir(parents=True);binary.write_text('')
+    monkeypatch.setenv('HOME',str(tmp_path));calls=[]
+    monkeypatch.setattr('leon_control_plane.magister_auth.status',lambda _: {'state':'school_needed'})
+    monkeypatch.setattr('leon_control_plane.magister_auth.browser',lambda script,**kwargs:calls.append(script))
+    start({**VALUES,'LEON_MAGISTER_USERNAME':'student'})
+    assert 'location.assign("https://vova.magister.net")' in calls[0]
+    assert 'set.call' not in calls[0]
 
 
 def test_mfa_code_and_authenticator_number_are_distinct():

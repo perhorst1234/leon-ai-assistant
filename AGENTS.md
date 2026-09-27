@@ -1,5 +1,11 @@
 # Werken aan Leon / Gaia
 
+- Nieuwste27september: Magister eigen account/agendaAPI200 werkelijk bewezen,
+  18weekafspraken, Google+schoolplanning7slots zonder lesoverlap, beide chat-
+  antwoorden en Vandaag6items/webbridge bewezen. Privé plannerflag aan;
+  exacte Magister-vaardigheiddone. Geen nieuwe schoolwachtwoord/MFA ontvangen.
+  668backend/57web; zie docs/magister-agenda.md en handoff.
+
 - Nieuwste27september: compact coder10stappen/1536output; echte korte M40-
   bouw59.4s + Docker-tests/registratie/aanroep128 bewezen. Volledige nachtproef
   afzonderlijk open. TicketSwap gratis voorbeeld in chat/Werk, liveHTTP403/
