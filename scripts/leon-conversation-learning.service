@@ -8,5 +8,5 @@ Type=oneshot
 WorkingDirectory=%h/leon-ai-assistant
 EnvironmentFile=-%h/leon-ai-assistant/.env.local
 ExecStart=%h/leon-ai-assistant/.venv/bin/python -m leon_control_plane.conversation_learning
-TimeoutStartSec=1500
-
+ExecStartPost=%h/leon-ai-assistant/.venv/bin/python -m leon_control_plane.skill_discovery
+TimeoutStartSec=2100

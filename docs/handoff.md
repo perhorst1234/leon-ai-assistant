@@ -1,5 +1,37 @@
 # Overdracht — Leon / Gaia
 
+**27 september, automatische MCP-zoekstap aangesloten:** skill_discovery draait
+als ExecStartPost na de22:00-gesprekreflectie. Per run maximaal2 nieuwe
+vaardigheidstaken; herkenbare productnamen direct, onbekende via bestaande M40
+achtergrondprioriteit. Geen Firecrawl/OpenAI/abonnement. Vaste officiële HTTPS-
+catalogus, version=latest, hoogstens2 zoeknamen en5 kandidaten; metadata begrensd,
+geen redirects, geen pakketargumenten/code uit het antwoord uitvoeren. Op deze VM
+time-out bij directe registry-TLS; bestaande serverproxy via urllib levertHTTP200.
+Catalogusbeschrijvingen zijn brondata; prijs/licentie/werking blijven onbekend.
+
+Echte zoeksubtaak onder de oorspronkelijke vaardigheid in verenigd Werk; alleen
+zoeksubtaak gaat done na opgeslagen providerresultaat. Hoofdvaardigheid blijft
+open tot installatie/configuratie/werkelijke tools bewezen zijn. Journal hervat
+meldingen zonder model/netwerkreplay; fouten blokkeren zoeksubtaak en wachten24h,
+expliciete onderhoudsretry alleen voor terminal retry-status. Nieuwe taakbrief
+krijgt eigen zoekresultaat; oude zoekresultaten verdringen geen nieuwe opdrachten.
+
+Doelserver: eigenaarwens Magister-agenda als taak geregistreerd. Eerste M40-query
+ongeldig (te algemene naam), daarna vaste productnaam; tweede proef directe TLS
+time-out. Na proxycorrectie werkelijk afgerond: magister-query,0 kandidaten,
+zoeksubtaakdone/hoofdtaaknew en één melding.0 resultaten zijn geen bewijs dat er
+elders geen connector bestaat. Extra catalogusprobe calendar:5 kandidaten,
+3 bronrepositories, geen bewezen installatie of prijs. Bestaande Google-
+koppeling blijft de werkelijke plannerconnector. Bron:
+https://registry.modelcontextprotocol.io/docs .
+
+Volgende: voor relevante kandidaten GitHub/licentie/vereiste accounts onderzoeken
+en echte installatie/verbinding/test uitvoeren; anders eigen connector bouwen.
+Magister-school/auth nog onbekend. GLM5.2/Colibri wacht extra schijf/RAM.
+604 volledige backendtests, systemd/diffcheck geslaagd. Geïntegreerde productie-
+oneshot reflectie+ExecStartPost eindigde success/exit0; eerder afgehandelde
+zoekstap niet herhaald, geen dubbele melding. School/portal-URL aan eigenaar gevraagd.
+
 **27 september, eerste echte zelfleerketen gedeployd:** nieuwe module
 conversation_learning gebruikt bestaande Leon-chat, Memory, taken en owner_updates.
 Dagelijks22:00 Europe/Amsterdam via enabled/active timer; maximaal12 nieuwe

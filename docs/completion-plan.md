@@ -21,7 +21,7 @@ beproeven en deployen voordat het volgende onderdeel wordt uitgebreid.
 | Model Scheduler | Lokale M40, sensitive-local routing, GPU-lease met prioriteiten/aging, cacherouting en globale 89C-guard met cooling-aware queue | Adaptieve modelkeuze, batching en aansluiting Code Worker |
 | M40 Code Worker | OpenCode/GPT-OSS read/edit/readback eerder bewezen; laatste Qwen-review timeout zonder verdict | Vanuit Leon starten met eigen workspace, daadwerkelijke checks en deployment terugkoppelen |
 | Value / Opportunity / Curiosity | Scores, observaties, policies en queue-algoritmes | Relevante echte bronnen, herhaling in eigen gebruik herkennen en bruikbare verbeteringen uitvoeren |
-| Night Cycle / Feedback | Bronindex, ochtendbrief en echte lokale gesprekreflectie om22:00: voorkeuren in chat, tools/vragen in Werk | Foutreflectie, semantische conflictoplossing en vaardigheden daadwerkelijk bouwen |
+| Night Cycle / Feedback | Bronindex, ochtendbrief en echte lokale gesprekreflectie om22:00: voorkeuren in chat, tools/vragen in Werk en automatische MCP-cataloguszoekstap | Foutreflectie, semantische conflictoplossing en vaardigheden daadwerkelijk bouwen |
 | Zelfverbetering / Genome | Patchvalidator, rollbackcontract, configuratie/journal | Werkende doelhost-uitvoering, tests, succesvolle update en automatische rollback |
 | UI / Experience / Character | Eén Werk, compacte Vandaag, echte Chat/Memory | Kaarten passend bij echte tools, zichtbare blokkades en minder demo-restanten |
 | Manager / school / reizen | Vooral conceptrollen | Gekozen bronnen en concrete gebruiksscenario's; nog geen financiële/accountacties |

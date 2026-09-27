@@ -1,5 +1,11 @@
 # Werken aan Leon / Gaia
 
+- Nieuwste27september: nightly skill_discovery zoekt zelf echte MCP-catalogus-
+  metadata voor vaardigheidstaken; bronresultaat als zoeksubtaak, hoofdtaak open.
+  Live Magister0matches en calendar5metadataresultaten; directeTLS-timeout
+  verholpen met bestaande serverproxy. Geen installatie/prijs claimen.
+  Zie docs/handoff.md.
+
 - Nieuwste27september: echte gesprekreflectie22:00 Amsterdam gedeployd;
   M40-only, broncitaten, preferences in chat, tools/vragen in Werk; journal/dedup.
   Productie12berichten stil; geïsoleerde echte M40-proef2voorkeuren/chatcontext.
