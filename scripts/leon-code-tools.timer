@@ -1,0 +1,10 @@
+[Unit]
+Description=Recover queued generated tool invocations
+
+[Timer]
+OnBootSec=60
+OnUnitInactiveSec=30
+Unit=leon-code-tools.service
+
+[Install]
+WantedBy=timers.target

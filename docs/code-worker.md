@@ -58,3 +58,51 @@ Verificatie:631 volledige backendtests,11 gerichte bouw-/containertests,
 Echte Docker-test via systemd-gebruikersservice exit0; geen eigen testcontainers
 achtergebleven. Backend/web/worker/guard en bouwwerktimer active/enabled.
 Containeropties: https://docs.docker.com/reference/cli/docker/container/run/ .
+
+## Geteste functies gebruiken, 27 september
+
+Na succesvolle Docker-tests registreert Leon automatisch geschikte sync
+Python-functies met JSON-invoer, type-/parametercontrole en de geteste bronhash
+plus image-ID. Functies worden uitsluitend in Docker geladen; op de host leest
+AST alleen de handtekening. De eerste ondersteunde functie is de werkelijk door
+de M40 gebouwde gb_to_mb. Die staat nu in de productiecatalogus en Werk; echte
+productie-aanroep64GB gaf65536MB. Bron is het eerder bewezen M40-artifact; niet
+opnieuw gegenereerd. Dit is een lokale rekenfunctie, geen live MCP-integratie.
+
+Vraag in chat welke tools beschikbaar zijn, of bijvoorbeeld: “Gebruik mijn
+nieuwe tool en reken64GB om naarMB.” De M40-router krijgt alleen geregistreerde
+metadata en kiest een exact ID en gevalideerde argumenten. Een afzonderlijke
+achtergrondservice voert de functie uit en bezorgt het resultaat in dezelfde
+chat/Werk. Geen extra goedkeuring voor deze geautoriseerde lokale uitvoering.
+De gewone web/backendservice krijgt geen containercode in zijn proces.
+
+PrivateTmp in de systemd-gebruikersmanager bleek groeps-ID's te remappen naar
+65534; sg kon de nieuwe Docker-groep daar niet verkrijgen. Beide Docker-workers
+gebruiken daarom de echte host-groeps-ID's. Docker zelf houdt code offline,
+nonroot, read-only en begrensd. Tijdelijke bronkopieën staan op een vaste
+host-zichtbare private plek zodat ook de Docker-daemon ze kan lezen; na afloop
+opgeruimd. De backend blijft ongewijzigd afgeschermd en wekt alleen de vaste
+functiewerker. Een timer herstelt gemiste wakeups.
+
+Aanroep maximaal15s/8KiB uitvoer; stdin is begrensde JSON en stdout wordt tijdens
+het lezen begrensd, niet achteraf met een onbeperkte communicate(). Geen raw
+fout/logoutput in chat. Request-ID bindt functie en argumenten; opgeslagen
+resultaat/melding herstelt zonder nieuwe uitvoering. Onzekere uitvoering wordt
+geblokkeerd zonder automatische replay. Gewijzigde bron verdwijnt uit catalogus
+en wordt vóór uitvoering afgewezen. Onbewezen externe integraties worden niet
+als afgeronde tool geregistreerd omdat lokale tests geen echte accountacties
+bewijzen. Complexe signatures/async functies en netwerk-/accounttools zijn
+vervolgwerk, naast de bestaande echte Google/shopperconnectors.
+
+Bewijs: geteste M40-functie geregistreerd en parent done. Geïsoleerde echte
+chatservice + M40-router41.3s + systemd/Docker41.9s totaal leverde65536 in hetzelfde
+gesprek; echte achtergrondservice-aanroep128GB gaf131072. Overmatige uitvoer
+werd na0.4s afgewezen; oneindige lus na15.1s gestopt; eigen containers opgeruimd.
+Dit bewijst deze berekeningen en keten, niet alle toekomstige tools.
+
+Laatste productieacceptatie: geauthenticeerde webbridge→backend→echte M40-router
+→vaste achtergrondservice→Docker→oorspronkelijke chat,10s, bevestigd65536.
+Gesprek heet Controle lokale functies, geen credentials gelogd. Dit is een
+werkelijke HTTP-webflow, geen nieuwe native-browser-klikproef. Backend640tests
+plus36 gerichte registry/bouw/container/routerchecks geslaagd; webbron ongewijzigd.
+Geteste bron/installatie en functie-uitvoering staan ook in productie-Werk.

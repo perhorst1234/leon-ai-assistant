@@ -1,0 +1,11 @@
+[Unit]
+Description=Leon generated tool executor
+
+[Service]
+Type=oneshot
+WorkingDirectory=%h/leon-ai-assistant
+ExecStart=%h/leon-ai-assistant/.venv/bin/python -m leon_control_plane.code_tools
+TimeoutStartSec=180
+# User-manager PrivateTmp remaps group IDs and prevents sg acquiring docker.
+# Generated functions are isolated by the offline Docker container itself.
+PrivateTmp=false

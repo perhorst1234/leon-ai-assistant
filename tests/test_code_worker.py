@@ -88,3 +88,19 @@ def test_source_rejects_symlinks_extra_files_and_stub(tmp_path):
     with pytest.raises(ValueError):artifacts(workspace)
     (workspace/'outside.txt').write_text('unexpected')
     with pytest.raises(ValueError):artifacts(workspace)
+
+
+def test_successful_offline_function_is_automatically_available(tmp_path,monkeypatch):
+    from leon_control_plane.code_tools import catalog
+    store=make_store(tmp_path);parent=enqueue(store,str(uuid.uuid4()),BRIEF)['task_id']
+    monkeypatch.setattr('leon_control_plane.code_worker.test_artifacts',lambda p:{'tests_executed':True,'tests_passed':True,'test_exit_code':0,'test_image':'sha256:'+'a'*64})
+    assert run_once(store,builder=files,clock=lambda:100,notify=False)
+    assert store.get_task(parent)['status']=='done' and catalog(store)[0]['name']=='username'
+
+
+def test_passing_local_tests_do_not_complete_external_integration(tmp_path,monkeypatch):
+    from leon_control_plane.code_tools import catalog
+    store=make_store(tmp_path);parent=enqueue(store,str(uuid.uuid4()),'Maak een Vinted API tool voor berichten.')['task_id']
+    monkeypatch.setattr('leon_control_plane.code_worker.test_artifacts',lambda p:{'tests_executed':True,'tests_passed':True,'test_exit_code':0,'test_image':'sha256:'+'a'*64})
+    assert run_once(store,builder=files,clock=lambda:100,notify=False)
+    assert store.get_task(parent)['status']=='blocked' and catalog(store)==[]

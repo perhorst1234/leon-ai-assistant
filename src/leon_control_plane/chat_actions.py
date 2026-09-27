@@ -7,7 +7,7 @@ import threading
 import time
 from zoneinfo import ZoneInfo
 
-_ACTIONS = {'code.build', 'shopper.create', 'shopper.update', 'shopper.pause', 'shopper.resume', 'shopper.search',
+_ACTIONS = {'code.build', 'code.invoke', 'code.list', 'shopper.create', 'shopper.update', 'shopper.pause', 'shopper.resume', 'shopper.search',
             'shopper.hold', 'shopper.status', 'calendar.read', 'calendar.find_slots', 'calendar.create', 'calendar.update', 'calendar.delete', 'mail.read', 'memory.save', 'memory.search',
             'tasks.create', 'tasks.execute', 'tasks.pause', 'tasks.resume', 'tasks.cancel', 'tasks.status', 'research.search', 'server.status', 'server.check', 'clarify'}
 
@@ -18,7 +18,8 @@ def may_be_action(content: str) -> bool:
     commands = bool(re.search(r'\b(zoek|zoeken|volg|regelen?|vind|pauze|pauzeer|stop|hervat|reageer|budget|status|hoe|update|verander|wacht|alleen|liever|voorkeur)\b', text))
     work = bool(re.search(r'\b(maak|schrijf|stel|analyseer|vergelijk|vat|werk|pauzeer|hervat)\b', text) and re.search(r'\b(opdracht|achtergrond|plan|rapport|analyse|samenvatting|tekst|checklist|taak)\b', text))
     availability=bool(re.search(r'\b(vrije? (?:momenten?|tijd)|wanneer .{0,60}(?:tijd|vrij))\b',text))
-    return code_command(content) or availability or work or (shopping and commands) or bool(re.search(r'\b(onderzoek|webresearch|zoek op internet|zoek online|zoek bronnen)\b',text)) or bool(re.search(
+    tools=bool(re.search(r'\b(tools?|functie)\b',text) and re.search(r'\b(gebruik|voer|roep|bereken|reken|welke|beschikbaar)\b',text))
+    return tools or code_command(content) or availability or work or (shopping and commands) or bool(re.search(r'\b(onderzoek|webresearch|zoek op internet|zoek online|zoek bronnen)\b',text)) or bool(re.search(
         r'\b(server|m40|agenda|afspraak|afspraken|gmail|mail|geheugen)\b|\b(onthoud|bewaar|taken|opdrachten)\b', text))
 
 
@@ -84,6 +85,8 @@ def shopper_service():
 def route(content: str, history: list[str], state: dict) -> dict:
     if code_command(content):
         return {'action':'code.build','args':{}}
+    if re.search(r'\b(welke|beschikbare)\b.*\btools\b',content,re.I):
+        return {'action':'code.list','args':{}}
     from leon_control_plane.shopper_runtime import model_json
     watches = [{'id': w['id'], 'query': w['query'], 'budget_cents': w['max_total_cents'],
                 'min_ram_gb': w['min_ram_gb'], 'enabled': w['enabled']} for w in state.get('watches', [])[:5]]
@@ -101,10 +104,12 @@ def route(content: str, history: list[str], state: dict) -> dict:
         'tasks.create:title,goal uitsluitend expliciet later bewaren. tasks.pause/resume/cancel:task_id. '
         'tasks.status:{} of task_id. research.search:query voor webresearch, geen advertenties. '
         'server.status:{}; server.check:{} expliciete controle/herstel. '
+        'code.invoke:tool_id,arguments gebruikt een beschikbare lokale functie uit generated_tools. '
+        'Neem exact dat ID en de parameternaam/type. code.list:{} toont deze functies. '
         'Gebruik bekende IDs; twijfel:clarify(question). Budget EUR50=5000; geen RAM:RAM-velden 0.\n'
     )
     context = {'watches': watches, 'tasks': state.get('tasks',[])[:5], 'calendar':state.get('calendar',[])[:5], 'now_amsterdam':datetime.now(ZoneInfo('Europe/Amsterdam')).isoformat(timespec='minutes'),
-               'previous_owner_messages': history[-2:], 'current_owner_command': content}
+               'generated_tools':state.get('generated_tools',[])[:4], 'previous_owner_messages': history[-2:], 'current_owner_command': content}
     prompt = instructions + json.dumps(context,ensure_ascii=False)
     while len(prompt.encode())>4096:
         if context['previous_owner_messages']:
@@ -115,6 +120,8 @@ def route(content: str, history: list[str], state: dict) -> dict:
             context['tasks'].pop()
         elif context['calendar']:
             context['calendar'].pop()
+        elif context['generated_tools']:
+            context['generated_tools'].pop()
         else:
             raise ValueError('Owner command exceeds router context')
         prompt = instructions + json.dumps(context,ensure_ascii=False)
@@ -126,6 +133,16 @@ def route(content: str, history: list[str], state: dict) -> dict:
 
 def apply(store, request_id: str, decision: dict, shopper, *, owner_content='') -> str:
     action, args = decision['action'], decision['args']
+    if action=='code.list':
+        if args:raise ValueError('Invalid tool list request')
+        from leon_control_plane.code_tools import catalog
+        tools=catalog(store)
+        return 'Beschikbare lokale functies:\n'+'\n'.join(t['name']+' — '+t['description'] for t in tools) if tools else 'Er zijn nog geen zelfgebouwde functies beschikbaar.'
+    if action=='code.invoke':
+        if set(args)!={'tool_id','arguments'} or not isinstance(args['tool_id'],str):raise ValueError('Invalid generated tool request')
+        from leon_control_plane.code_tools import enqueue_call
+        enqueue_call(store,request_id,args['tool_id'],args['arguments'])
+        return 'Ik gebruik de lokale functie en stuur het resultaat hier terug. Je kunt de uitvoering volgen in Werk.'
     if action=='code.build':
         if args or not code_command(owner_content):raise ValueError('Invalid coding command')
         from leon_control_plane.code_worker import enqueue
@@ -317,7 +334,8 @@ class ActionRunner:
                         known_calendar=calendar_context(self.store,message['request_content'])
                     except ValueError:
                         pass
-            state=shopper.state() | {'tasks':task_context(self.store),'calendar':known_calendar}
+            from leon_control_plane.code_tools import catalog
+            state=shopper.state() | {'tasks':task_context(self.store),'calendar':known_calendar,'generated_tools':catalog(self.store)}
             decision = validate_authority(route(message['request_content'], [r['content'][:500] for r in reversed(rows)], state), message['request_content'])
             with closing(self.store.connect()) as conn, conn:
                 conn.execute("UPDATE chat_actions SET status='applying',operation=?,updated_at=? WHERE message_id=?", (json.dumps(decision), time.time(), message['id']))

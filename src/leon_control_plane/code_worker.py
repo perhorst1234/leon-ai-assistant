@@ -6,6 +6,7 @@ import hashlib
 import fcntl
 import json
 import os
+import re
 from pathlib import Path
 import stat
 import subprocess
@@ -117,15 +118,24 @@ def transition(store,task_id,target,**kwargs):
 
 def finish(store,row,payload,notify):
     checked=payload.get('tests_passed',False)
+    from leon_control_plane.code_tools import register
+    external=bool(re.search(r'\b(mcp|api|plugin|installeer|marktplaats|vinted|ticketswap|google|agenda|gmail|magister|paypal|rabobank|server|printer|fluidd)\b',row['brief'],re.I))
+    tools=register(store,row['id'],payload) if not external else []
+    payload['installed']=bool(tools)
+    payload['tool_ids']=tools
+    with closing(store.connect()) as c,c:c.execute('UPDATE code_builds SET payload=? WHERE id=?',(json.dumps(payload),row['id']))
     summary='M40 heeft broncode en tests geschreven. Python-syntax gecontroleerd. '
-    summary+=('De uitvoeringstests in Docker zijn geslaagd; aansluiting nog niet uitgevoerd.\n' if checked else
+    summary+=('De uitvoeringstests in Docker zijn geslaagd. '+('Beschikbaar vanuit chat: '+', '.join(t.split(':',1)[1] for t in tools)+'.\n' if tools else 'Live toolaansluiting nog niet uitgevoerd.\n') if checked else
         'Uitvoeringstests nog niet geslaagd: '+payload.get('test_reason','niet uitgevoerd')+'. Niets geïnstalleerd.\n')
     summary+='\n'.join(f"{name}: {f['bytes']} bytes, SHA256 {f['sha256']}" for name,f in payload['files'].items())
     transition(store,row['child_id'],'done',result=summary,verification_note='Bestanden werkelijk teruggelezen; AST-syntaxcheck, geen uitvoering.')
-    transition(store,row['parent_id'],'blocked',result=summary,blocked_reason='Toolaansluiting ontbreekt.' if checked else 'Uitvoeringstests en toolaansluiting ontbreken.')
+    # Offline function availability cannot prove a requested external integration.
+    complete=bool(tools) and not external
+    transition(store,row['parent_id'],'done' if complete else 'blocked',result=summary,
+        **({'verification_note':'Werkelijke Docker-tests geslaagd; geteste bron/hash en aanroepbare offline functies geregistreerd.'} if complete else {'blocked_reason':'Live integratie nog niet bewezen.' if checked else 'Uitvoeringstests en toolaansluiting ontbreken.'}))
     if notify:
         from leon_control_plane.owner_updates import publish
-        publish(store,'code-built:'+row['id'],summary+'\nDe tool blijft open in Werk tot tests en aansluiting bewezen zijn.',request_id=row['id'])
+        publish(store,'code-built:'+row['id'],summary+('Je kunt deze lokale functie nu in de chat gebruiken.' if complete else '\nDe opdracht blijft open tot de echte aansluiting bewezen is.'),request_id=row['id'])
     with closing(store.connect()) as c,c:c.execute("UPDATE code_builds SET status='built' WHERE id=?",(row['id'],))
 
 

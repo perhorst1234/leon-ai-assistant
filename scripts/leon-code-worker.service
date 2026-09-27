@@ -10,4 +10,5 @@ ExecStart=%h/leon-ai-assistant/.venv/bin/python -m leon_control_plane.code_worke
 TimeoutStartSec=700
 # Existing user sessions use sg to acquire the owner's newly granted docker group.
 # Generated code runs only inside containers with no-new-privileges enabled.
-PrivateTmp=true
+# Docker needs the host group IDs; generated tests stay isolated in Docker.
+PrivateTmp=false

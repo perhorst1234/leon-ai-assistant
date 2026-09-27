@@ -1,5 +1,27 @@
 # Overdracht — Leon / Gaia
 
+**27 september, M40-tools automatisch geregistreerd en vanuit chat gebruikt:**
+Geteste sync lokale Python-functies worden met bronhash/image-ID/typeparameters
+beschikbaar. Code Worker hoofdtaakdone alleen bij echte lokale aansluiting;
+externe/MCP-requests blijven open zolang live integratie niet bewezen is.
+Router leest catalogus en kiest ID+JSON-args; aparte offline Docker-functiewerker,
+resultaat in oorspronkelijke chat/Werk, zonder extra ownerreview. Requestbinding,
+resultaat-/meldingsherstel zonder replay, gewijzigde bron uit catalogus geweerd.
+
+Echte M40-bron gb_to_mb nu op productie geregistreerd en aangeroepen:64→65536.
+Geïsoleerde volledige chat/M40-router/systemd-containerketen41.9s bewezen;
+128→131072 via echte achtergrondservice. Uitvoerlimiet8KiB/15s werkelijk beproefd
+met flood/oneindige lus, eigen containers opgeruimd. PrivateTmp in usermanager
+mapte groepen naar65534 en brak sg; beide Docker-workers gebruiken nu de echte
+host-groeps-ID's. Backend blijft afgeschermd; generated code alleen in Docker.
+Zie docs/code-worker.md. Schema's/async/netwerktools blijven vervolgwerk.
+Productie-webbridgeketen met echte M40-router/Docker/chatreply10s bevestigd.
+640full/36gerichte checks; timers/backend/web active, testcontainers weg.
+Schoolagenda nog calendar_connectedfalse. Volgende: nachtelijke skilltaken naar
+bouw/installatie verbinden en bestaande MCP-kandidaten werkelijk aansluiten;
+volledige repo-patchtests/deployment en overige visie blijven open.
+
+
 **27 september, Leon-chat → M40-codebouw → echte Docker-tests:**
 code.build herkent expliciete eigenaarbouwopdracht zonder extra routermodel;
 letterlijke brief/dedup, eigen korte werkpaden, begrensde OpenCode/GPT-OSS,

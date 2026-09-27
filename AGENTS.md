@@ -1,5 +1,11 @@
 # Werken aan Leon / Gaia
 
+- Nieuwste27september: geteste M40-functies automatisch beschikbaar in chat,
+  aparte Docker-functiewerker en echte GB→MB-aanroepen/chatreply bewezen.
+  Docker-worker PrivateTmp uit wegens group-ID-remap; code blijft in Docker.
+  Productie-webflow10s/640tests bewezen. Externe integraties blijven open.
+  Zie docs/code-worker.md en handoff.
+
 - Nieuwste27september: Leon-chat→M40-codebouw→offline Docker-tests→terugmelding
   werkelijk bewezen,0kosten. Docker-toegang toegekend/sg werkt. Worker/timer live.
   631backend/57web. Tool blijft open tot registratie/aansluiting; zie docs/code-worker.md.
