@@ -10,6 +10,7 @@ requires-python = ">=3.12"
 dependencies = [
   "mcp==2.2.0",
   "openai-agents==0.22.2",
+  "websockets==16.1.1",
 ]
 
 [project.scripts]

@@ -27,37 +27,19 @@ if ! flock -n 9; then
   echo "M40 is currently serving another Leon request; retry the coding task later." >&2
   exit 75
 fi
-peak_temp=0
 if ! "$repo_root/.venv/bin/python" -m leon_control_plane.gpu_lease; then
   echo "M40 has queued Leon requests; defer this coding task." >&2
   exit 75
 fi
 "$repo_root/.venv/bin/python" -m leon_control_plane.thermal_guard --check
-setsid "$opencode_bin" --pure --model "ollama/$model" "$@" &
-agent_pid=$!
-trap 'kill -TERM -- "-$agent_pid" 2>/dev/null || true' INT TERM
-stop_hot_agent() {
-  kill -TERM -- "-$agent_pid" 2>/dev/null || true
-  if ! timeout 3s ollama stop "$model" >/dev/null 2>&1; then
-    # If Ollama cannot unload the model promptly, stop the local GPU service.
-    systemctl --user stop leon-ollama >/dev/null 2>&1 || true
-  fi
-  wait "$agent_pid" || true
-}
-while kill -0 "$agent_pid" 2>/dev/null; do
-  temperature="$(nvidia-smi --query-gpu=name,temperature.gpu --format=csv,noheader,nounits 2>/dev/null | awk -F, '/Tesla M40/ {gsub(/ /, "", $2); print $2}')"
-  if [[ ! "$temperature" =~ ^[0-9]+$ ]]; then
-    stop_hot_agent
-    echo "M40 coding agent stopped: GPU temperature could not be read safely." >&2
-    exit 75
-  fi
-  if (( temperature > peak_temp )); then peak_temp=$temperature; fi
-  if (( temperature >= max_temp )); then
-    stop_hot_agent
-    echo "M40 coding agent stopped at ${temperature}C (limit ${max_temp}C). Check the Proxmox host fancontrol and GPU cooling before another sustained run." >&2
-    exit 75
-  fi
-  sleep 1
-done
-wait "$agent_pid"
-printf 'M40 coding agent peak sampled temperature: %sC\n' "$peak_temp" >&2
+if [[ "${LEON_CODING_COMPACT:-0}" == "1" ]]; then
+  export OPENCODE_CONFIG_CONTENT="$(cat "$repo_root/config/m40-compact-agent.json")"
+  export OPENCODE_DISABLE_PROJECT_CONFIG=1
+  export OPENCODE_DISABLE_CLAUDE_CODE=1
+  export OPENCODE_DISABLE_MODELS_FETCH=1
+  export OPENCODE_DISABLE_LSP_DOWNLOAD=1
+fi
+max_seconds="${LEON_M40_CODING_TIMEOUT_SECONDS:-600}"
+exec "$repo_root/.venv/bin/python" -m leon_control_plane.coding_process \
+  --limit "$max_temp" --seconds "$max_seconds" --model "$model" -- \
+  "$opencode_bin" --pure --model "ollama/$model" "$@"

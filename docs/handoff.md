@@ -1,5 +1,39 @@
 # Overdracht — Leon / Gaia
 
+**27 september, schoolaanmelding en begrensde M40-coder gedeployd:**
+Magister heeft nu in Vandaag → Je agenda → Magister koppelen een eigen
+serverformulier voor Microsoft-wachtwoord en 2FA-code/Authenticator-bevestiging.
+School/account blijven alleen in private configuratie. Magister accepteerde het
+leerlingnummer en redirectte werkelijk naar Microsoft; live status password_needed,
+HTTP200 via de webbridge. Een opgeslagen login-HTML is geen ingelogde sessie.
+Geen schoolwachtwoord/2FA ontvangen of geprobeerd; agenda-toegang nog onbewezen.
+Laatste browserproef vond CDP-tabselectie gedeeld tussen sessiealiases; school
+wordt nu direct via vaste loopback-CDP-pagetarget aangesproken, zonder focus
+te wijzigen. Regressie en echte HTTP200/password_needed na wisselen bewezen.
+Wachtwoord/code alleen via lokale browser-CDP-verbinding, geen chat/geheugen/DB; DB bewaart alleen
+verzoeknonce/tijd. Exacte host/accountcontrole, deduplicatie en geen automatische
+retry bij onbekende uitkomst. Statuscontrole door eigenaar; geen MFA-bypass.
+
+Coding-wrapper gebruikt nu bestaande verse thermische guard i.p.v. steeds
+nvidia-smi te starten, met begrensde runtime en cleanup van de eigen procesgroep.
+Compacte OpenCode-config met korte prompt/read/edit/write verlaagt prefill.
+Echte GPT-OSS20B/M40-proef: read/edit/readback in tijdelijk bestand, exit0,
+charged0, piek59C. De twee regels voor leerlingnummerextractie zijn na bronreview
+in de schoolconnector overgenomen en getest. Dit bewijst nog geen algemene
+Code Worker vanuit Leon of uitvoering van willekeurige gegenereerde code.
+Docker is geïnstalleerd maar gebruiker heeft geen sockettoegang; OS-sandbox en
+nachtelijke autonome codebouw/deployment blijven open.
+
+Verificatie: 620 volledige backendtests en16 gerichte checks incl. helper/CDP-tabselectie;
+57 webtests, TypeScript/build geslaagd, lint0 errors/7 bestaande
+warnings. Backend/web/worker/guard active. React-review: eventgestuurde lazy
+status, gelabelde invoer, busy-guard en geen browseropslag. Browserformulier
+Schoolwachtwoord/School aanmelden/Status controleren werkelijk zichtbaar.
+Volgende: eigenaar meldt zich in Leon aan en bevestigt2FA; daarna echte
+Magister-agenda lezen en aansluiten op planner/chat. M40-codeworker verder
+verbinden zodra gecontroleerde doelhostchecks mogelijk zijn.
+
+
 **27 september, automatische MCP-zoekstap aangesloten:** skill_discovery draait
 als ExecStartPost na de22:00-gesprekreflectie. Per run maximaal2 nieuwe
 vaardigheidstaken; herkenbare productnamen direct, onbekende via bestaande M40

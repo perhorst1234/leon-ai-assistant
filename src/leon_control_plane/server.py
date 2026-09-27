@@ -3647,6 +3647,10 @@ class Handler(BaseHTTPRequestHandler):
             self._send_json(overview_response)
             return
         try:
+            if self.path == '/api/magister/status':
+                from leon_control_plane.magister_auth import status
+                self._send_json(status())
+                return
             google_response = google_request(STORE, method="GET", path=self.path, values=parse_selected_env_values({"GOOGLE_CALENDAR_WRITE_ENABLED", "GOOGLE_READONLY_ENABLED", "GOOGLE_ACCESS_TOKEN", "GOOGLE_REFRESH_TOKEN", "GOOGLE_CLIENT_ID", "GOOGLE_CLIENT_SECRET", "GOOGLE_GRANTED_SCOPES", "GOOGLE_CREDENTIALS_FILE"}))
         except (ValueError, GoogleReadonlyError) as exc:
             self._send_json({"error": str(exc)}, HTTPStatus.BAD_REQUEST)
@@ -3822,6 +3826,16 @@ class Handler(BaseHTTPRequestHandler):
                 return
             if self.path == "/api/memory":
                 self._handle_memory_create()
+                return
+            if self.path == '/api/magister/login':
+                from leon_control_plane.magister_auth import submit
+                self._send_json(submit(STORE,self._read_body(allow_secret_values=True)))
+                return
+            if self.path == '/api/magister/start':
+                from leon_control_plane.magister_auth import start
+                if self._read_body():
+                    raise ValueError('magister_invalid_start_request')
+                self._send_json(start())
                 return
             if self.path in {"/api/google/calendar/preview", "/api/google/mail/preview"}:
                 data = self._read_body()

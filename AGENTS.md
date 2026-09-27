@@ -1,5 +1,11 @@
 # Werken aan Leon / Gaia
 
+- Nieuwste27september: schoolwachtwoord/2FA-formulier in Vandaag→Je agenda,
+  serverbrowser op echte Microsoft-wachtwoordstap; nog geen agenda-loginbewijs.
+  Begrensde compact M40-coder read/edit/readback exit0/charged0/piek59C,
+  gegenereerde leerlingnummerhelper gereviewd/toegepast. 620full+16target/57web.
+  Zie docs/handoff.md; Code Worker/OS-sandbox en schoolagenda blijven open.
+
 - Nieuwste27september: nightly skill_discovery zoekt zelf echte MCP-catalogus-
   metadata voor vaardigheidstaken; bronresultaat als zoeksubtaak, hoofdtaak open.
   Live Magister0matches en calendar5metadataresultaten; directeTLS-timeout

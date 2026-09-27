@@ -1,6 +1,7 @@
 'use client';
 import { useCallback, useEffect, useState } from 'react';
 import { CalendarDays } from 'lucide-react';
+import MagisterConnect from './magister-connect';
 import { buildCalendarPreviewPayload, defaultCalendarDraft, formatGoogleDate, normalizeCalendarPreview, normalizeMailPreview, type CalendarPreviewItem, type MailPreviewItem, type GoogleStatus } from './google-contract';
 
 export default function ConnectedGoogle({ status }: { token: string; status: GoogleStatus }) {
@@ -12,5 +13,6 @@ export default function ConnectedGoogle({ status }: { token: string; status: Goo
     {events&&events.length>3&&<details className="google-mail-details"><summary>{events.length-3} overige afspraken</summary><ul className="agenda-list">{events.slice(3).map(e=><li key={e.id}><strong>{e.summary}</strong><small>{formatGoogleDate(e.start,e.allDay)}</small></li>)}</ul></details>}
     {status.configured&&status.scopes.mail&&<details className="google-mail-details" onToggle={e=>{if(e.currentTarget.open&&mail===null)void load('mail',new AbortController().signal);}}><summary>Recente mail</summary>{mail?.map(m=><p key={m.id}>{m.subject}<br/><small>{m.from}</small></p>)}</details>}
     {status.calendarWrite?.enabled&&!status.calendarWrite.granted&&<p><a className="google-connect" href="/api/google/oauth/start">Afspraken beheren inschakelen</a></p>}{error&&<p role="alert" className="today-error">Google ophalen is niet gelukt. <a href="/api/google/oauth/start">Opnieuw verbinden</a></p>}
+    <MagisterConnect/>
   </section>;
 }
