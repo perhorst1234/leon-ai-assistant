@@ -1,5 +1,31 @@
 # Overdracht — Leon / Gaia
 
+**27 september, nachtelijke vaardigheidstaken naar echte codebouw verbonden:**
+Na gesprekreflectie en catalogusonderzoek draait skill_development. Maximaal twee
+nieuwe beslissingen per run; bestaande codebouw uit hetzelfde chatbericht wordt
+hergebruikt zonder extra zoek-/modelronde. Nieuwe lokale JSON-functies krijgen
+M40-bouwsubtaken, echte Docker-tests en registratie in de chatcatalogus. De
+bouwwerker werkt daarna ook de oorspronkelijke Zelfleren-taak bij. Externe
+accounts/MCP-installaties blijven open met concrete vervolgstap; geen fictieve
+integratie of nieuwe API-uitgaven. Journal/dedup, bronwijzigingen, cooldown en
+meldingsherstel afgedekt. Legacy zoekresultaten migreren alleen met de exacte
+taak+goal-journalhash; geen onnodige catalogusherhaling.
+
+Eerste echte nachtketen reflecteerde en zocht succesvol, maar classificeerde een
+te korte samenvatting als onvoldoende informatie. Originele bronvraag wordt nu
+meegenomen in besluit en bouwbrief. Herproef149.1s schreef wel de functie,
+maar liet het testbestand leeg: terecht failed/blocked, niets geïnstalleerd.
+De coderprompt schrijft nu tests eerst en vraagt korte bestanden/readback.
+Verdere automatische replay van die mislukte poging is uitgeschakeld.
+Geteste M40-tool GB→MB vanuit bestaande echte bronopdracht hergebruikt:
+Zelfleren-hoofdtaakdone, geen extra model/catalogus/bouw. Die proef bevestigt
+de journal-/registratie-/afrondingsketen; nieuwe nachtelijke bronbouw bleef
+in deze live proef onafgerond. 651full backend/35target na promptaanpassing,
+57webtests, TypeScript/build, lint0errors/7 bestaande warnings; webHTTP200. Magister is op
+productie blocked, huidige schoolstate username_needed, agenda niet verbonden.
+Geen schoolwachtwoord of 2FA ontvangen/gebruikt. Docker-toegang is bewezen.
+Web toont historische blokkadereden alleen zolang taak echt blocked is.
+
 **27 september, M40-tools automatisch geregistreerd en vanuit chat gebruikt:**
 Geteste sync lokale Python-functies worden met bronhash/image-ID/typeparameters
 beschikbaar. Code Worker hoofdtaakdone alleen bij echte lokale aansluiting;

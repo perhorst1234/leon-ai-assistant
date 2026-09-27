@@ -106,3 +106,29 @@ Gesprek heet Controle lokale functies, geen credentials gelogd. Dit is een
 werkelijke HTTP-webflow, geen nieuwe native-browser-klikproef. Backend640tests
 plus36 gerichte registry/bouw/container/routerchecks geslaagd; webbron ongewijzigd.
 Geteste bron/installatie en functie-uitvoering staan ook in productie-Werk.
+
+## Nachtelijke vaardigheidsontwikkeling
+
+De22:00-service voert na conversation_learning en skill_discovery ook
+skill_development uit. Concrete offline-functies worden automatisch gekoppeld
+aan bestaande bronopdrachten of als nieuwe bouwsubtaak gequeued. De originele
+vraag blijft in de brief. UUID/journalbind voorkomt dubbele builds. Maximaal
+twee nieuwe beslissingen per run; wachtende vragen/fouten krijgen24h cooldown.
+Nieuwe bouw hangt onder de oorspronkelijke vaardigheid in Werk. Code Worker
+reconcile sluit die taak alleen bij geteste bron+werkelijke catalogusregistratie
++afgeronde codehoofdtaak. Gewijzigde doelen krijgen geen oude voltooiing.
+Meldingen gaan waar mogelijk terug naar het oorspronkelijke gesprek.
+
+Extern-account/MCP/software-installatie is geen lokale functie. Die vaardigheid
+blijft open tot aansluiting bewezen is; Magister verwijst naar de bestaande
+schoolaanmelding/2FA. Catalogusmetadata bewijst geen gratis/licentie/werking.
+Noch deze stap noch de standalone-container bewijst volledige repo-patchtests
+of automatische deployment van gegenereerde wijzigingen.
+
+Nachtketen-doelserverproef27september: echte reflectie+catalogus+besluit;
+herproef149.1s leverde M40-functie zonder echte tests, correct failed/blocked,
+geen tool geïnstalleerd. Prompt daarna aangescherpt naar tests-eerst/korte
+bestanden; die gewijzigde prompt nog niet als nieuwe succesvolle bouw claimen.
+Eerder werkelijk geteste M40 GB→MB-bron automatisch hergebruikt door
+skill_development: oorspronkelijke vaardigheiddone, geen extra model/search.
+651full backend/35target na promptwijziging/57webtests, tsc/build, lint0errors.

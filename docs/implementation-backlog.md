@@ -1,3 +1,10 @@
+Actueel27september: nachtelijke vaardigheidsontwikkeling aangesloten op echte
+M40-codebouw/test/registratie. Bronvraag behouden en bestaande chat-builds
+hergebruikt. Afronden alleen bij beschikbare geteste functies; externe connectors
+blijven open. Nog nodig: echte MCP-installatie/connectoruitvoering, schoolagenda
+na eigenaarlogin/2FA, repo-patchtests/deployment en resterende agents. Volledige
+visie blijft actief; deze stap sluit die niet af.
+
 # Leon / Gaia — uitvoeringsbacklog
 
 **27 september, M40-tools automatisch geregistreerd en vanuit chat gebruikt:**

@@ -47,6 +47,7 @@ def analyze(messages):
         'Zoek maximaal 3 duurzame expliciete voorkeuren, ontbrekende informatie of gevraagde tools/skills. '
         'Geen geheimen, diagnoses, verzonnen informatie, nieuwe bevoegdheden of boodschappen aan anderen. '
         'Een voorkeur moet letterlijk uitgesproken zijn. Een tool moet door de eigenaar gevraagd zijn. '
+        'Een verzoek om een functie, tool of connector is kind tool, geen smaakvoorkeur. '
         'Sla gewone begroetingen en eenmalige opdrachten over. '
         'Antwoord alleen JSON: {"items":[{"kind":"preference|tool|question","message_id":"bekend ID",'
         '"quote":"letterlijk citaat uit dat bericht","text":"kort leerpunt, gerichte vraag of concrete bouwprompt"}]}. '

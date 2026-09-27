@@ -1,5 +1,11 @@
 # Werken aan Leon / Gaia
 
+- Nieuwste27september: nachtelijke skill-development verbindt gesprekreflectie,
+  catalogus en bestaande/nieuwe M40-codebouw. Originele bronvraag behouden;
+  bestaande chat-build hergebruikt, geen dubbele generatie. Afronden alleen
+  bij echte tests+registratie. Magister blijft blocked/schoollogin nodig.
+  Zie docs/handoff.md en docs/code-worker.md voor doelserverbewijs.
+
 - Nieuwste27september: geteste M40-functies automatisch beschikbaar in chat,
   aparte Docker-functiewerker en echte GB→MB-aanroepen/chatreply bewezen.
   Docker-worker PrivateTmp uit wegens group-ID-remap; code blijft in Docker.

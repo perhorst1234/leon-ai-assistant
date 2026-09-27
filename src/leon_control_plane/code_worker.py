@@ -36,7 +36,7 @@ def initialize(store):
             brief TEXT NOT NULL,status TEXT NOT NULL,payload TEXT,attempted_at REAL NOT NULL)''')
 
 
-def enqueue(store,request_id,brief):
+def enqueue(store,request_id,brief,*,parent_task_id=None):
     initialize(store)
     request_id=str(uuid.UUID(request_id))
     if not isinstance(brief,str) or not 10<=len(brief.encode())<=2048:
@@ -54,6 +54,7 @@ def enqueue(store,request_id,brief):
                 row=c.execute('SELECT id FROM tasks WHERE EXISTS(SELECT 1 FROM json_each(tasks.source_refs_json) WHERE value=?)',(marker,)).fetchone()
             return row['id'] if row else store.create_task(source_refs=[marker],owner='Leon Code',risk_level='low',**kwargs)
         parent=task('code-request:'+request_id,title='Tool bouwen: '+brief[:80],goal=brief,
+            parent_task_id=parent_task_id,
             acceptance_criteria='Code genereren, werkelijke uitvoeringstests en aansluiting bewijzen; broncode alleen is niet klaar.')
         child=task('code-generation:'+request_id,title='M40: broncode en tests schrijven',goal=brief,parent_task_id=parent,
             acceptance_criteria='Werkelijke bestanden met hashes bewaren; alleen codegeneratie, geen uitvoering of installatie claimen.')
@@ -93,6 +94,9 @@ def generate(workspace,brief):
         'Use exactly these file paths; do not guess or change their spelling. '
         'Read tool.py and test_tool.py. Implement the owner request as a Python module in tool.py '
         'and meaningful pytest cases in test_tool.py. Use the Python standard library only. '
+        'Write the tests first, then implement the function. Keep both files short; no long documentation. '
+        'For local tools expose a simple public synchronous function with int, float, str, bool, list or dict parameters. '
+        'Do not use future or third-party imports. Do not finish until both files contain real code and have been read back. '
         'No shell, installation, credentials, or other files. Do not invent a successful external API call. '
         'If an API/account is missing, report that rather than pretending it works. '
         'Do not claim tests were run. Read back both files when finished. Owner request:\n'+brief)
@@ -119,7 +123,7 @@ def transition(store,task_id,target,**kwargs):
 def finish(store,row,payload,notify):
     checked=payload.get('tests_passed',False)
     from leon_control_plane.code_tools import register
-    external=bool(re.search(r'\b(mcp|api|plugin|installeer|marktplaats|vinted|ticketswap|google|agenda|gmail|magister|paypal|rabobank|server|printer|fluidd)\b',row['brief'],re.I))
+    external=external_request(row['brief'])
     tools=register(store,row['id'],payload) if not external else []
     payload['installed']=bool(tools)
     payload['tool_ids']=tools
@@ -137,6 +141,10 @@ def finish(store,row,payload,notify):
         from leon_control_plane.owner_updates import publish
         publish(store,'code-built:'+row['id'],summary+('Je kunt deze lokale functie nu in de chat gebruiken.' if complete else '\nDe opdracht blijft open tot de echte aansluiting bewezen is.'),request_id=row['id'])
     with closing(store.connect()) as c,c:c.execute("UPDATE code_builds SET status='built' WHERE id=?",(row['id'],))
+
+
+def external_request(brief):
+    return bool(re.search(r'\b(mcp|api|plugin|installeer\w*|marktplaats|vinted|ticketswap|google|agenda|gmail|magister|paypal|rabobank|server|printer|fluidd|verstuur\w*|verzend\w*|send\w*|bied\w*|onderhandel\w*|koop\w*|kopen|betaal\w*|betalen|overboek\w*|checkout|captcha|koppel\w*|connect\w*)\b',brief,re.I))
 
 
 def run_once(store,*,builder=generate,notify=True,clock=time.time):
@@ -194,7 +202,11 @@ def run_once(store,*,builder=generate,notify=True,clock=time.time):
 def main(argv=None):
     parser=argparse.ArgumentParser();parser.add_argument('--db',type=Path,default=ROOT/'.runtime/control-plane.sqlite')
     args=parser.parse_args(argv)
-    print(json.dumps({'processed':run_once(ControlPlaneStore(args.db,ROOT/'state/control-plane.seed.json'))}))
+    store=ControlPlaneStore(args.db,ROOT/'state/control-plane.seed.json')
+    processed=run_once(store)
+    from leon_control_plane.skill_development import reconcile
+    reconcile(store)
+    print(json.dumps({'processed':processed}))
 
 
 if __name__=='__main__':main()

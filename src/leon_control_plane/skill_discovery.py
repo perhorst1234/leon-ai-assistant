@@ -152,9 +152,21 @@ def discover(store, *, query_model=queries, catalog=search, clock=time.time, not
                 ORDER BY t.created_at,t.id LIMIT 100""").fetchall()
         attempts = 0
         for task in tasks:
+            from leon_control_plane.skill_development import source_build
+            if source_build(store,store.get_task(task['id'])) is not None:
+                # The same owner message already has a real build; no new search.
+                continue
             key = hashlib.sha256((task['id']+task['goal']).encode()).hexdigest()
             with closing(store.connect()) as conn:
                 old = conn.execute('SELECT * FROM skill_discoveries WHERE id=?',(key,)).fetchone()
+            if old and old['status']=='done':
+                # Older results lacked the goal field. The journal key binds
+                # this exact task ID and goal, so migrate without new searches.
+                data=json.loads(old['payload'])
+                if 'goal' not in data:
+                    data['goal']=task['goal']
+                    with closing(store.connect()) as conn,conn:
+                        conn.execute('UPDATE skill_discoveries SET payload=? WHERE id=?',(json.dumps(data),key))
             if old and (old['status']=='done' or (clock()-old['attempted_at']<86400 and not (retry_failed and old['status']=='retry'))):
                 continue
             if attempts >= 2:

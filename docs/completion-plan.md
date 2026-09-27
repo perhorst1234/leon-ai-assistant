@@ -19,9 +19,9 @@ beproeven en deployen voordat het volgende onderdeel wordt uitgebreid.
 | Shopper | Wekelijkse MP/Vinted-zoekopdrachten, echte MP-berichten, delayed replies | Echte inkomende replyketen bewijzen, Vinted-onderhandelingen, TicketSwap-eventwatch en alerts |
 | Server Manager | Status, wekelijkse echte inspectie, chatmeldingen en beperkte serviceherstarts | Ruimere diagnose/backups en geverifieerde herstelacties voor andere storingen |
 | Model Scheduler | Lokale M40, sensitive-local routing, GPU-lease met prioriteiten/aging, cacherouting en globale 89C-guard met cooling-aware queue | Adaptieve modelkeuze, batching en aansluiting Code Worker |
-| M40 Code Worker | Chat→M40-codebouw→Docker-tests→automatische lokale functieregistratie/aanroep en terugmelding live bewezen | Nachtelijke skillbouw/MCP-installatie, complexere toolinterfaces en volledige repo-patchtests/deployment |
+| M40 Code Worker | Chat→M40-codebouw→Docker-tests→automatische lokale functieregistratie/aanroep en terugmelding live bewezen | MCP-installatie, complexere toolinterfaces en volledige repo-patchtests/deployment |
 | Value / Opportunity / Curiosity | Scores, observaties, policies en queue-algoritmes | Relevante echte bronnen, herhaling in eigen gebruik herkennen en bruikbare verbeteringen uitvoeren |
-| Night Cycle / Feedback | Bronindex, ochtendbrief en echte lokale gesprekreflectie om22:00: voorkeuren in chat, tools/vragen in Werk en automatische MCP-cataloguszoekstap | Foutreflectie, semantische conflictoplossing en vaardigheden daadwerkelijk bouwen |
+| Night Cycle / Feedback | Bronindex, ochtendbrief en echte lokale gesprekreflectie om22:00: voorkeuren in chat, tools/vragen in Werk en automatische MCP-cataloguszoekstap plus lokale skillbouw/test/registratie | Foutreflectie, semantische conflictoplossing en externe vaardigheden aansluiten |
 | Zelfverbetering / Genome | Patchvalidator, rollbackcontract, configuratie/journal | Werkende doelhost-uitvoering, tests, succesvolle update en automatische rollback |
 | UI / Experience / Character | Eén Werk, compacte Vandaag, echte Chat/Memory | Kaarten passend bij echte tools, zichtbare blokkades en minder demo-restanten |
 | Manager / school / reizen | Vooral conceptrollen | Magister-serveraanmelding met wachtwoord/2FA gereed; schoolagenda na eigenaar-login testen, financiële acties open |
