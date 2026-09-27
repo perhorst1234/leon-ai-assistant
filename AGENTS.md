@@ -1,5 +1,9 @@
 # Werken aan Leon / Gaia
 
+- Nieuwste27september: Leon-chat→M40-codebouw→offline Docker-tests→terugmelding
+  werkelijk bewezen,0kosten. Docker-toegang toegekend/sg werkt. Worker/timer live.
+  631backend/57web. Tool blijft open tot registratie/aansluiting; zie docs/code-worker.md.
+
 - Nieuwste27september: schoolwachtwoord/2FA-formulier in Vandaag→Je agenda,
   serverbrowser op echte Microsoft-wachtwoordstap; nog geen agenda-loginbewijs.
   Begrensde compact M40-coder read/edit/readback exit0/charged0/piek59C,

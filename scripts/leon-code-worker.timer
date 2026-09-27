@@ -1,0 +1,10 @@
+[Unit]
+Description=Process queued Leon code builds
+
+[Timer]
+OnBootSec=90
+OnUnitInactiveSec=60
+Unit=leon-code-worker.service
+
+[Install]
+WantedBy=timers.target

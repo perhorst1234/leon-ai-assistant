@@ -7,7 +7,7 @@ import threading
 import time
 from zoneinfo import ZoneInfo
 
-_ACTIONS = {'shopper.create', 'shopper.update', 'shopper.pause', 'shopper.resume', 'shopper.search',
+_ACTIONS = {'code.build', 'shopper.create', 'shopper.update', 'shopper.pause', 'shopper.resume', 'shopper.search',
             'shopper.hold', 'shopper.status', 'calendar.read', 'calendar.find_slots', 'calendar.create', 'calendar.update', 'calendar.delete', 'mail.read', 'memory.save', 'memory.search',
             'tasks.create', 'tasks.execute', 'tasks.pause', 'tasks.resume', 'tasks.cancel', 'tasks.status', 'research.search', 'server.status', 'server.check', 'clarify'}
 
@@ -18,8 +18,13 @@ def may_be_action(content: str) -> bool:
     commands = bool(re.search(r'\b(zoek|zoeken|volg|regelen?|vind|pauze|pauzeer|stop|hervat|reageer|budget|status|hoe|update|verander|wacht|alleen|liever|voorkeur)\b', text))
     work = bool(re.search(r'\b(maak|schrijf|stel|analyseer|vergelijk|vat|werk|pauzeer|hervat)\b', text) and re.search(r'\b(opdracht|achtergrond|plan|rapport|analyse|samenvatting|tekst|checklist|taak)\b', text))
     availability=bool(re.search(r'\b(vrije? (?:momenten?|tijd)|wanneer .{0,60}(?:tijd|vrij))\b',text))
-    return availability or work or (shopping and commands) or bool(re.search(r'\b(onderzoek|webresearch|zoek op internet|zoek online|zoek bronnen)\b',text)) or bool(re.search(
+    return code_command(content) or availability or work or (shopping and commands) or bool(re.search(r'\b(onderzoek|webresearch|zoek op internet|zoek online|zoek bronnen)\b',text)) or bool(re.search(
         r'\b(server|m40|agenda|afspraak|afspraken|gmail|mail|geheugen)\b|\b(onthoud|bewaar|taken|opdrachten)\b', text))
+
+
+def code_command(content):
+    return bool(re.match(r'^\s*(?:leon[, ]+)?(?:maak|bouw|schrijf|ontwikkel)\b',content,re.I)
+        and re.search(r'\b(python|code|script|tool|functie|parser|mcp)\b',content,re.I))
 
 
 def calendar_time(value: dict) -> str:
@@ -33,6 +38,8 @@ def validate_authority(decision: dict, content: str) -> dict:
     """Writes require the current owner command; a model cannot invent a budget."""
     action, args = decision['action'], decision['args']
     text = content.casefold()
+    if action=='code.build' and not code_command(content):
+        return {'action':'clarify','args':{'question':'Welke tool wil je dat ik bouw, en wat moet die doen?'}}
     if action in {'calendar.create','calendar.update','calendar.delete'}:
         verbs={'calendar.create':r'\b(zet|voeg|plan|maak|noteer|plaats|boek)\b','calendar.update':r'\b(verplaats|verzet|wijzig|verander|pas|verschuif)\b','calendar.delete':r'\b(verwijder|annuleer|schrap|haal)\b'}
         if not re.search(verbs[action],text) or re.match(r'\s*(hoe|wat|waarom|leg uit)\b',text):
@@ -75,6 +82,8 @@ def shopper_service():
 
 
 def route(content: str, history: list[str], state: dict) -> dict:
+    if code_command(content):
+        return {'action':'code.build','args':{}}
     from leon_control_plane.shopper_runtime import model_json
     watches = [{'id': w['id'], 'query': w['query'], 'budget_cents': w['max_total_cents'],
                 'min_ram_gb': w['min_ram_gb'], 'enabled': w['enabled']} for w in state.get('watches', [])[:5]]
@@ -117,6 +126,11 @@ def route(content: str, history: list[str], state: dict) -> dict:
 
 def apply(store, request_id: str, decision: dict, shopper, *, owner_content='') -> str:
     action, args = decision['action'], decision['args']
+    if action=='code.build':
+        if args or not code_command(owner_content):raise ValueError('Invalid coding command')
+        from leon_control_plane.code_worker import enqueue
+        result=enqueue(store,request_id,owner_content)
+        return 'Ik heb de bouwopdracht bij Leon Code in Werk gezet. De M40 schrijft de code en tests; uitvoering en aansluiting blijven open tot die echt zijn gecontroleerd. Taak: '+result['task_id']
     if action == 'clarify':
         question = args.get('question', 'Welke opdracht bedoel je precies?')
         if set(args) - {'question'} or not isinstance(question, str) or len(question) > 400:

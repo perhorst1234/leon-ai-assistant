@@ -1,0 +1,13 @@
+[Unit]
+Description=Leon M40 code builder
+After=leon-m40-guard.service leon-ollama.service
+Wants=leon-m40-guard.service
+
+[Service]
+Type=oneshot
+WorkingDirectory=%h/leon-ai-assistant
+ExecStart=%h/leon-ai-assistant/.venv/bin/python -m leon_control_plane.code_worker
+TimeoutStartSec=700
+# Existing user sessions use sg to acquire the owner's newly granted docker group.
+# Generated code runs only inside containers with no-new-privileges enabled.
+PrivateTmp=true

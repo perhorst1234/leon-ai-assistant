@@ -1,5 +1,29 @@
 # Overdracht — Leon / Gaia
 
+**27 september, Leon-chat → M40-codebouw → echte Docker-tests:**
+code.build herkent expliciete eigenaarbouwopdracht zonder extra routermodel;
+letterlijke brief/dedup, eigen korte werkpaden, begrensde OpenCode/GPT-OSS,
+bron/hash/syntaxcontrole en werkelijke offline Docker-tests. Worker/timer actief,
+normale chatworker apart. Eerste padfoutproef correct failed; nieuwe korte-paden-
+proef81.7s geslaagd. Volledige geïsoleerde chatserviceproef68.7s: code en tests,
+Dockerpassed, resultaat terug in hetzelfde gesprek, charged0. Hoofdtool blijft
+blocked tot aansluiting; broncodegeneratiesubtaak done betekent geen installatie.
+Onzekere afgebroken generatie zichtbaar blocked, geen replay; opgeslagen ready-
+resultaat hervat melding zonder nieuwe inference/tests.
+
+Eigenaar heeft docker-groep verleend; sg-docker toegang werkelijk bevestigd,
+Docker29.1.3. Immutable lokale testimage, geen netwerk/hostcredentials/socket/GPU,
+read-only source/root, nonroot/capdrop/no-new-privileges/256MiB/1CPU/64pids/35s.
+Echte passing tests, bewuste failing test en isolatieprobes bewezen. Zie
+code-worker.md. Nieuwe Code-owner verschijnt vanzelf in bestaande Werk-filter;
+bolletjes nemen nu actieve/geblokkeerde uitvoering ook zonder tekstmodeljob mee.
+631backend/11gerichte/57web, TypeScript/build en lint0errors/7 bestaande
+warnings; echte systemd-containerproef exit0, testcontainers opgeruimd.
+Schoolstatus nog niet ingelogd/agenda_connectedfalse; huidige username_needed.
+Volgende: geteste tools registreren/uitvoeren vanuit chat; daarna nachtelijke
+skillbouw/MCP-installatie en repo-patchtests/deployment. Goal blijft volledig open.
+
+
 **27 september, schoolaanmelding en begrensde M40-coder gedeployd:**
 Magister heeft nu in Vandaag → Je agenda → Magister koppelen een eigen
 serverformulier voor Microsoft-wachtwoord en 2FA-code/Authenticator-bevestiging.
