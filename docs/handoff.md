@@ -1,5 +1,27 @@
 # Overdracht — Leon / Gaia
 
+**27 september, M40-testbestanden en gratis TicketSwap-voorbeeld:**
+Compact coder had6stappen/768output; nu10stappen/1536output, nog steeds
+4096context/600s deadline/89C/local-only. Echte korte GPT-OSS20B-proef59.4s:
+read/read/edit/edit/read/read/stop, beide bestanden werkelijk geschreven.
+Werkelijke Docker-tests passed, registratie ram_total en Docker-aanroep4×32=128;
+geïsoleerde Zelfleren-hoofdtaakdone. Eerste10stappen/768output-herproef137.2s
+schreef niets en bleef terecht failed; niet automatisch herhaald. De59.4s-proef
+gebruikt een korte expliciete bouwprompt, niet de volledige nachtservice. Nieuwe
+config op de volledige nachtketen nog afzonderlijk bewijzen.
+
+Eigenaar heeft geen actueel concert en autoriseert gratis voorbeeld. Nieuwe
+chatactie tickets.search alleen voor expliciet TicketSwap-voorbeeld/overzicht:
+vaste publieke NL-concertpagina, begrensde HTML, alleen publieke evenementlinks,
+geen account/aankoop/reservering/API-modelkosten. Bron eerst werkelijkHTTP200;
+latereHTTP403, gewone serverbrowser toont Verifying. Live backendchat toont
+terecht leesblokkade en blocked-taak, geen beschikbaarheid/prijsclaim. Eerder
+gelezen bron gebruikt voor transparant tijdgestempeld voorbeeld met3links in
+chat TicketSwap voorbeeld en Werk; die voorbeeldtaakdone is geen live monitor.
+Voorbeeldtab daarna gesloten, eigen accounttabs behouden. Concertkeuze ontbreekt;
+prijscontrole, TicketSwap-login/alerts/eventmonitoring en aankopen blijven open.
+654fullbackend/26targetchecks; geen TS/UI-wijzigingen. Backend active/restarted.
+
 **27 september, nachtelijke vaardigheidstaken naar echte codebouw verbonden:**
 Na gesprekreflectie en catalogusonderzoek draait skill_development. Maximaal twee
 nieuwe beslissingen per run; bestaande codebouw uit hetzelfde chatbericht wordt

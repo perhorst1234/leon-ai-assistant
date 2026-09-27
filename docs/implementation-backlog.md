@@ -1,3 +1,8 @@
+Actueel: kort M40-build/test/registratiebewijs59.4s na output/staplimietfix;
+volledige nachtketen nog opnieuw bewijzen. TicketSwap publieke voorbeeldzoekactie
+gedeployd, maar actuele live toegang403/Verifying. Gratis snapshotvoorbeeld in
+chat/Werk; eventmonitor/prijscontrole/login blijven open.
+
 Actueel27september: nachtelijke vaardigheidsontwikkeling aangesloten op echte
 M40-codebouw/test/registratie. Bronvraag behouden en bestaande chat-builds
 hergebruikt. Afronden alleen bij beschikbare geteste functies; externe connectors

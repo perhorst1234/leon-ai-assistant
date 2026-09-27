@@ -93,3 +93,15 @@ thereafter 64GB may qualify as a fallback. The existing conversation stays held
 until the owner releases it. The latest real search read 28 rendered adverts
 and found no qualifying 128GB set. Fallback timing and held-contact suppression
 have regression tests. The dashboard shows the priority deadline and held count.
+
+## TicketSwap public example, 27 September
+
+Explicit chat example/overview requests can read the fixed public Netherlands
+concert overview. HTML and output are bounded, event links restricted to the
+exact HTTPS host; no login, paid provider, reservation or purchase. The task and
+result appear in Work. This is a limited overview, not full artist search or an
+event monitor, and gives no verified ticket prices. HTTP200 initially observed;
+later403 and ordinary serverbrowser Verifying. Live chat correctly reports a
+blocked read. Owner-authorized free example uses the earlier real public HTML,
+with its read timestamp and explicit lack of active monitoring, in chat and
+Work. No actual concert chosen yet. Protected pages and pricing remain open.

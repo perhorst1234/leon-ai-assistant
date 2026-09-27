@@ -1,5 +1,7 @@
 {
-  "enabled_providers": ["ollama"],
+  "enabled_providers": [
+    "ollama"
+  ],
   "autoupdate": false,
   "share": "disabled",
   "lsp": false,
@@ -7,10 +9,24 @@
   "provider": {
     "ollama": {
       "npm": "@ai-sdk/openai-compatible",
-      "options": {"baseURL": "http://127.0.0.1:11434/v1"},
+      "options": {
+        "baseURL": "http://127.0.0.1:11434/v1"
+      },
       "models": {
-        "gpt-oss:20b": {"name": "Local compact coder", "limit": {"context": 4096, "output": 768}},
-        "qwen2.5-coder:14b": {"name": "Local compact coder", "limit": {"context": 4096, "output": 768}}
+        "gpt-oss:20b": {
+          "name": "Local compact coder",
+          "limit": {
+            "context": 4096,
+            "output": 1536
+          }
+        },
+        "qwen2.5-coder:14b": {
+          "name": "Local compact coder",
+          "limit": {
+            "context": 4096,
+            "output": 1536
+          }
+        }
       }
     }
   },
@@ -19,10 +35,15 @@
       "mode": "primary",
       "description": "Small local file-editing steps for Leon",
       "prompt": "Read the requested file, make the requested small change, then read it back. Work only inside this workspace. Use only read and edit/write tools. Never claim tests or deployment that you did not perform. Finish with a short factual result.",
-      "steps": 6,
+      "steps": 10,
       "permission": {
         "*": "deny",
-        "read": {"*": "allow", "*.env": "deny", "*.env.*": "deny", "*/.runtime/*": "deny"},
+        "read": {
+          "*": "allow",
+          "*.env": "deny",
+          "*.env.*": "deny",
+          "*/.runtime/*": "deny"
+        },
         "edit": "allow",
         "external_directory": "deny"
       }

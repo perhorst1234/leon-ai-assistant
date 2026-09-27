@@ -7,14 +7,14 @@ import threading
 import time
 from zoneinfo import ZoneInfo
 
-_ACTIONS = {'code.build', 'code.invoke', 'code.list', 'shopper.create', 'shopper.update', 'shopper.pause', 'shopper.resume', 'shopper.search',
+_ACTIONS = {'tickets.search', 'code.build', 'code.invoke', 'code.list', 'shopper.create', 'shopper.update', 'shopper.pause', 'shopper.resume', 'shopper.search',
             'shopper.hold', 'shopper.status', 'calendar.read', 'calendar.find_slots', 'calendar.create', 'calendar.update', 'calendar.delete', 'mail.read', 'memory.save', 'memory.search',
             'tasks.create', 'tasks.execute', 'tasks.pause', 'tasks.resume', 'tasks.cancel', 'tasks.status', 'research.search', 'server.status', 'server.check', 'clarify'}
 
 
 def may_be_action(content: str) -> bool:
     text = content.casefold()
-    shopping = bool(re.search(r'\b(shopper|marktplaats|vinted|ddr[345]|ram|deals?|aanbiedingen?|verkoper)\b', text))
+    shopping = bool(re.search(r'\b(ticketswap|shopper|marktplaats|vinted|ddr[345]|ram|deals?|aanbiedingen?|verkoper)\b', text))
     commands = bool(re.search(r'\b(zoek|zoeken|volg|regelen?|vind|pauze|pauzeer|stop|hervat|reageer|budget|status|hoe|update|verander|wacht|alleen|liever|voorkeur)\b', text))
     work = bool(re.search(r'\b(maak|schrijf|stel|analyseer|vergelijk|vat|werk|pauzeer|hervat)\b', text) and re.search(r'\b(opdracht|achtergrond|plan|rapport|analyse|samenvatting|tekst|checklist|taak)\b', text))
     availability=bool(re.search(r'\b(vrije? (?:momenten?|tijd)|wanneer .{0,60}(?:tijd|vrij))\b',text))
@@ -85,6 +85,8 @@ def shopper_service():
 def route(content: str, history: list[str], state: dict) -> dict:
     if code_command(content):
         return {'action':'code.build','args':{}}
+    if re.search(r'\b(voorbeeld\w*|overzicht)\b',content,re.I) and re.search(r'\bticketswap\b',content,re.I):
+        return {'action':'tickets.search','args':{'query':''}}
     if re.search(r'\b(welke|beschikbare)\b.*\btools\b',content,re.I):
         return {'action':'code.list','args':{}}
     from leon_control_plane.shopper_runtime import model_json
@@ -143,6 +145,10 @@ def apply(store, request_id: str, decision: dict, shopper, *, owner_content='') 
         from leon_control_plane.code_tools import enqueue_call
         enqueue_call(store,request_id,args['tool_id'],args['arguments'])
         return 'Ik gebruik de lokale functie en stuur het resultaat hier terug. Je kunt de uitvoering volgen in Werk.'
+    if action=='tickets.search':
+        if args!={'query':''} or not re.search(r'\bticketswap\b',owner_content,re.I) or not re.search(r'\b(voorbeeld\w*|overzicht)\b',owner_content,re.I):raise ValueError('Unsupported concert query')
+        from leon_control_plane.ticketswap_search import execute
+        return execute(store,request_id)
     if action=='code.build':
         if args or not code_command(owner_content):raise ValueError('Invalid coding command')
         from leon_control_plane.code_worker import enqueue

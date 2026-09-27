@@ -1,5 +1,11 @@
 # Werken aan Leon / Gaia
 
+- Nieuwste27september: compact coder10stappen/1536output; echte korte M40-
+  bouw59.4s + Docker-tests/registratie/aanroep128 bewezen. Volledige nachtproef
+  afzonderlijk open. TicketSwap gratis voorbeeld in chat/Werk, liveHTTP403/
+  Verifying correctblocked; geen monitoring/aankoopclaim. 654backendchecks.
+  Zie docs/handoff.md voor exacte grenzen.
+
 - Nieuwste27september: nachtelijke skill-development verbindt gesprekreflectie,
   catalogus en bestaande/nieuwe M40-codebouw. Originele bronvraag behouden;
   bestaande chat-build hergebruikt, geen dubbele generatie. Afronden alleen

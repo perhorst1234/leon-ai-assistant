@@ -132,3 +132,9 @@ bestanden; die gewijzigde prompt nog niet als nieuwe succesvolle bouw claimen.
 Eerder werkelijk geteste M40 GB→MB-bron automatisch hergebruikt door
 skill_development: oorspronkelijke vaardigheiddone, geen extra model/search.
 651full backend/35target na promptwijziging/57webtests, tsc/build, lint0errors.
+
+Compact-profiel aangepast naar10stappen/1536output (context4096 behouden).
+Bron: https://opencode.ai/docs/agents — laatste stap is toolvrije samenvatting.
+Echte korte M40-fileproef59.4s read/read/edit/edit/read/read/stop en twee
+bestanden; Docker-tests passed, ram_total geregistreerd/uitgevoerd4×32=128,
+geïsoleerde skilldone. Deze korte proef is geen volledige nachtserviceproef.
