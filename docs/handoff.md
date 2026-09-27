@@ -1,5 +1,47 @@
 # Overdracht — Leon / Gaia
 
+**27 september, eerste echte zelfleerketen gedeployd:** nieuwe module
+conversation_learning gebruikt bestaande Leon-chat, Memory, taken en owner_updates.
+Dagelijks22:00 Europe/Amsterdam via enabled/active timer; maximaal12 nieuwe
+gebruikersberichten uit afgelopen7dagen, batches3 en achtergrondprioriteit op
+bestaande M40. Geen Firecrawl/OpenAI of betaalde providerfallback. Geheimhoudende
+berichten worden vóór inference uitgesloten en als afgehandeld gemarkeerd.
+Uitsluitend letterlijke broncitaten; een expliciete eigenaaruitspraak is nodig
+voor voorkeuren/tools. Modelinterpretaties worden niet als geheugen opgeslagen.
+Nieuwe voorkeuren komen actief als preference in bestaande chatcontext; mogelijke
+conflicten via conservatieve woordoverlap blijven candidate/conflicted zonder
+oude entries te wijzigen. Dit is nog geen volwaardige semantische conflictoplosser.
+
+Tool/skillwensen worden concrete taken met bouwprompt en bronverwijzing in
+verenigd Werk, owner Leon Zelfleren. Vragen staan daar en in de gededupliceerde
+chatmelding. Taken zijn geen bewijs van installatie/uitvoering. Journal vóór
+mutaties, exclusieve proceslock, stabiele source-deduplicatie en hervatten van
+pending resultaat voorkomen herhaalde inference na een meldingstoring. Geen
+nieuwe melding als niets geleerd is. Een crash precies tussen effect en journal-
+update kan nog een telling/melding missen, maar veroorzaakt geen dubbele bron.
+
+Productieservice doorliep12 echte Leon-gebruikersberichten in4 lokale batches;
+geen duurzame nieuwe leerpunten, dus terecht geen meldingen. Kleine geïsoleerde
+M40-proef met een bestaande echte eigenaaruitspraak:2 nieuwe voorkeuren en
+memory_used_in_chat=true, charged0. Eerste strikte validatorproef wees een
+letterlijk vervolgzin-citaat af; explicietheid wordt nu in het hele bronbericht
+gecontroleerd. 588 volledige backendtests +10 gerichte tests na deze correctie;
+systemd/diffcheck geslaagd. UI ongewijzigd. Geen trainingsgewichten aangepast.
+
+GLM5.2/Colibri nog niet aangesloten: projectdocumentatie noemt circa372GB disk en
+minimaal16GB RAM; deze VM heeft129GB vrij/9.3GB RAM. Eigenaar gevraagd om grotere
+schijf/RAM of voorlopig bestaande M40. Bron: https://github.com/JustVugg/colibri .
+Niet stilzwijgend een betaald API-abonnement openen. Volgende: nuttige skilltaken
+met bestaande gratis MCPs verbinden en daadwerkelijke code/test/rollback-worker.
+
+**27 september, Google Calendar-write live bewezen:** writegrant nu true.
+Eigen primaire tijdelijke afspraak zonder gasten/herhaling daadwerkelijk gemaakt,
+gewijzigd en verwijderd; elke toestand teruggelezen. Google retourneert na
+DELETE soms HTTP200/status=cancelled als tombstone. Eerste extra smoke-assertion
+verwachtte alleen404/410 en was fout; tweede correcte proef bevestigde volledige
+create/update/delete-keten en cancelled. Geen testafspraak achtergelaten. Nog
+open: multi-tool-planning, andere agenda's en Gmail meer dan metadata.
+
 **27 september, gezamenlijke GPU-prioriteiten gedeployd:** chat en inkomende
 shopperreacties vóór zoeken, achtergrondwerk en coding. Wachttijd verhoogt de
 prioriteit zodat oude taken ook starten; lopende generaties worden niet afgebroken.

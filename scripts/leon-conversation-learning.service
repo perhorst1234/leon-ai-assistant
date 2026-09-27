@@ -1,0 +1,12 @@
+[Unit]
+Description=Leon learns preferences and skill needs from conversations
+After=leon-m40-guard.service leon-ollama.service
+Wants=leon-m40-guard.service
+
+[Service]
+Type=oneshot
+WorkingDirectory=%h/leon-ai-assistant
+EnvironmentFile=-%h/leon-ai-assistant/.env.local
+ExecStart=%h/leon-ai-assistant/.venv/bin/python -m leon_control_plane.conversation_learning
+TimeoutStartSec=1500
+

@@ -1,5 +1,11 @@
 # Werken aan Leon / Gaia
 
+- Nieuwste27september: echte gesprekreflectie22:00 Amsterdam gedeployd;
+  M40-only, broncitaten, preferences in chat, tools/vragen in Werk; journal/dedup.
+  Productie12berichten stil; geïsoleerde echte M40-proef2voorkeuren/chatcontext.
+  Google create/update/delete nu live bewezen/opgeruimd; Colibri wacht extra
+  disk/RAM. 588full+10targetchecks. Zie docs/handoff.md.
+
 - Nieuwste27september: GPU-prioriteiten chat/reply→shopper→background→coding,
   aging en procescleanup; echte chat/charged0 en codingdefer75 bewezen;579tests.
   Volgende: gesprekreflectie om22:00. Google writegrant nu true, writeproef open.

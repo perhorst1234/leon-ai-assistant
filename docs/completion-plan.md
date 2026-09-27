@@ -15,13 +15,13 @@ beproeven en deployen voordat het volgende onderdeel wordt uitgebreid.
 | Memory / graph | Bewaren, ophalen, corrigeren, verwijderen, relaties en automatische context | Voorkeuren/correcties vanzelf leren, conflicten netjes behandelen |
 | Task Manager | SQLite-taken, wachtrij, checkpoints, herstel, chatuitvoering en terugbezorging | Subtaken en afhankelijkheden |
 | Research Agent | Chat → Firecrawl → M40-synthese → bronnen in chat/Werk, max10 credits/dag | Dieper lezen binnen budget en periodieke research |
-| Planner / Google | PKCE OAuth, live Agenda/Gmail-metadata, vrije momenten en writer vanuit chat/Werk | Aanvullend write-consent en echte writeproef; multi-tool-planning; Gmail alleen metadata |
+| Planner / Google | PKCE OAuth, live Agenda/Gmail-metadata, vrije momenten en create/update/delete live bewezen | Multi-tool-planning, andere agenda's; Gmail alleen metadata |
 | Shopper | Wekelijkse MP/Vinted-zoekopdrachten, echte MP-berichten, delayed replies | Echte inkomende replyketen bewijzen, Vinted-onderhandelingen, TicketSwap-eventwatch en alerts |
 | Server Manager | Status, wekelijkse echte inspectie, chatmeldingen en beperkte serviceherstarts | Ruimere diagnose/backups en geverifieerde herstelacties voor andere storingen |
 | Model Scheduler | Lokale M40, sensitive-local routing, GPU-lease met prioriteiten/aging, cacherouting en globale 89C-guard met cooling-aware queue | Adaptieve modelkeuze, batching en aansluiting Code Worker |
 | M40 Code Worker | OpenCode/GPT-OSS read/edit/readback eerder bewezen; laatste Qwen-review timeout zonder verdict | Vanuit Leon starten met eigen workspace, daadwerkelijke checks en deployment terugkoppelen |
 | Value / Opportunity / Curiosity | Scores, observaties, policies en queue-algoritmes | Relevante echte bronnen, herhaling in eigen gebruik herkennen en bruikbare verbeteringen uitvoeren |
-| Night Cycle / Feedback | Dagelijkse veilige bronindex en ochtendbrief | Echte gesprek-/foutreflectie, memory-updates, laag-risicotaken en leerresultaten |
+| Night Cycle / Feedback | Bronindex, ochtendbrief en echte lokale gesprekreflectie om22:00: voorkeuren in chat, tools/vragen in Werk | Foutreflectie, semantische conflictoplossing en vaardigheden daadwerkelijk bouwen |
 | Zelfverbetering / Genome | Patchvalidator, rollbackcontract, configuratie/journal | Werkende doelhost-uitvoering, tests, succesvolle update en automatische rollback |
 | UI / Experience / Character | Eén Werk, compacte Vandaag, echte Chat/Memory | Kaarten passend bij echte tools, zichtbare blokkades en minder demo-restanten |
 | Manager / school / reizen | Vooral conceptrollen | Gekozen bronnen en concrete gebruiksscenario's; nog geen financiële/accountacties |
@@ -37,7 +37,7 @@ beproeven en deployen voordat het volgende onderdeel wordt uitgebreid.
 3. **Echte research — live bewezen.** Bestaande Firecrawl-credits, duidelijke daglimiet,
    bronvermelding, lokale synthese en geen nieuwe betaling.
 4. **Planner en accounts.** Lezen bewezen en geautoriseerde writer gedeployd.
-   Aanvullend Google-consent en echte create/update/delete-proef nog nodig;
+   Echte create/update/delete-proef inmiddels geslaagd;
    vrije momenten vanuit chat nu live bewezen. Samengestelde planning
    en meerdere agenda's nog aansluiten.
 5. **Shopper afronden.** Vinted en TicketSwap, echte meldingen en follow-ups;
@@ -50,10 +50,14 @@ beproeven en deployen voordat het volgende onderdeel wordt uitgebreid.
 8. **Overige rollen en afronding.** School-/reis-/managerbronnen waar gewenst,
    dynamische kaarten en gezamenlijke herstel-/rebootacceptatie.
 
+Eigenaarprioriteit27september: na de GPU-update eerst zelfleren uit gesprekken,
+dan MCP/skillontwikkeling. Nachtreflectie draait op de M40; GLM5.2 via Colibri
+blijft expliciet vervolgwerk, afhankelijk van extra schijf/RAM.
+
 ## Nog benodigde eigenaargegevens
 
 - Google OAuth: live lezen is bewezen. De planner-writer is gedeployd;
-  write-consent is inmiddels verleend; echte writeproef nog nodig.
+  write-consent en echte create/update/delete-proef zijn nu geslaagd.
 - Research: toestemming voor maximaal tien bestaande Firecrawl-credits per dag
   is gegeven; geen credits kopen en geen OpenAI gebruiken voor synthese.
 - TicketSwap: eerste concert/eventlink, aantal tickets en maximale totaalprijs.

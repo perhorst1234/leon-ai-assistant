@@ -1,0 +1,10 @@
+[Unit]
+Description=Reflect on Leon conversations at 22:00 Amsterdam
+
+[Timer]
+OnCalendar=*-*-* 22:00:00 Europe/Amsterdam
+Persistent=true
+Unit=leon-conversation-learning.service
+
+[Install]
+WantedBy=timers.target
