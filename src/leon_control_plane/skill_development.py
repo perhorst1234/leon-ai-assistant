@@ -83,8 +83,12 @@ def plan(store,task,discovery,*,model=decision_model,school_status=None):
         if school_status is None:
             from leon_control_plane.magister_auth import status
             school_status=status()
-        return {'kind':'needs_integration','reason':'Magister-agenda is nog niet verbonden. Rond de schoolaanmelding af via Vandaag → Je agenda → Magister koppelen; bevestig daarna de 2FA.',
-            'school_state':school_status.get('state','unknown')}
+        state=school_status.get('state','unknown')
+        if state in {'signed_in_unverified','connected'}:
+            reason='De schoolaanmelding is aanwezig. De Magister-agenda is al beschikbaar via de bestaande connector; controleer de gevraagde vaardigheid en verifieer de bijbehorende bron. Andere schoolbronnen moeten afzonderlijk worden aangesloten.' if school_status.get('calendar_connected') else 'De schoolaanmelding is aanwezig. Verifieer de gevraagde schoolbron via de bestaande connector; een geopende portal bewijst nog geen werkende vaardigheid.'
+        else:
+            reason='Rond de schoolaanmelding af via Vandaag → Je agenda → Magister koppelen; bevestig zo nodig de 2FA. Daarna moet de gevraagde schoolbron worden geverifieerd.'
+        return {'kind':'needs_integration','reason':reason,'school_state':state}
     if external_request(request):
         return {'kind':'needs_integration','reason':'Deze vaardigheid vereist een echte connector/accountactie. Controleer de gevonden bronnen, benodigde accounttoegang en kosten voordat de aansluiting wordt uitgevoerd.'}
     result=model(request,discovery.get('candidates',[]))

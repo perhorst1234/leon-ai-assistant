@@ -1,5 +1,23 @@
 # Overdracht — Leon / Gaia
 
+**27 september, volledige nieuwe nachtvaardigheid echt beproefd:**
+Geïsoleerde eigen acceptatiedatabase, dezelfde productie-functies zonder
+model-/catalogus-/bouw-/testmocks: echte M40-gesprekreflectie herkent één tool,
+werkelijk MCP-catalogusonderzoek en lokale vaardigheidsbeslissing, nieuwe
+OpenCode/GPT-OSS-bronbouw plus Docker-tests en automatische functieregistratie.
+Bouwfase203.3s; ram_total werkelijk beschikbaar, aanroep4×32 geeft128.
+Vaardigheid en zoeksubtaak done. Dit sluit de eerdere open compacte nachtproef
+af; het is geen bewijs voor willekeurige externe connectorinstallaties.
+Proefdatabase, gegenereerde bron en gesprekken privé; geen testopdracht in
+productie-Werk. Echte chatservice/M40-router/functiewerker op dezelfde
+acceptatiedatabase:44.0s, resultaat128 terug in hetzelfde gesprek. Timer enabled,
+volgende geplande run20:00UTC/22:00Amsterdam; de ketenproef startte handmatig.
+
+Zelfleren vraagt bij een aanwezige schoolaanmelding niet onnodig opnieuw om
+2FA. Verbonden schoolagenda bewijst geen huiswerk/cijfersconnector: die taken
+blijven open. Twee nieuwe regressies en54gerichte backendchecks geslaagd.
+Zie docs/code-worker.md; de volledige Leon-goal blijft actief.
+
 **27 september, Magister-agenda werkelijk verbonden met Leon Planner:**
 Verlopen schoolpagina werd onterecht als leerlingnummerformulier herkend;
 status onderscheidt nu verlopen sessie/schoolkeuze/username. Native username

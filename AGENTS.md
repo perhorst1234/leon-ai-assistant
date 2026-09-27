@@ -1,5 +1,11 @@
 # Werken aan Leon / Gaia
 
+- Nieuwste27september: volledige geïsoleerde nachtketen met echte M40-reflectie,
+  echte MCP-zoekstap/beslissing en nieuwe codebouw203.3s, Docker-tests/registratie
+  en ram_total-aanroep128 bewezen. Geen nieuwe API-kosten. Andere externe
+  connectoren blijven open. Schoolstatus vraagt geen onnodige 2FA;54targetchecks.
+  Zie nieuwste handoff en docs/code-worker.md.
+
 - Nieuwste27september: Magister eigen account/agendaAPI200 werkelijk bewezen,
   18weekafspraken, Google+schoolplanning7slots zonder lesoverlap, beide chat-
   antwoorden en Vandaag6items/webbridge bewezen. Privé plannerflag aan;

@@ -138,3 +138,27 @@ Bron: https://opencode.ai/docs/agents — laatste stap is toolvrije samenvatting
 Echte korte M40-fileproef59.4s read/read/edit/edit/read/read/stop en twee
 bestanden; Docker-tests passed, ram_total geregistreerd/uitgevoerd4×32=128,
 geïsoleerde skilldone. Deze korte proef is geen volledige nachtserviceproef.
+
+
+## Volledige nieuwe nachtvaardigheid, 27 september
+
+Echte acceptatie op de doelserver in een aparte database: gesprekbericht over
+een herbruikbare RAM-functie → productie-M40-reflectie → echte gratis MCP-
+cataloguszoekstap → lokale M40-vaardigheidsbeslissing → nieuwe OpenCode/GPT-OSS-
+bouw → echte Docker-tests → automatische registratie → reconcile van de
+Zelfleren-hoofdtaak. Geen geïnjecteerde modellen/bouwers/testresultaten.
+Bouwfase203.3seconden met huidige10stappen/1536output/4096context.
+Vaardigheid en bronzoektaak done; ram_total(4,32) werkelijk uitgevoerd:128.
+Alle calls lokaal, nul API-uitgaven; dezelfde nachtfuncties als de productie-
+service. De proef bewijst de keten, niet de kloktijd22:00 of iedere toekomstige
+functie. Privé bewijs in .runtime; geen synthetisch gesprek in productie.
+
+Bij een aanwezige schoolaanmelding vraagt zelfleren niet automatisch opnieuw
+om wachtwoord/2FA. Een geverifieerde agenda is geen huiswerk/cijferbron; extra
+connectoropdrachten blijven open tot de gevraagde bron echt is geverifieerd.
+Twee regressies voor verbonden/onbevestigde sessies;54gerichte checks geslaagd.
+
+Ook nieuwe functie vanuit chat echt gebruikt: productie-ChatService met echte
+M40-router en standaard Docker-functiewerker,44.0s, bevestigde128 als terugmelding
+in hetzelfde geïsoleerde gesprek. Nacht/bouw/functietimers enabled; volgende
+nacht gepland22:00Amsterdam. Dit chatbewijs is geen nieuwe HTTP/browserproef.

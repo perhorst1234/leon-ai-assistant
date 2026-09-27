@@ -127,3 +127,13 @@ def test_legacy_catalog_result_migrates_only_exact_journal_key(tmp_path):
         c.execute('UPDATE skill_discoveries SET payload=? WHERE id=?',(json.dumps(data),row['id']))
     discover(store,query_model=lambda *a:pytest.fail('repeated search'),notify=False)
     assert develop(store,model=lambda *a:{'kind':'local_function','reason':'Offline rekenen.'},notify=False)['prepared']==1
+
+
+@pytest.mark.parametrize('state,connected',[('signed_in_unverified',False),('connected',True)])
+def test_existing_school_session_never_requests_unnecessary_login_or_finishes_other_sources(tmp_path,state,connected):
+    store=make_store(tmp_path);parent=skill(store,'Koppel mijn Magister-huiswerk.');searched(store)
+    develop(store,model=lambda *a:pytest.fail('unnecessary inference'),school_status={'state':state,'calendar_connected':connected},notify=False)
+    task=store.get_task(parent)
+    assert task['status']=='blocked' and '2FA' not in task['blocked_reason']
+    assert 'schoolbron' in task['blocked_reason'].lower()
+    with closing(store.connect()) as c:assert c.execute('SELECT COUNT(*) FROM code_builds').fetchone()[0]==0

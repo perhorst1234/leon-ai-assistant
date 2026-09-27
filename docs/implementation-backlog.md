@@ -578,3 +578,9 @@ De GitHub-kandidaten staan in sectie 22 van het conceptplan. Hun eerdere onderho
 - https://www.youtube.com/watch?v=19xCOJxWU0A
 
 “Jcode” en “Ollm” moeten nog als exacte projecten worden geïdentificeerd. Colibri is de opgegeven repository `JustVugg/colibri`; de gewenste GLM-versie en compatibiliteit moeten nog worden bevestigd.
+
+
+27 september: volledige geïsoleerde nachtketen van M40-gesprekreflectie tot
+nieuw gebouwde/geteste/geregistreerde RAM-functie daadwerkelijk geslaagd.
+Echte aanroep128, bouw203.3s, nul API-kosten; andere MCP-installaties blijven
+open. Zelfleren houdt schoolbronverificatie apart van een bestaande login.
